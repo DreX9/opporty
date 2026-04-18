@@ -5,38 +5,34 @@ import { Box } from '@/components/ui/box';
 import { ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 
+//icon
+
+import { Icon } from '@/components/ui/icon';
+
 import { Button, ButtonText } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
+import { ICONS } from '@/components/icons';
 
 export default function Home() {
   const router = useRouter();
   return (
-    <Box className="flex-1 bg-background-300 h-[100vh]">
-      <Box className="absolute h-[500px] w-[500px] lg:w-[700px] lg:h-[700px]">
-        <Gradient />
-      </Box>
-      {/* <ScrollView
-        style={{ height: '100%' }}
-        contentContainerStyle={{ flexGrow: 1 }}
-      > */}
-      <Box className="flex flex-1 items-center mx-5 lg:my-24 lg:mx-32 py-safe">
-        <Box className="gap-10 base:flex-col sm:flex-row justify-between sm:w-[80%] md:flex-1">
-          <Box className="bg-background-template py-2 px-6 rounded-full items-center flex-column md:flex-row md:self-start">
+    <Box className="flex-1 bg-white dark:bg-background-500 items-center justify-center gap-6">
 
-          </Box>
-          <Button
-            size="md"
-            className="bg-primary-500 px-6 py-2 rounded-full"
-            onPress={() => {
-              router.push('/tabs/tab1');
-            }}
-          >
-            <ButtonText>Explore Tab Navigation</ButtonText>
-          </Button>
-        </Box>
-
+      {/* 🔵 Icono */}
+      <Box className="w-24 h-24 rounded-full bg-primary-500 items-center justify-center">
+        <Icon as={ICONS.webhook} className="w-12 h-12 text-black dark:text-black" />
       </Box>
-      {/* </ScrollView> */}
+
+      {/* 🔘 Botón */}
+      <Button
+        className="bg-primary-500 px-6 py-2 rounded-full"
+        onPress={() => router.push('/tabs/tab1')}
+      >
+        <ButtonText className="text-black dark:text-black">
+          Ir a Tabs
+        </ButtonText>
+      </Button>
+
     </Box>
   );
 }
