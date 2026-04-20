@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { View, Text, Image, ScrollView, TextInput, TouchableOpacity, Alert, StyleSheet, Dimensions, StatusBar } from 'react-native';
 import { ICONS } from '@/components/icons';
@@ -7,6 +8,7 @@ const { width: SW } = Dimensions.get('window');
 
 const A = { p: '#00E5FF', s: '#FF00FF', t: '#39FF14', g: '#FFD700' } as const;
 
+// Interfaz que define los datos principales de un evento
 interface Evento {
   id: string; titulo: string; fecha: string; hora: string; lugar: string;
   categoria: string; asistentes: number; rating: number; precio: string;
@@ -14,6 +16,8 @@ interface Evento {
   accentClass: string; accentHex: string;
   IconCategoria: React.ComponentType<{ size: number; color: string }>;
 }
+
+// Array constante que contiene todos los eventos disponibles.}
 
 const EVENTOS: Evento[] = [
   {
@@ -57,10 +61,10 @@ function InfoFila({ Icon, color, children, cls = '' }: { Icon: any; color: strin
     </View>
   );
 }
-
-// ─── Componente reutilizable: EventCard (Semana 3 – Props) ────────────────────
+// Propiedades esperadas para el componente de tarjeta de evento
 interface EventCardProps { evento: Evento; favorito: boolean; onToggleFavorito: (id: string) => void; onVerDetalle: (evento: Evento) => void; }
 
+// Componente que renderiza la tarjeta individual de un evento con su imagen, info y botones
 function EventCard({ evento, favorito, onToggleFavorito, onVerDetalle }: EventCardProps) {
   const { dark: isDark } = useTheme();
   const tw = isDark
@@ -123,10 +127,10 @@ function EventCard({ evento, favorito, onToggleFavorito, onVerDetalle }: EventCa
     </View>
   );
 }
-
-// ─── Pantalla principal: Tab2 – Eventos ──────────────────────────────────────
+// Lista de categorías para el filtro
 const CATS = ['Todos', 'Tecnología', 'Música', 'Deporte', 'Social', 'Cultural'];
 
+// Gestiona el estado de búsqueda, favoritos y categoría activa.
 export default function Tab2() {
   const { dark: isDark } = useTheme();
   const [busqueda, setBusqueda] = useState('');
@@ -139,6 +143,7 @@ export default function Tab2() {
     ? { bg9: 'bg-background-900', bg5: 'bg-background-500', bd: 'border-outline-800', tp: 'text-typography-white', ts: 'text-typography-gray', gh: '#9BA1A6', bh: '#0B101B', ph: '#9BA1A6', cb: '#131927', cBd: '#1E2A3A' }
     : { bg9: 'bg-[#F0F4F8]', bg5: 'bg-white', bd: 'border-[#E2E8F0]', tp: 'text-[#0F172A]', ts: 'text-[#64748B]', gh: '#64748B', bh: '#F0F4F8', ph: '#94A3B8', cb: '#FFFFFF', cBd: '#E2E8F0' };
 
+  // Filtra los eventos según la búsqueda y la categoría seleccionada.
   const filtrados = EVENTOS.filter(ev =>
     (ev.titulo.toLowerCase().includes(busqueda.toLowerCase()) || ev.lugar.toLowerCase().includes(busqueda.toLowerCase())) &&
     (filtroActivo === 'Todos' || ev.categoria === filtroActivo)
@@ -159,7 +164,6 @@ export default function Tab2() {
     <View className={`flex-1 ${T.bg9}`}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={T.bh} />
 
-      {/* CABECERA (Semana 2) */}
       <View className="flex-row justify-between items-center px-4 pt-4 pb-3">
         <View>
           <Text className={`${T.tp} text-3xl font-extrabold tracking-tight`}>Eventos</Text>
@@ -171,14 +175,14 @@ export default function Tab2() {
         </View>
       </View>
 
-      {/* BUSCADOR – TextInput (Semana 4) */}
+      {/* Buscador */}
       <View className={`flex-row items-center mx-4 mb-3 ${T.bg5} border ${T.bd} rounded-xl`}>
         <ICONS.Search size={16} color={T.gh} style={{ marginLeft: 12 }} />
         <TextInput className={`flex-1 h-11 text-sm ${T.tp} px-2`} placeholder="Buscar eventos o lugares..." placeholderTextColor={T.ph} value={busqueda} onChangeText={setBusqueda} accessibilityLabel="Buscar eventos" />
         {busqueda.length > 0 && <TouchableOpacity onPress={() => setBusqueda('')} className="mr-3"><Text className="text-primary-500 text-xs font-semibold">Limpiar</Text></TouchableOpacity>}
       </View>
 
-      {/* CHIPS DE CATEGORÍA (Semana 4 – TouchableOpacity) */}
+      {/*Opcione de categoria*/}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10, height: 60 }} contentContainerStyle={{ paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', height: 44 }}>
         {CATS.map((cat, i) => {
           const activo = filtroActivo === cat;
@@ -196,7 +200,7 @@ export default function Tab2() {
         <Text className={`${T.ts} text-xs`}>{filtrados.length} evento{filtrados.length !== 1 ? 's' : ''} encontrado{filtrados.length !== 1 ? 's' : ''}</Text>
       </View>
 
-      {/* LISTA DE EVENTOS (Semana 3 – Flexbox) */}
+      {/* Lista de eventos*/}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={st.lista}>
         {filtrados.length > 0 ? (
           filtrados.map(ev => <EventCard key={ev.id} evento={ev} favorito={favoritos.has(ev.id)} onToggleFavorito={toggleFav} onVerDetalle={verDetalle} />)
@@ -216,6 +220,7 @@ export default function Tab2() {
   );
 }
 
+//Estilos para los componentes de la pantalla
 const st = StyleSheet.create({
   tarjeta: { elevation: 4, position: 'relative' },
   lineaAcento: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, zIndex: 10, borderTopLeftRadius: 16, borderBottomLeftRadius: 16 },
@@ -224,4 +229,4 @@ const st = StyleSheet.create({
   lista: { alignItems: 'center', paddingHorizontal: 16, gap: 16 },
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 16, height: 34, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
   chipTxt: { fontSize: 14, lineHeight: 18, includeFontPadding: false },
-}); 
+});

@@ -48,11 +48,13 @@ export default function Tab4() {
 
             {/* --- SECCIÓN DE PERFIL --- */}
             <VStack className="items-center mb-10 w-full">
+                {/* Contenedor relativo para poder superponer el botón de edición */}
                 <Box className="relative mb-4">
+                    {/* Avatar principal con borde de neón */}
                     <Box className="w-28 h-28 rounded-full border-2 border-cyan-400 items-center justify-center shadow-lg shadow-cyan-500/30 bg-[#0D1324]">
                         <Text className="text-5xl">👨🏻‍💻</Text>
                     </Box>
-
+                    {/* Botón flotante para cambiar foto  */}
                     <TouchableOpacity className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-cyan-400 items-center justify-center border-2 border-[#070B17]">
                         {/* Icono de Editar actualizado */}
                         <ICONS.radio color="#22d3ee" size={18} strokeWidth={2.5} />
@@ -73,8 +75,11 @@ export default function Tab4() {
                         5 SELECCIONADOS
                     </Text>
                 </HStack>
-
+                {/* Grid Responsivo: flex-wrap permite que los botones bajen a la siguiente 
+                    línea si no caben en el ancho de la pantalla. */}
                 <HStack className="flex-wrap justify-between" style={{ gap: 12 }}>
+                    {/* RENDERIZADO DE LISTA: En lugar de repetir código, iteramos sobre 
+                        el arreglo INTERESES para dibujar cada botón dinámicamente. */}
                     {INTERESES.map((item) => (
                         <TouchableOpacity
                             key={item.id}
@@ -92,18 +97,21 @@ export default function Tab4() {
                 </HStack>
             </VStack>
 
-            {/* --- SECCIÓN DEL SLIDER --- */}
+            {/* 3. SECCIÓN DE CONFIGURACIÓN (SLIDER INTERACTIVO)*/}
             <Box className="w-full bg-[#0D1324] rounded-3xl p-6 border border-white/5 mb-8 shadow-sm">
+                {/* Cabecera del Slider que muestra el valor en tiempo real */}
                 <HStack className="items-center mb-6">
                     {/* Icono de Crosshair actualizado */}
                     <Icon as={ICONS.crosshair} color="#22d3ee" className="w-[18px] h-[18px] mr-2" />
                     <Text className="text-white font-bold text-base flex-1">Radio de Búsqueda</Text>
+
                     <HStack className="items-baseline">
+                        {/* Imprime la variable de estado 'radius' */}
                         <Text className="text-cyan-400 font-bold text-2xl mr-1">{radius}</Text>
                         <Text className="text-gray-500 font-bold text-xs tracking-widest">KM</Text>
                     </HStack>
                 </HStack>
-
+                {/* Componente Slider de Gluestack vinculado al estado local */}
                 <Slider
                     value={radius}
                     onChange={(v) => setRadius(Math.floor(v))}

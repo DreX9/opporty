@@ -15,6 +15,17 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
 import { ICONS } from '@/components/icons';
 
+// Modal
+import {
+  Modal,
+  ModalBackdrop,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter
+} from '@/components/ui/modal';
+
 const MOCK_USERS = [
   { email: 'admin@admin.com', password: '123' },
   { email: 'alex@test.com', password: 'password' }
@@ -26,6 +37,13 @@ export default function Home() {
   // --- ESTADOS PARA LOS INPUTS ---
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // --- ESTADOS DEL MODAL DE REGISTRO ---
+  const [showModal, setShowModal] = useState(false); // Controla si se ve el modal
+  const [regName, setRegName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
 
   // --- LÓGICA DE LOGIN ---
   const handleLogin = () => {
@@ -60,6 +78,20 @@ export default function Home() {
     }
   };
 
+  // --- LÓGICA DE REGISTRO ---
+  const handleRegister = () => {
+    if (!regName || !regLastName || !regEmail || !regPassword) {
+      Alert.alert("Campos incompletos", "Por favor, llena todos los datos para crear tu cuenta.");
+      return;
+    }
+    // Aquí iría tu lógica real para guardar el usuario en la base de datos
+    Alert.alert("¡Éxito!", `La cuenta para ${regName} ha sido creada.`);
+    setShowModal(false); // Cerramos el modal
+
+    // Limpiamos los campos de registro
+    setRegName(''); setRegLastName(''); setRegEmail(''); setRegPassword('');
+  };
+
 
 
 
@@ -89,7 +121,7 @@ export default function Home() {
           </Box>
 
           <Text className="text-2xl font-bold text-black dark:text-white mb-6">
-            OPPORTY <Text className="text-primary-500">EVENT</Text>
+            ECHO <Text className="text-primary-500">EVENT</Text>
           </Text>
 
           {/* 🧱 CARD */}
@@ -154,15 +186,97 @@ export default function Home() {
           </Box>
 
           {/* FOOTER */}
+          {/* FOOTER */}
           <Box className='flex-row items-center mt-6'>
             <Text className='mr-2 dark:text-gray-300'>¿No tiene una cuenta?</Text>
-            <Button variant="link" size="md" className="p-0">
+            {/* Al presionar este botón, cambiamos el estado para mostrar el Modal */}
+            <Button variant="link" size="md" className="p-0" onPress={() => setShowModal(true)}>
               <ButtonText className='text-primary-500'>Crear cuenta</ButtonText>
             </Button>
           </Box>
 
         </Box>
       </ScrollView>
+      {/* ===================================================
+          MODAL FLOTANTE DE REGISTRO
+      =================================================== */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        size="md"
+      >
+        <ModalBackdrop />
+        <ModalContent className="bg-[#0D1324] border border-white/10 rounded-3xl">
+
+          <ModalHeader className="border-b border-white/5 pb-4">
+            <Text className="text-white font-bold text-xl">Crear Nueva Cuenta</Text>
+            <ModalCloseButton>
+              <Icon as={ICONS.Heart} className="text-gray-400 w-5 h-5" />
+            </ModalCloseButton>
+          </ModalHeader>
+
+          {/* Usamos un ScrollView dentro del body por si la pantalla del celular es muy pequeña */}
+          <ModalBody className="pt-4">
+            <ScrollView showsVerticalScrollIndicator={false}>
+
+              <Box className="mb-4">
+                <Text className="text-gray-400 mb-2 text-sm">Nombre</Text>
+                <Input className="h-12 rounded-xl">
+                  <InputField placeholder="Ej. Alex" value={regName} onChangeText={setRegName} />
+                </Input>
+              </Box>
+
+              <Box className="mb-4">
+                <Text className="text-gray-400 mb-2 text-sm">Apellido</Text>
+                <Input className="h-12 rounded-xl">
+                  <InputField placeholder="Ej. Rivera" value={regLastName} onChangeText={setRegLastName} />
+                </Input>
+              </Box>
+
+              <Box className="mb-4">
+                <Text className="text-gray-400 mb-2 text-sm">Correo Electrónico</Text>
+                <Input className="h-12 rounded-xl">
+                  <InputField
+                    placeholder="correo@ejemplo.com"
+                    value={regEmail}
+                    onChangeText={setRegEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                  />
+                </Input>
+              </Box>
+
+              <Box className="mb-4">
+                <Text className="text-gray-400 mb-2 text-sm">Contraseña</Text>
+                <Input className="h-12 rounded-xl">
+                  <InputField
+                    placeholder="Crea una contraseña segura"
+                    secureTextEntry
+                    value={regPassword}
+                    onChangeText={setRegPassword}
+                  />
+                </Input>
+              </Box>
+
+            </ScrollView>
+          </ModalBody>
+
+          <ModalFooter className="border-t border-white/5 pt-4">
+            <Button
+              variant="outline"
+              action="secondary"
+              className="mr-3 border-white/10"
+              onPress={() => setShowModal(false)}
+            >
+              <ButtonText className="text-gray-300">Cancelar</ButtonText>
+            </Button>
+            <Button className="bg-cyan-400 rounded-xl px-6" onPress={handleRegister}>
+              <ButtonText className="text-[#070B17] font-bold">Registrarse</ButtonText>
+            </Button>
+          </ModalFooter>
+
+        </ModalContent>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }

@@ -56,13 +56,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="tab2"
         options={{
-          tabBarLabel: 'Radar',
+          tabBarLabel: 'Buscar',
           // funcion para el titulo y sus estilos
           headerTitle: () => (
             <HStack className="items-center">
               {/* Icono */}
 
-              <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
+              <Icon as={ICONS.radar} size="xl" className='text-cyan-400' />
               {/* Estilo del Texto */}
               <Text style={{
                 fontFamily: 'Orbitron',
@@ -80,19 +80,19 @@ export default function TabLayout() {
               </Text>
             </HStack>
           ),
-          tabBarIcon: ({ color }) => <TabBarIcon name="star-o" color={color} />,
+          tabBarIcon: ({ color }) => <Icon as={ICONS.view} color={color} />,
         }}
       />
       <Tabs.Screen
         name="tab3"
         options={{
-          tabBarLabel: 'Radar',
+          tabBarLabel: 'Agregar',
           // funcion para el titulo y sus estilos
           headerTitle: () => (
             <HStack className="items-center">
               {/* Icono */}
 
-              <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
+              <Icon as={ICONS.radar} size="xl" className='text-cyan-400' />
               {/* Estilo del Texto */}
               <Text style={{
                 fontFamily: 'Orbitron',
@@ -110,7 +110,7 @@ export default function TabLayout() {
               </Text>
             </HStack>
           ),
-          tabBarIcon: ({ color }) => <TabBarIcon name="star-o" color={color} />,
+          tabBarIcon: ({ color }) => <Icon as={ICONS.badgePlus} color={color} />,
         }}
       />
       <Tabs.Screen
