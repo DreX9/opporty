@@ -13,7 +13,12 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Slider, SliderTrack, SliderFilledTrack, SliderThumb } from '@/components/ui/slider';
 import { Icon } from '@/components/ui/icon';
 
-
+/**
+ 
+ * BASE DE DATOS LOCAL (ESTADO INICIAL)
+ * Simulacion de datos como si fuera un json 
+ 
+ */
 const INTERESES = [
     { id: 1, name: 'TECNOLOGÍA', icon: ICONS.cpu, active: true, color: 'text-cyan-400', borderColor: 'border-cyan-400' },
     { id: 2, name: 'ARTE', icon: ICONS.palette, active: false, color: 'text-gray-400', borderColor: 'border-white/10' },
@@ -23,7 +28,16 @@ const INTERESES = [
     { id: 6, name: 'AÑADIR', icon: ICONS.plus, active: false, color: 'text-gray-500', borderColor: 'border-white/5', isDashed: true },
 ];
 
+
+/**
+ * PANTALLA DE PERFIL Y AJUSTES (Tab4)
+ * Propósito: Permite al usuario gestionar su identidad digital, 
+ * seleccionar sus intereses para el algoritmo de emparejamiento, 
+ * y ajustar el radio de búsqueda del radar mediante un Slider interactivo.
+ */
 export default function Tab4() {
+    // ESTADO DE REACT: Controla el valor dinámico del slider.
+    // Inicia en 25 (KM) y se actualizará
     const [radius, setRadius] = useState(25);
     return (
         <ScrollView
@@ -31,8 +45,6 @@ export default function Tab4() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 40, paddingBottom: 60 }}
         >
-            {/* --- TOP BAR --- */}
-
 
             {/* --- SECCIÓN DE PERFIL --- */}
             <VStack className="items-center mb-10 w-full">

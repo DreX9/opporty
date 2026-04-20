@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Gradient from '@/assets/icons/Gradient';
 import Logo from '@/assets/icons/Logo';
 import { Box } from '@/components/ui/box';
-import { ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Input, InputField } from '@/components/ui/input'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -15,8 +15,54 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
 import { ICONS } from '@/components/icons';
 
+const MOCK_USERS = [
+  { email: 'admin@admin.com', password: '123' },
+  { email: 'alex@test.com', password: 'password' }
+];
+
 export default function Home() {
   const router = useRouter();
+
+  // --- ESTADOS PARA LOS INPUTS ---
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // --- LÓGICA DE LOGIN ---
+  const handleLogin = () => {
+    // 1. Validar que no envíen campos vacíos
+    if (!email || !password) {
+      Alert.alert(
+        "Campos incompletos",
+        "Por favor, ingresa tu usuario y contraseña."
+      );
+      return;
+    }
+
+    // 2. Buscar si el usuario existe en nuestro arreglo simulado
+    const userFound = MOCK_USERS.find(
+      (u) => u.email === email.trim().toLowerCase() && u.password === password
+    );
+
+    // 3. Tomar decisión
+    if (userFound) {
+      // Limpiamos los campos (opcional, por si regresa a esta pantalla)
+      setEmail('');
+      setPassword('');
+      // Redirigimos al radar
+      router.push('/tabs/tab1');
+    } else {
+      // Mostramos la alerta de error tradicional de React Native
+      Alert.alert(
+        "Acceso Denegado",
+        "El usuario o la contraseña no son correctos. Por favor, verifica tus datos e inténtalo de nuevo.",
+        [{ text: "Entendido", style: "default" }]
+      );
+    }
+  };
+
+
+
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -62,7 +108,13 @@ export default function Home() {
               <Text className="text-gray-400">Usuario</Text>
             </Box>
             <Input className="mb-4 h-16 rounded-2xl">
-              <InputField placeholder="ID / Email" />
+              <InputField
+                placeholder="ID / Email"
+                value={email} // Vinculamos el estado
+                onChangeText={setEmail} // Actualizamos el estado cuando escribe
+                autoCapitalize="none" // Evita la mayúscula automática en el teclado
+                keyboardType="email-address" // Muestra el teclado con el "@"
+              />
             </Input>
 
             {/* INPUT PASSWORD */}
@@ -71,10 +123,15 @@ export default function Home() {
               <Text className="text-gray-400">Contraseña</Text>
             </Box>
             <Input className="mb-6 h-16 rounded-2xl">
-              <InputField placeholder="••••••••••" secureTextEntry />
+              <InputField
+                placeholder="••••••••••"
+                secureTextEntry
+                value={password} // Vinculamos el estado
+                onChangeText={setPassword} // Actualizamos el estado cuando escribe
+              />
             </Input>
 
-            {/* 🔥 BOTÓN CON GRADIENT */}
+            {/*  BOTÓN CON GRADIENT */}
             <LinearGradient
               colors={['#00E5FF', '#00B8D4']}
               start={{ x: 0, y: 0 }}
@@ -86,7 +143,7 @@ export default function Home() {
             >
               <Button className="bg-transparent w-full"
                 variant="solid" size="xl"
-                onPress={() => router.push('/tabs/tab1')}
+                onPress={handleLogin}
               >
                 <ButtonText className="text-black font-bold">
                   Inicie Sesión

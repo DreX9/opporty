@@ -35,7 +35,7 @@ export default function TabLayout() {
               <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
               {/* Estilo del Texto */}
               <Text style={{
-                fontFamily: 'Orbitron', // (o la fuente que instales)
+                fontFamily: 'Orbitron',
                 color: '#22d3ee',
                 fontWeight: 'bold',
                 fontSize: 16,
@@ -56,21 +56,90 @@ export default function TabLayout() {
       <Tabs.Screen
         name="tab2"
         options={{
-          title: 'Tab 2',
+          tabBarLabel: 'Radar',
+          // funcion para el titulo y sus estilos
+          headerTitle: () => (
+            <HStack className="items-center">
+              {/* Icono */}
+
+              <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
+              {/* Estilo del Texto */}
+              <Text style={{
+                fontFamily: 'Orbitron',
+                color: '#22d3ee',
+                fontWeight: 'bold',
+                fontSize: 16,
+                letterSpacing: 3, // Esto separa las letras (efecto tracking)
+                marginLeft: 8, // Separación entre el icono y el texto
+                textShadowColor: 'rgba(34, 211, 238, 0.5)', // Brillo neón
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 8,
+              }}>
+                {/* Nombre del texto */}
+                RADAR ACTIVO
+              </Text>
+            </HStack>
+          ),
           tabBarIcon: ({ color }) => <TabBarIcon name="star-o" color={color} />,
         }}
       />
       <Tabs.Screen
         name="tab3"
         options={{
-          title: 'Tab 3',
+          tabBarLabel: 'Radar',
+          // funcion para el titulo y sus estilos
+          headerTitle: () => (
+            <HStack className="items-center">
+              {/* Icono */}
+
+              <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
+              {/* Estilo del Texto */}
+              <Text style={{
+                fontFamily: 'Orbitron',
+                color: '#22d3ee',
+                fontWeight: 'bold',
+                fontSize: 16,
+                letterSpacing: 3, // Esto separa las letras (efecto tracking)
+                marginLeft: 8, // Separación entre el icono y el texto
+                textShadowColor: 'rgba(34, 211, 238, 0.5)', // Brillo neón
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 8,
+              }}>
+                {/* Nombre del texto */}
+                RADAR ACTIVO
+              </Text>
+            </HStack>
+          ),
           tabBarIcon: ({ color }) => <TabBarIcon name="star-o" color={color} />,
         }}
       />
       <Tabs.Screen
         name="tab4"
         options={{
-          title: 'Perfil',
+          tabBarLabel: 'Perfil',
+          // funcion para el titulo y sus estilos
+          headerTitle: () => (
+            <HStack className="items-center">
+              {/* Icono */}
+
+              <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
+              {/* Estilo del Texto */}
+              <Text style={{
+                fontFamily: 'Orbitron',
+                color: '#22d3ee',
+                fontWeight: 'bold',
+                fontSize: 16,
+                letterSpacing: 3, // Esto separa las letras (efecto tracking)
+                marginLeft: 8, // Separación entre el icono y el texto
+                textShadowColor: 'rgba(34, 211, 238, 0.5)', // Brillo neón
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 8,
+              }}>
+                {/* Nombre del texto */}
+                RADAR ACTIVO
+              </Text>
+            </HStack>
+          ),
           tabBarIcon: ({ color }) => <Icon as={ICONS.user} color={color} />,
         }}
       />

@@ -4,7 +4,7 @@ import {
 
     // Icons Jahir
     ArrowDownUp, Radio, Edit2, Cpu, Palette, Utensils,
-    Rocket, Music, Plus, Crosshair,
+    Rocket, Music, Plus, Crosshair, Wifi, ShoppingBag,
 
     // Icons Gustavo
     CalendarDays, MapPin, Users, Search, Heart, Clock, Tag,
@@ -32,6 +32,8 @@ export const ICONS = {
     plus: Plus,
     crosshair: Crosshair,
     edit2: Edit2,
+    wifi: Wifi,
+    shoppingBag: ShoppingBag,
 
     // Icon gustvo
     CalendarDays: CalendarDays,

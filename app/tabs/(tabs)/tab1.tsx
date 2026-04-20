@@ -11,12 +11,21 @@ import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import { ScrollView } from 'react-native';
 
+/**
+ * PANTALLA PRINCIPAL DEL RADAR (Tab2)
+ * Propósito: Muestra un escáner animado simulando la búsqueda de eventos cercanos,
+ * seguido de una lista de oportunidades recomendadas (Networking, Promociones).
+ */
+
 export default function Tab2() {
   return (
+    // Se utiliza ScrollView en lugar de un Box normal para garantizar
+    // que la pantalla no se rompa si el usuario gira el celular a modo horizontal (Landscape)
     <ScrollView
       className="flex-1 bg-[#070B17]"
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{
+        // ESTILOS DEL CONTENEDOR INTERNO DEL SCROLL
         flexGrow: 1,
         paddingHorizontal: 16, // Equivalente a px-4
         paddingTop: 32,        // Equivalente a pt-8
@@ -25,7 +34,7 @@ export default function Tab2() {
     >
 
       {/* --- ZONA DEL RADAR ANIMADO --- */}
-      {/* 2. Quitamos flex-[1] y usamos min-h-[380px] para asegurar que los anillos de 350px quepan */}
+
       <Box className="w-full min-h-[380px] relative items-center justify-center overflow-hidden mb-6">
 
         <RadarRing size={350} delay={0} />
@@ -39,63 +48,68 @@ export default function Tab2() {
       </Box>
 
       {/* --- SECCIÓN DE OPORTUNIDADES --- */}
-      {/* 3. Quitamos flex-1 del VStack para que tome su altura natural */}
+      {/* VStack (Vertical Stack) apila elementos de arriba hacia abajo automáticamente */}
       <VStack space="md" className="w-full">
         <Box className="mb-4">
+          {/* Título de la sección */}
           <Text className="text-white text-2xl font-bold">Eventos cerca</Text>
         </Box>
 
-        {/* Card destacado */}
+        {/* CARD DESTACADO (Layout Horizontal) */}
+
         <Box className="w-full rounded-3xl border border-white/10 bg-[#0D1324] px-4 py-4 flex-row items-center justify-between shadow-sm">
+          {/* HStack (Horizontal Stack) alinea icono y textos de izquierda a derecha */}
           <HStack space="md" className="items-center flex-1">
             <Box className="w-12 h-12 rounded-2xl bg-[#2A163D] border border-[#5B2A86] items-center justify-center">
               <Text className="text-pink-400 text-base">⭐</Text>
             </Box>
-
+            {/* Contenedor de Textos */}
             <VStack className="flex-1">
               <Text className="text-pink-500 text-xs font-bold tracking-wide">
                 DESTACADO
               </Text>
               <Text className="text-gray-200 text-sm">
-                Evento Tech Global en 200m
+                A 200m • 50+ asistentes confirmados
               </Text>
             </VStack>
           </HStack>
+          {/* Flecha indicadora de navegación */}
           <Text className="text-gray-500 text-lg">{'>'}</Text>
         </Box>
 
-        {/* Grid */}
+        {/* GRID SECUNDARIO (Tarjetas divididas) */}
         <HStack className="w-full justify-between">
           <Box className="w-[48.5%] rounded-3xl border border-white/10 bg-[#0D1324] px-4 py-5">
+            {/* Tarjeta Izquierda (Ancho calculado al 48.5% para dejar un pequeño margen central) */}
             <VStack space="sm">
               <HStack className="items-center justify-between">
-                <Text className="text-lg">🛍️</Text>
+                <Icon as={ICONS.shoppingBag} className="text-orange-300 w-5 h-5" />
                 <Text className="text-[10px] font-bold text-lime-400">NUEVO</Text>
               </HStack>
 
               <Text className="text-white text-base font-semibold">
-                2 Ofertas Pro
+                Promoción Local
               </Text>
 
               <Text className="text-gray-500 text-xs">
-                Suscripciones 40% OFF
+                2x1 en barra principal
               </Text>
             </VStack>
           </Box>
-
+          {/* Tarjeta Derecha */}
           <Box className="w-[48.5%] rounded-3xl border border-white/10 bg-[#0D1324] px-4 py-5">
             <VStack space="sm">
               <HStack className="items-center justify-between">
-                <Text className="text-lg">🌐</Text>
+                <Icon as={ICONS.wifi} className="text-cyan-300 w-5 h-5" />
                 <Text className="text-[10px] font-bold text-cyan-400">CERCA</Text>
               </HStack>
 
               <Text className="text-white text-base font-semibold">
-                Networking
+                Conexiones
               </Text>
 
               <Text className="text-gray-500 text-xs">
-                3 Perfiles activos
+                3 Inversores a tu alrededor
               </Text>
             </VStack>
           </Box>
