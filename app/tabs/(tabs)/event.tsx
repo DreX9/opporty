@@ -131,7 +131,7 @@ function EventCard({ evento, favorito, onToggleFavorito, onVerDetalle }: EventCa
 const CATS = ['Todos', 'Tecnología', 'Música', 'Deporte', 'Social', 'Cultural'];
 
 // Gestiona el estado de búsqueda, favoritos y categoría activa.
-export default function Tab2() {
+export default function Event() {
   const { dark: isDark } = useTheme();
   const [busqueda, setBusqueda] = useState('');
   const [favoritos, setFavoritos] = useState<Set<string>>(new Set());

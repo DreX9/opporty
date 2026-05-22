@@ -24,7 +24,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="tab1"
+        name="radar"
         options={{
           tabBarLabel: 'Radar',
           // funcion para el titulo y sus estilos
@@ -54,7 +54,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tab2"
+        name="event"
         options={{
           tabBarLabel: 'Buscar',
           // funcion para el titulo y sus estilos
@@ -113,7 +113,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tab4"
+        name="profile"
         options={{
           tabBarLabel: 'Perfil',
           // funcion para el titulo y sus estilos

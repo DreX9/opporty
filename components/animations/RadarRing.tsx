@@ -26,8 +26,11 @@ export default function RadarRing({ delay = 0, size = 300 }: RadarRingProps) {
                 repeatReverse: false,
                 delay: delay,
             }}
-            className="absolute border-[1.5px] border-cyan-400 rounded-full"
             style={{
+                position: 'absolute',
+                borderWidth: 1.5,
+                borderColor: '#22d3ee',
+                borderRadius: size / 2,
                 width: size,
                 height: size,
                 shadowColor: '#22d3ee',

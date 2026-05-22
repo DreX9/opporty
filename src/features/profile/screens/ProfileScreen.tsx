@@ -1,9 +1,5 @@
-import EditScreenInfo from '@/components/EditScreenInfo';
 import { ICONS } from '@/components/icons';
 import { Box } from '@/components/ui/box';
-import { Center } from '@/components/ui/center';
-import { Divider } from '@/components/ui/divider';
-import { Heading } from '@/components/ui/heading';
 import { useState } from 'react';
 import { ScrollView, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
@@ -28,16 +24,14 @@ const INTERESES = [
     { id: 6, name: 'AÑADIR', icon: ICONS.plus, active: false, color: 'text-gray-500', borderColor: 'border-white/5', isDashed: true },
 ];
 
-
 /**
- * PANTALLA DE PERFIL Y AJUSTES (Tab4)
+ * PANTALLA DE PERFIL Y AJUSTES (ProfileScreen)
  * Propósito: Permite al usuario gestionar su identidad digital, 
  * seleccionar sus intereses para el algoritmo de emparejamiento, 
  * y ajustar el radio de búsqueda del radar mediante un Slider interactivo.
  */
-export default function Tab4() {
-    // ESTADO DE REACT: Controla el valor dinámico del slider.
-    // Inicia en 25 (KM) y se actualizará
+
+const ProfileScreen = () => {
     const [radius, setRadius] = useState(25);
     return (
         <ScrollView
@@ -157,4 +151,6 @@ export default function Tab4() {
             </VStack>
         </ScrollView>
     );
+
 }
+export default ProfileScreen;
