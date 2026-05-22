@@ -1,6 +1,6 @@
 import {
     // Iconos base (que ambos tenían)
-    Radar, User, Lock, Eye, Webhook,
+    Radar, User, Lock, Eye, EyeOff, Webhook,
 
     // Icons Jahir
     ArrowDownUp, Radio, Edit2, Cpu, Palette, Utensils,
@@ -20,6 +20,7 @@ export const ICONS = {
     user: User,
     lock: Lock,
     eye: Eye,
+    eyeOff: EyeOff,
     webhook: Webhook,
 
     // Icon jahir

@@ -4,6 +4,7 @@ module.exports = {
   content: [
     './app/**/*.{html,js,jsx,ts,tsx,mdx}',
     './components/**/*.{html,js,jsx,ts,tsx,mdx}',
+    './src/**/*.{html,js,jsx,ts,tsx,mdx}',
   ],
   presets: [require('nativewind/preset')],
   important: 'html',
@@ -16,6 +17,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        uniradar: {
+          blue: '#1E3FFF',
+          purple: '#A82BFA',
+          indigo: '#6366F1',
+          cyan: '#22D3EE',
+          lightPurple: '#C084FC',
+          violet: '#A78BFA',
+          // Fondos generales
+          bg: '#F4F4FB',
+          radarBg: '#EEF0FA',
+          // Cards y bordes
+          cardBg: '#FFFFFF',
+          cardBorder: '#E9EAF4',
+          // Tags / chips
+          tagBg: '#EEF2FF',
+          tagText: '#4F46E5',
+          // Perfil
+          heroBg: '#6366F1',
+          badgeBg: '#EAB308',
+          // Peligro / logout
+          danger: '#EF4444',
+          dangerBg: '#FEF2F2',
+          dangerBorder: '#FECACA',
+        },
         primary: {
           0: 'rgb(var(--color-primary-0)/<alpha-value>)',
           50: 'rgb(var(--color-primary-50)/<alpha-value>)',
