@@ -1,43 +1,40 @@
-// Archivo: components/RadarRing.tsx
+// components/animations/RadarRing.tsx
 import React from 'react';
 import { MotiView } from 'moti';
+import { ViewStyle } from 'react-native';
 
-// Interfaz para definir qué propiedades (props) acepta el componente
 interface RadarRingProps {
     delay?: number;
     size?: number;
+    color?: string;
 }
 
-export default function RadarRing({ delay = 0, size = 300 }: RadarRingProps) {
+export default function RadarRing({
+    delay = 0,
+    size = 300,
+    color = '#6366F1',   // uniradar-indigo por defecto
+}: RadarRingProps) {
+    const ringStyle: ViewStyle = {
+        position: 'absolute',
+        borderWidth: 1,
+        borderColor: color,
+        borderRadius: size / 2,
+        width: size,
+        height: size,
+    };
+
     return (
         <MotiView
-            from={{
-                opacity: 0.8,
-                scale: 0.2,
-            }}
-            animate={{
-                opacity: 0,
-                scale: 1,
-            }}
+            from={{ opacity: 0.6, scale: 0.15 }}
+            animate={{ opacity: 0, scale: 1 }}
             transition={{
                 type: 'timing',
-                duration: 3000,
+                duration: 3200,
                 loop: true,
                 repeatReverse: false,
-                delay: delay,
+                delay,
             }}
-            style={{
-                position: 'absolute',
-                borderWidth: 1.5,
-                borderColor: '#22d3ee',
-                borderRadius: size / 2,
-                width: size,
-                height: size,
-                shadowColor: '#22d3ee',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.5,
-                shadowRadius: 10,
-            }}
+            style={ringStyle}
         />
     );
 }

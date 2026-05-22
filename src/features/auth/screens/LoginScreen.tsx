@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { Box } from '@/components/ui/box';
-import { ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { VStack } from '@/components/ui/vstack';
+import { ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { Input, InputField } from '@/components/ui/input'
-import { LinearGradient } from 'expo-linear-gradient'
-
-//icon
-
+import { Input, InputField } from '@/components/ui/input';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/icon';
-
 import { Button, ButtonText } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
 import { ICONS } from '@/components/icons';
@@ -24,7 +21,12 @@ import {
     ModalFooter
 } from '@/components/ui/modal';
 
-const MOCK_USERS = [
+interface MockUser {
+    email: string;
+    password: string;
+}
+
+const MOCK_USERS: MockUser[] = [
     { email: 'admin@admin.com', password: '123' },
     { email: 'alex@test.com', password: 'password' }
 ];
@@ -33,19 +35,19 @@ const LoginScreen = () => {
     const router = useRouter();
 
     // --- ESTADOS PARA LOS INPUTS ---
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [showPassword, setShowPassword] = useState<boolean>(false);
 
     // --- ESTADOS DEL MODAL DE REGISTRO ---
-    const [showModal, setShowModal] = useState(false); // Controla si se ve el modal
-    const [regName, setRegName] = useState('');
-    const [regLastName, setRegLastName] = useState('');
-    const [regEmail, setRegEmail] = useState('');
-    const [regPassword, setRegPassword] = useState('');
+    const [showModal, setShowModal] = useState<boolean>(false);
+    const [regName, setRegName] = useState<string>('');
+    const [regLastName, setRegLastName] = useState<string>('');
+    const [regEmail, setRegEmail] = useState<string>('');
+    const [regPassword, setRegPassword] = useState<string>('');
 
     // --- LÓGICA DE LOGIN ---
     const handleLogin = () => {
-        // 1. Validar que no envíen campos vacíos
         if (!email || !password) {
             Alert.alert(
                 "Campos incompletos",
@@ -54,20 +56,15 @@ const LoginScreen = () => {
             return;
         }
 
-        // 2. Buscar si el usuario existe en nuestro arreglo simulado
         const userFound = MOCK_USERS.find(
             (u) => u.email === email.trim().toLowerCase() && u.password === password
         );
 
-        // 3. Tomar decisión
         if (userFound) {
-            // Limpiamos los campos (opcional, por si regresa a esta pantalla)
             setEmail('');
             setPassword('');
-            // Redirigimos al radar
             router.push('/tabs/radar');
         } else {
-            // Mostramos la alerta de error tradicional de React Native
             Alert.alert(
                 "Acceso Denegado",
                 "El usuario o la contraseña no son correctos. Por favor, verifica tus datos e inténtalo de nuevo.",
@@ -82,200 +79,221 @@ const LoginScreen = () => {
             Alert.alert("Campos incompletos", "Por favor, llena todos los datos para crear tu cuenta.");
             return;
         }
-        // Aquí iría tu lógica real para guardar el usuario en la base de datos
         Alert.alert("¡Éxito!", `La cuenta para ${regName} ha sido creada.`);
-        setShowModal(false); // Cerramos el modal
+        setShowModal(false);
 
-        // Limpiamos los campos de registro
-        setRegName(''); setRegLastName(''); setRegEmail(''); setRegPassword('');
+        setRegName('');
+        setRegLastName('');
+        setRegEmail('');
+        setRegPassword('');
     };
 
-
-
-
     return (
-        <KeyboardAvoidingView
+        <LinearGradient
+            colors={['#1E3FFF', '#A82BFA']}
             style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <ScrollView
-                className="bg-white dark:bg-background-500"
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{
-                    flexGrow: 1,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 24, // Equivale a px-6
-                    paddingVertical: 40    // Espacio extra para que se vea bien al hacer scroll en horizontal
-                }}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                {/* Contenedor centralizado y con ancho máximo para que no se estire feo en horizontal */}
-                <Box className="w-full max-w-[400px] items-center">
-
-                    {/* 🔵 HEADER */}
-                    <Box className="w-24 h-24 rounded-full bg-primary-500 items-center justify-center mb-4">
-                        <Icon as={ICONS.webhook} className="w-12 h-12 text-black dark:text-black" />
-                    </Box>
-
-                    <Text className="text-2xl font-bold text-black dark:text-white mb-6">
-                        ECHO <Text className="text-primary-500">EVENT</Text>
-                    </Text>
-
-                    {/* 🧱 CARD */}
-                    {/* NOTA: Eliminé flex-[0.5] para que la tarjeta tome su tamaño natural en horizontal */}
-                    <Box className="w-full p-6 bg-[#F1F5F9] dark:bg-background-600 justify-center" style={{
-                        borderRadius: 20,
-                        shadowColor: '#00ffff',
-                        shadowOpacity: 0.2,
-                        shadowRadius: 20,
-                        elevation: 5
-                    }}>
-
-                        {/* INPUT EMAIL */}
-                        <Box className='flex-row items-center mb-2'>
-                            <Icon as={ICONS.user} className='mr-2' />
-                            <Text className="text-gray-400">Usuario</Text>
+                <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingHorizontal: 28,
+                        paddingVertical: 50
+                    }}
+                >
+                    <Box className="w-full max-w-[400px] items-center">
+                        
+                        {/* 🔵 LOGO CIRCULAR (White circle with blue Radar icon) */}
+                        <Box className="w-28 h-28 rounded-full bg-white items-center justify-center mb-6 shadow-xl shadow-black/20">
+                            <Icon as={ICONS.radar} className="w-14 h-14 text-uniradar-blue" style={{ color: '#1E3FFF' }} />
                         </Box>
-                        <Input className="mb-4 h-16 rounded-2xl">
-                            <InputField
-                                placeholder="ID / Email"
-                                value={email} // Vinculamos el estado
-                                onChangeText={setEmail} // Actualizamos el estado cuando escribe
-                                autoCapitalize="none" // Evita la mayúscula automática en el teclado
-                                keyboardType="email-address" // Muestra el teclado con el "@"
-                            />
-                        </Input>
 
-                        {/* INPUT PASSWORD */}
-                        <Box className='flex-row items-center mb-2'>
-                            <Icon as={ICONS.lock} className='mr-2' />
-                            <Text className="text-gray-400">Contraseña</Text>
-                        </Box>
-                        <Input className="mb-6 h-16 rounded-2xl">
-                            <InputField
-                                placeholder="••••••••••"
-                                secureTextEntry
-                                value={password} // Vinculamos el estado
-                                onChangeText={setPassword} // Actualizamos el estado cuando escribe
-                            />
-                        </Input>
+                        {/* TÍTULO PRINCIPAL */}
+                        <Text className="text-white text-4xl font-extrabold mb-2 text-center" style={{ fontFamily: 'System' }}>
+                            UniRadar
+                        </Text>
 
-                        {/*  BOTÓN CON GRADIENT */}
-                        <LinearGradient
-                            colors={['#00E5FF', '#00B8D4']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={{
-                                borderRadius: 8,
-                                overflow: 'hidden',
-                            }}
-                        >
-                            <Button className="bg-transparent w-full"
-                                variant="solid" size="xl"
+                        {/* SUBTÍTULO */}
+                        <Text className="text-white/85 text-sm font-medium text-center max-w-[280px] mb-10">
+                            Descubre eventos universitarios cerca de ti
+                        </Text>
+
+                        {/* FORMULARIO DE ACCESO */}
+                        <VStack className="w-full">
+                            {/* INPUT EMAIL */}
+                            <Input 
+                                className="mb-4 h-14 rounded-full px-5 flex-row items-center border"
+                                style={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                                    borderColor: 'rgba(255, 255, 255, 0.25)'
+                                }}
+                            >
+                                <InputField
+                                    className="text-white flex-1 text-base"
+                                    style={{ color: '#ffffff' }}
+                                    placeholder="Correo universitario"
+                                    placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                />
+                            </Input>
+
+                            {/* INPUT PASSWORD */}
+                            <Input 
+                                className="mb-6 h-14 rounded-full px-5 flex-row items-center justify-between border"
+                                style={{
+                                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                                    borderColor: 'rgba(255, 255, 255, 0.25)'
+                                }}
+                            >
+                                <InputField
+                                    className="text-white flex-1 text-base pr-2"
+                                    style={{ color: '#ffffff' }}
+                                    placeholder="Contraseña"
+                                    placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                                    secureTextEntry={!showPassword}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                />
+                                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                    <Icon 
+                                        as={showPassword ? ICONS.eye : ICONS.eyeOff} 
+                                        className="text-white/60 w-5 h-5" 
+                                        style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                                    />
+                                </TouchableOpacity>
+                            </Input>
+
+                            {/* BOTÓN INICIAR SESIÓN */}
+                            <Button 
+                                className="bg-white w-full h-14 rounded-full items-center justify-center shadow-lg shadow-black/15 active:bg-white/90"
                                 onPress={handleLogin}
                             >
-                                <ButtonText className="text-black font-bold">
-                                    Inicie Sesión
+                                <ButtonText className="text-uniradar-blue font-bold text-base" style={{ color: '#1E3FFF' }}>
+                                    Iniciar Sesión
                                 </ButtonText>
                             </Button>
-                        </LinearGradient>
+                        </VStack>
+
+                        {/* REGISTRO FOOTER */}
+                        <Box className='flex-row items-center justify-center mt-8'>
+                            <Text className='mr-1.5 text-white/80 text-sm font-medium'>¿No tienes cuenta?</Text>
+                            <TouchableOpacity onPress={() => setShowModal(true)}>
+                                <Text className='text-white font-extrabold text-sm underline decoration-white'>
+                                    Regístrate
+                                </Text>
+                            </TouchableOpacity>
+                        </Box>
 
                     </Box>
+                </ScrollView>
 
-                    {/* FOOTER */}
-                    {/* FOOTER */}
-                    <Box className='flex-row items-center mt-6'>
-                        <Text className='mr-2 dark:text-gray-300'>¿No tiene una cuenta?</Text>
-                        {/* Al presionar este botón, cambiamos el estado para mostrar el Modal */}
-                        <Button variant="link" size="md" className="p-0" onPress={() => setShowModal(true)}>
-                            <ButtonText className='text-primary-500'>Crear cuenta</ButtonText>
-                        </Button>
-                    </Box>
+                {/* ===================================================
+                    MODAL DE REGISTRO
+                =================================================== */}
+                <Modal
+                    isOpen={showModal}
+                    onClose={() => setShowModal(false)}
+                    size="md"
+                >
+                    <ModalBackdrop />
+                    <ModalContent className="bg-[#0D1324] border border-white/10 rounded-3xl mx-4">
 
-                </Box>
-            </ScrollView>
-            {/* ===================================================
-          MODAL FLOTANTE DE REGISTRO
-      =================================================== */}
-            <Modal
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                size="md"
-            >
-                <ModalBackdrop />
-                <ModalContent className="bg-[#0D1324] border border-white/10 rounded-3xl">
+                        <ModalHeader className="border-b border-white/5 pb-4">
+                            <Text className="text-white font-bold text-xl">Crear Nueva Cuenta</Text>
+                            <ModalCloseButton>
+                                <Icon as={ICONS.X} className="text-gray-400 w-5 h-5" style={{ color: '#9CA3AF' }} />
+                            </ModalCloseButton>
+                        </ModalHeader>
 
-                    <ModalHeader className="border-b border-white/5 pb-4">
-                        <Text className="text-white font-bold text-xl">Crear Nueva Cuenta</Text>
-                        <ModalCloseButton>
-                            <Icon as={ICONS.Heart} className="text-gray-400 w-5 h-5" />
-                        </ModalCloseButton>
-                    </ModalHeader>
+                        <ModalBody className="pt-4">
+                            <ScrollView showsVerticalScrollIndicator={false}>
 
-                    {/* Usamos un ScrollView dentro del body por si la pantalla del celular es muy pequeña */}
-                    <ModalBody className="pt-4">
-                        <ScrollView showsVerticalScrollIndicator={false}>
+                                <Box className="mb-4">
+                                    <Text className="text-gray-400 mb-2 text-sm">Nombre</Text>
+                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
+                                        <InputField 
+                                            placeholder="Ej. Alex" 
+                                            placeholderTextColor="#6B7280"
+                                            value={regName} 
+                                            onChangeText={setRegName}
+                                            style={{ color: '#ffffff' }}
+                                        />
+                                    </Input>
+                                </Box>
 
-                            <Box className="mb-4">
-                                <Text className="text-gray-400 mb-2 text-sm">Nombre</Text>
-                                <Input className="h-12 rounded-xl">
-                                    <InputField placeholder="Ej. Alex" value={regName} onChangeText={setRegName} />
-                                </Input>
-                            </Box>
+                                <Box className="mb-4">
+                                    <Text className="text-gray-400 mb-2 text-sm">Apellido</Text>
+                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
+                                        <InputField 
+                                            placeholder="Ej. Rivera" 
+                                            placeholderTextColor="#6B7280"
+                                            value={regLastName} 
+                                            onChangeText={setRegLastName}
+                                            style={{ color: '#ffffff' }}
+                                        />
+                                    </Input>
+                                </Box>
 
-                            <Box className="mb-4">
-                                <Text className="text-gray-400 mb-2 text-sm">Apellido</Text>
-                                <Input className="h-12 rounded-xl">
-                                    <InputField placeholder="Ej. Rivera" value={regLastName} onChangeText={setRegLastName} />
-                                </Input>
-                            </Box>
+                                <Box className="mb-4">
+                                    <Text className="text-gray-400 mb-2 text-sm">Correo Electrónico</Text>
+                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
+                                        <InputField
+                                            placeholder="correo@ejemplo.com"
+                                            placeholderTextColor="#6B7280"
+                                            value={regEmail}
+                                            onChangeText={setRegEmail}
+                                            autoCapitalize="none"
+                                            keyboardType="email-address"
+                                            style={{ color: '#ffffff' }}
+                                        />
+                                    </Input>
+                                </Box>
 
-                            <Box className="mb-4">
-                                <Text className="text-gray-400 mb-2 text-sm">Correo Electrónico</Text>
-                                <Input className="h-12 rounded-xl">
-                                    <InputField
-                                        placeholder="correo@ejemplo.com"
-                                        value={regEmail}
-                                        onChangeText={setRegEmail}
-                                        autoCapitalize="none"
-                                        keyboardType="email-address"
-                                    />
-                                </Input>
-                            </Box>
+                                <Box className="mb-4">
+                                    <Text className="text-gray-400 mb-2 text-sm">Contraseña</Text>
+                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
+                                        <InputField
+                                            placeholder="Crea una contraseña segura"
+                                            placeholderTextColor="#6B7280"
+                                            secureTextEntry
+                                            value={regPassword}
+                                            onChangeText={setRegPassword}
+                                            style={{ color: '#ffffff' }}
+                                        />
+                                    </Input>
+                                </Box>
 
-                            <Box className="mb-4">
-                                <Text className="text-gray-400 mb-2 text-sm">Contraseña</Text>
-                                <Input className="h-12 rounded-xl">
-                                    <InputField
-                                        placeholder="Crea una contraseña segura"
-                                        secureTextEntry
-                                        value={regPassword}
-                                        onChangeText={setRegPassword}
-                                    />
-                                </Input>
-                            </Box>
+                            </ScrollView>
+                        </ModalBody>
 
-                        </ScrollView>
-                    </ModalBody>
+                        <ModalFooter className="border-t border-white/5 pt-4">
+                            <Button
+                                variant="outline"
+                                action="secondary"
+                                className="mr-3 border-white/10 rounded-xl"
+                                onPress={() => setShowModal(false)}
+                            >
+                                <ButtonText className="text-gray-300">Cancelar</ButtonText>
+                            </Button>
+                            <Button className="bg-uniradar-blue rounded-xl px-6" style={{ backgroundColor: '#1E3FFF' }} onPress={handleRegister}>
+                                <ButtonText className="text-white font-bold">Registrarse</ButtonText>
+                            </Button>
+                        </ModalFooter>
 
-                    <ModalFooter className="border-t border-white/5 pt-4">
-                        <Button
-                            variant="outline"
-                            action="secondary"
-                            className="mr-3 border-white/10"
-                            onPress={() => setShowModal(false)}
-                        >
-                            <ButtonText className="text-gray-300">Cancelar</ButtonText>
-                        </Button>
-                        <Button className="bg-cyan-400 rounded-xl px-6" onPress={handleRegister}>
-                            <ButtonText className="text-[#070B17] font-bold">Registrarse</ButtonText>
-                        </Button>
-                    </ModalFooter>
-
-                </ModalContent>
-            </Modal>
-        </KeyboardAvoidingView>
+                    </ModalContent>
+                </Modal>
+            </KeyboardAvoidingView>
+        </LinearGradient>
     );
 };
 

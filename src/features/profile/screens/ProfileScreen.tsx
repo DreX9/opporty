@@ -1,156 +1,510 @@
-import { ICONS } from '@/components/icons';
-import { Box } from '@/components/ui/box';
-import { useState } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { Text } from '@/components/ui/text';
-import { VStack } from '@/components/ui/vstack';
-import { HStack } from '@/components/ui/hstack';
-import { Button, ButtonText } from '@/components/ui/button';
-import { Slider, SliderTrack, SliderFilledTrack, SliderThumb } from '@/components/ui/slider';
+import React, { useState } from 'react';
+import {
+    ScrollView,
+    View,
+    TouchableOpacity,
+    StyleSheet,
+    Alert,
+} from 'react-native';
 import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
+import { ICONS } from '@/components/icons';
 
-/**
- 
- * BASE DE DATOS LOCAL (ESTADO INICIAL)
- * Simulacion de datos como si fuera un json 
- 
- */
-const INTERESES = [
-    { id: 1, name: 'TECNOLOGÍA', icon: ICONS.cpu, active: true, color: 'text-cyan-400', borderColor: 'border-cyan-400' },
-    { id: 2, name: 'ARTE', icon: ICONS.palette, active: false, color: 'text-gray-400', borderColor: 'border-white/10' },
-    { id: 3, name: 'GASTRONOMÍA', icon: ICONS.utensils, active: true, color: 'text-green-400', borderColor: 'border-green-400' },
-    { id: 4, name: 'EMPRENDIMIENTO', icon: ICONS.rocket, active: true, color: 'text-pink-500', borderColor: 'border-pink-500' },
-    { id: 5, name: 'MÚSICA', icon: ICONS.music, active: false, color: 'text-gray-400', borderColor: 'border-white/10' },
-    { id: 6, name: 'AÑADIR', icon: ICONS.plus, active: false, color: 'text-gray-500', borderColor: 'border-white/5', isDashed: true },
+// ─── Paleta (tokens locales que mapean a uniradar en tailwind) ─────────────────
+const C = {
+    bg: '#F4F4FB',
+    cardBg: '#FFFFFF',
+    cardBorder: '#E9EAF4',
+    heroBg: '#6366F1',          // indigo (fondo del banner de perfil)
+    accent: '#6366F1',          // uniradar-indigo
+    accentPurple: '#A82BFA',    // uniradar-purple
+    accentLight: '#EEF2FF',     // uniradar-tagBg
+    danger: '#EF4444',
+    dangerBg: '#FEF2F2',
+    dangerBorder: '#FECACA',
+    textPrimary: '#111827',
+    textSecondary: '#6B7280',
+    textWhite: '#FFFFFF',
+    textWhite70: 'rgba(255,255,255,0.7)',
+    badgeBg: '#EAB308',         // amarillo para el badge de rol
+    badgeText: '#FFFFFF',
+    interestActive: '#EEF2FF',
+    interestActiveBorder: '#6366F1',
+    interestInactiveText: '#374151',
+    dotNotif: '#EF4444',
+};
+
+// ─── Tipos ─────────────────────────────────────────────────────────────────────
+
+interface Interes {
+    id: number;
+    nombre: string;
+    emoji: string;
+    activo: boolean;
+}
+
+interface MenuItem {
+    id: string;
+    icono: React.ComponentType;
+    etiqueta: string;
+    badge?: string;
+    peligro?: boolean;
+    info?: string;
+}
+
+// ─── Datos estáticos ───────────────────────────────────────────────────────────
+
+const INTERESES_INICIAL: Interes[] = [
+    { id: 1, nombre: 'Tecnología', emoji: '💻', activo: true },
+    { id: 2, nombre: 'Música',     emoji: '🎵', activo: true },
+    { id: 3, nombre: 'Deportes',   emoji: '⚽', activo: false },
+    { id: 4, nombre: 'Arte',       emoji: '🎨', activo: true },
+    { id: 5, nombre: 'Gastronomía',emoji: '🍕', activo: false },
+    { id: 6, nombre: 'Emprendimiento', emoji: '💼', activo: true },
 ];
 
-/**
- * PANTALLA DE PERFIL Y AJUSTES (ProfileScreen)
- * Propósito: Permite al usuario gestionar su identidad digital, 
- * seleccionar sus intereses para el algoritmo de emparejamiento, 
- * y ajustar el radio de búsqueda del radar mediante un Slider interactivo.
- */
+const MENU_ITEMS: MenuItem[] = [
+    { id: 'eventos',    icono: ICONS.CalendarDays, etiqueta: 'Mis Eventos',           info: '5 eventos' },
+    { id: 'notif',      icono: ICONS.radar,        etiqueta: 'Notificaciones',         badge: 'dot' },
+    { id: 'privacidad', icono: ICONS.Shield,       etiqueta: 'Privacidad y Seguridad' },
+];
+
+// ─── Sub-componentes ───────────────────────────────────────────────────────────
+
+function InterestChip({
+    interes,
+    onToggle,
+}: {
+    interes: Interes;
+    onToggle: (id: number) => void;
+}) {
+    return (
+        <TouchableOpacity
+            onPress={() => onToggle(interes.id)}
+            activeOpacity={0.75}
+            style={[
+                styles.chip,
+                {
+                    backgroundColor: interes.activo ? C.interestActive : C.cardBg,
+                    borderColor: interes.activo ? C.interestActiveBorder : C.cardBorder,
+                },
+            ]}
+            accessibilityLabel={`Interés: ${interes.nombre}`}
+            accessibilityRole="button"
+        >
+            <Text style={styles.chipEmoji}>{interes.emoji}</Text>
+            <Text
+                style={[
+                    styles.chipLabel,
+                    { color: interes.activo ? C.accent : C.interestInactiveText },
+                ]}
+            >
+                {interes.nombre}
+            </Text>
+        </TouchableOpacity>
+    );
+}
+
+function MenuRow({ item }: { item: MenuItem }) {
+    return (
+        <TouchableOpacity
+            activeOpacity={0.75}
+            style={[
+                styles.menuRow,
+                {
+                    backgroundColor: item.peligro ? C.dangerBg : C.cardBg,
+                    borderColor: item.peligro ? C.dangerBorder : C.cardBorder,
+                },
+            ]}
+            accessibilityLabel={item.etiqueta}
+            accessibilityRole="button"
+        >
+            <View style={styles.menuLeft}>
+                <View
+                    style={[
+                        styles.menuIconBox,
+                        { backgroundColor: item.peligro ? C.dangerBg : C.accentLight },
+                    ]}
+                >
+                    <Icon
+                        as={item.icono}
+                        style={{
+                            color: item.peligro ? C.danger : C.accent,
+                            width: 18,
+                            height: 18,
+                        }}
+                    />
+                </View>
+                <Text
+                    style={[
+                        styles.menuLabel,
+                        { color: item.peligro ? C.danger : C.textPrimary },
+                    ]}
+                >
+                    {item.etiqueta}
+                </Text>
+            </View>
+
+            {/* Lado derecho */}
+            <View style={styles.menuRight}>
+                {item.badge === 'dot' && (
+                    <View style={[styles.notifDot, { backgroundColor: C.dotNotif }]} />
+                )}
+                {item.info !== undefined && (
+                    <Text style={{ color: C.textSecondary, fontSize: 12 }}>{item.info}</Text>
+                )}
+                {!item.peligro && (
+                    <Icon
+                        as={ICONS.ChevronRight}
+                        style={{ color: C.textSecondary, width: 16, height: 16, marginLeft: 6 }}
+                    />
+                )}
+            </View>
+        </TouchableOpacity>
+    );
+}
+
+// ─── Pantalla principal ────────────────────────────────────────────────────────
 
 const ProfileScreen = () => {
-    const [radius, setRadius] = useState(25);
+    const [intereses, setIntereses] = useState<Interes[]>(INTERESES_INICIAL);
+
+    const totalActivos = intereses.filter((i) => i.activo).length;
+
+    const toggleInteres = (id: number) => {
+        setIntereses((prev) =>
+            prev.map((i) => (i.id === id ? { ...i, activo: !i.activo } : i))
+        );
+    };
+
+    const handleLogout = () => {
+        Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Salir', style: 'destructive', onPress: () => {} },
+        ]);
+    };
+
     return (
         <ScrollView
-            className="flex-1 bg-[#070B17]"
+            style={{ flex: 1, backgroundColor: C.bg }}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 40, paddingBottom: 60 }}
+            contentContainerStyle={{ paddingBottom: 48 }}
         >
+            {/* ── Banner de perfil (degradado índigo → púrpura) ─────────────── */}
+            <View style={styles.heroBanner}>
+                {/* Botón de ajustes */}
+                <TouchableOpacity
+                    style={styles.settingsBtn}
+                    accessibilityLabel="Ajustes"
+                    accessibilityRole="button"
+                >
+                    <Icon as={ICONS.edit2} style={{ color: C.accent, width: 20, height: 20 }} />
+                </TouchableOpacity>
 
-            {/* --- SECCIÓN DE PERFIL --- */}
-            <VStack className="items-center mb-10 w-full">
-                {/* Contenedor relativo para poder superponer el botón de edición */}
-                <Box className="relative mb-4">
-                    {/* Avatar principal con borde de neón */}
-                    <Box className="w-28 h-28 rounded-full border-2 border-cyan-400 items-center justify-center shadow-lg shadow-cyan-500/30 bg-[#0D1324]">
-                        <Text className="text-5xl">👨🏻‍💻</Text>
-                    </Box>
-                    {/* Botón flotante para cambiar foto  */}
-                    <TouchableOpacity className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-cyan-400 items-center justify-center border-2 border-[#070B17]">
-                        {/* Icono de Editar actualizado */}
-                        <ICONS.radio color="#22d3ee" size={18} strokeWidth={2.5} />
-                    </TouchableOpacity>
-                </Box>
+                {/* Avatar */}
+                <View style={styles.avatarRing}>
+                    <View style={styles.avatarInner}>
+                        <Icon as={ICONS.user} style={{ color: C.accent, width: 44, height: 44 }} />
+                    </View>
+                </View>
 
-                <Text className="text-white text-2xl font-bold mb-1">Alex Rivera</Text>
-                <Text className="text-gray-400 text-sm">Conectando realidades digitales</Text>
-            </VStack>
+                {/* Nombre y email */}
+                <Text style={styles.heroName}>Administrador</Text>
+                <Text style={styles.heroEmail}>admin@admin.com</Text>
 
-            {/* --- SECCIÓN INTERESES --- */}
-            <VStack className="w-full mb-8">
-                <HStack className="justify-between items-end mb-4">
-                    <Text className="text-cyan-400 font-bold tracking-widest text-xs">
-                        INTERESES DE PULSO
+                {/* Badge de rol */}
+                <View style={styles.roleBadge}>
+                    <Text style={styles.roleBadgeText}>Administrador</Text>
+                </View>
+            </View>
+
+            {/* ── Tarjeta universidad / facultad ───────────────────────────── */}
+            <View style={styles.infoCard}>
+                <View style={styles.infoItem}>
+                    <View style={[styles.infoIconBox, { backgroundColor: C.accentLight }]}>
+                        <Icon as={ICONS.Laptop} style={{ color: C.accent, width: 18, height: 18 }} />
+                    </View>
+                    <View>
+                        <Text style={styles.infoLabel}>Universidad</Text>
+                        <Text style={styles.infoValue}>Sistema UniRadar</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.infoDivider, { backgroundColor: C.cardBorder }]} />
+
+                <View style={styles.infoItem}>
+                    <View style={[styles.infoIconBox, { backgroundColor: '#F5F3FF' }]}>
+                        <Icon as={ICONS.Zap} style={{ color: C.accentPurple, width: 18, height: 18 }} />
+                    </View>
+                    <View>
+                        <Text style={styles.infoLabel}>Facultad</Text>
+                        <Text style={styles.infoValue}>Administración</Text>
+                    </View>
+                </View>
+            </View>
+
+            {/* ── Sección Intereses ─────────────────────────────────────────── */}
+            <View style={[styles.section, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
+                {/* Header */}
+                <View style={styles.sectionHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Icon as={ICONS.Heart} style={{ color: C.danger, width: 18, height: 18 }} />
+                        <Text style={styles.sectionTitle}>Intereses</Text>
+                    </View>
+                    <Text style={{ color: C.textSecondary, fontSize: 13 }}>
+                        {totalActivos} seleccionados
                     </Text>
-                    <Text className="text-gray-500 text-[10px] font-bold tracking-widest">
-                        5 SELECCIONADOS
-                    </Text>
-                </HStack>
-                {/* Grid Responsivo: flex-wrap permite que los botones bajen a la siguiente 
-                    línea si no caben en el ancho de la pantalla. */}
-                <HStack className="flex-wrap justify-between" style={{ gap: 12 }}>
-                    {/* RENDERIZADO DE LISTA: En lugar de repetir código, iteramos sobre 
-                        el arreglo INTERESES para dibujar cada botón dinámicamente. */}
-                    {INTERESES.map((item) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            className={`w-[48%] py-4 rounded-2xl items-center justify-center bg-[#0D1324] border ${item.borderColor} ${item.isDashed ? 'border-dashed' : 'border-solid'}`}
-                        >
-                            <Icon
-                                as={item.icon}
-                                className={`mb-2 w-5 h-5 ${item.color}`}
-                            />
-                            <Text className={`text-[10px] font-bold tracking-widest uppercase ${item.color}`}>
-                                {item.name}
-                            </Text>
-                        </TouchableOpacity>
+                </View>
+
+                {/* Grid 2 columnas */}
+                <View style={styles.chipGrid}>
+                    {intereses.map((item) => (
+                        <InterestChip key={item.id} interes={item} onToggle={toggleInteres} />
                     ))}
-                </HStack>
-            </VStack>
+                </View>
+            </View>
 
-            {/* 3. SECCIÓN DE CONFIGURACIÓN (SLIDER INTERACTIVO)*/}
-            <Box className="w-full bg-[#0D1324] rounded-3xl p-6 border border-white/5 mb-8 shadow-sm">
-                {/* Cabecera del Slider que muestra el valor en tiempo real */}
-                <HStack className="items-center mb-6">
-                    {/* Icono de Crosshair actualizado */}
-                    <Icon as={ICONS.crosshair} color="#22d3ee" className="w-[18px] h-[18px] mr-2" />
-                    <Text className="text-white font-bold text-base flex-1">Radio de Búsqueda</Text>
+            {/* ── Menú de opciones ─────────────────────────────────────────── */}
+            <View style={styles.menuContainer}>
+                {MENU_ITEMS.map((item) => (
+                    <MenuRow key={item.id} item={item} />
+                ))}
 
-                    <HStack className="items-baseline">
-                        {/* Imprime la variable de estado 'radius' */}
-                        <Text className="text-cyan-400 font-bold text-2xl mr-1">{radius}</Text>
-                        <Text className="text-gray-500 font-bold text-xs tracking-widest">KM</Text>
-                    </HStack>
-                </HStack>
-                {/* Componente Slider de Gluestack vinculado al estado local */}
-                <Slider
-                    value={radius}
-                    onChange={(v) => setRadius(Math.floor(v))}
-                    minValue={1}
-                    maxValue={100}
-                    size="md"
-                    orientation="horizontal"
-                    className="mb-4"
+                {/* Cerrar sesión (separado para énfasis) */}
+                <TouchableOpacity
+                    onPress={handleLogout}
+                    activeOpacity={0.75}
+                    style={[styles.menuRow, { backgroundColor: C.dangerBg, borderColor: C.dangerBorder }]}
+                    accessibilityLabel="Cerrar sesión"
+                    accessibilityRole="button"
                 >
-                    <SliderTrack className="bg-white/10 rounded-full h-1">
-                        <SliderFilledTrack className="bg-cyan-400" />
-                    </SliderTrack>
-                    <SliderThumb className="bg-cyan-400 border-4 border-[#0D1324] w-6 h-6 shadow-md shadow-cyan-400/50" />
-                </Slider>
+                    <View style={styles.menuLeft}>
+                        <View style={[styles.menuIconBox, { backgroundColor: C.dangerBg }]}>
+                            <Icon as={ICONS.arrrowDownUp} style={{ color: C.danger, width: 18, height: 18 }} />
+                        </View>
+                        <Text style={[styles.menuLabel, { color: C.danger }]}>Cerrar Sesión</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
 
-                <HStack className="justify-between">
-                    <Text className="text-gray-500 text-[9px] font-bold tracking-widest">CERCANO</Text>
-                    <Text className="text-gray-500 text-[9px] font-bold tracking-widest">REGIONAL</Text>
-                    <Text className="text-gray-500 text-[9px] font-bold tracking-widest">GLOBAL</Text>
-                </HStack>
-            </Box>
-
-            {/* --- BOTONES DE ACCIÓN --- */}
-            <VStack space="md" className="w-full">
-                <Button
-                    size="xl"
-                    className="w-full bg-cyan-400 rounded-2xl shadow-lg shadow-cyan-400/30"
-                >
-                    <ButtonText className="text-[#070B17] font-bold tracking-widest text-sm">
-                        GUARDAR CONFIGURACIÓN
-                    </ButtonText>
-                </Button>
-
-                <Button
-                    variant="link"
-                    size="lg"
-                    className="w-full"
-                >
-                    <ButtonText className="text-gray-400 font-bold tracking-widest text-xs">
-                        RESTABLECER VALORES
-                    </ButtonText>
-                </Button>
-            </VStack>
+            {/* ── Footer ───────────────────────────────────────────────────── */}
+            <View style={styles.footer}>
+                <Text style={styles.footerTitle}>UniRadar v1.0.0</Text>
+                <Text style={styles.footerSub}>Descubre eventos universitarios</Text>
+            </View>
         </ScrollView>
     );
+};
 
-}
+// ─── Estilos ───────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+    // Hero banner
+    heroBanner: {
+        backgroundColor: '#6366F1',
+        paddingTop: 24,
+        paddingBottom: 32,
+        alignItems: 'center',
+        position: 'relative',
+    },
+    settingsBtn: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.18)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarRing: {
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        backgroundColor: 'rgba(255,255,255,0.25)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 14,
+    },
+    avatarInner: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    heroName: {
+        color: '#FFFFFF',
+        fontSize: 22,
+        fontWeight: '800',
+        marginBottom: 2,
+    },
+    heroEmail: {
+        color: 'rgba(255,255,255,0.75)',
+        fontSize: 13,
+        marginBottom: 12,
+    },
+    roleBadge: {
+        backgroundColor: '#EAB308',
+        borderRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 4,
+    },
+    roleBadgeText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+
+    // Info card universidad
+    infoCard: {
+        marginHorizontal: 16,
+        marginTop: -18,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#E9EAF4',
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        gap: 12,
+        shadowColor: '#6366F1',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    infoItem: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    infoIconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    infoLabel: {
+        color: '#9CA3AF',
+        fontSize: 11,
+        marginBottom: 1,
+    },
+    infoValue: {
+        color: '#111827',
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    infoDivider: {
+        width: 1,
+        height: 40,
+    },
+
+    // Sección genérica (card con borde)
+    section: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 16,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 14,
+    },
+    sectionTitle: {
+        color: '#111827',
+        fontSize: 15,
+        fontWeight: '700',
+    },
+
+    // Grid de intereses
+    chipGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    chip: {
+        width: '47%',
+        borderRadius: 12,
+        borderWidth: 1.5,
+        paddingVertical: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    chipEmoji: {
+        fontSize: 26,
+    },
+    chipLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+
+    // Menú
+    menuContainer: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        gap: 10,
+    },
+    menuRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderRadius: 14,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+    },
+    menuLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    menuRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    menuIconBox: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    menuLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    notifDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 4,
+    },
+
+    // Footer
+    footer: {
+        alignItems: 'center',
+        marginTop: 28,
+        gap: 3,
+    },
+    footerTitle: {
+        color: '#9CA3AF',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    footerSub: {
+        color: '#D1D5DB',
+        fontSize: 11,
+    },
+});
+
 export default ProfileScreen;

@@ -1,145 +1,132 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Icon } from '@/components/ui/icon';
 import { ICONS } from '@/components/icons';
-import { HStack } from '@/components/ui/hstack';
 import { Text } from '@/components/ui/text';
+import { HStack } from '@/components/ui/hstack';
+import { View } from 'react-native';
 
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={18} style={{ marginBottom: -3 }} {...props} />;
+// ─── Paleta de la app ────────────────────────────────────────────────────────
+const C = {
+  headerBg: '#FFFFFF',
+  headerBorder: '#F0F0F8',
+  headerText: '#111827',
+  accent: '#6366F1',          // uniradar-indigo
+  tabBg: '#FFFFFF',
+  tabActive: '#6366F1',       // uniradar-indigo
+  tabInactive: '#9CA3AF',
+};
+
+// ─── Título de header reutilizable ───────────────────────────────────────────
+function HeaderTitle({ label }: { label: string }) {
+  return (
+    <HStack style={{ alignItems: 'center', gap: 8 }}>
+      <Icon
+        as={ICONS.radar}
+        style={{ color: C.accent, width: 22, height: 22 }}
+      />
+      <Text style={{ color: C.headerText, fontWeight: '700', fontSize: 17 }}>
+        {label}
+      </Text>
+    </HStack>
+  );
 }
+
+// ─── Avatar de usuario (cabecera derecha del Radar) ──────────────────────────
+function UserAvatar() {
+  return (
+    <View
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: C.accent,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+      }}
+    >
+      <Icon as={ICONS.user} style={{ color: '#FFFFFF', width: 18, height: 18 }} />
+    </View>
+  );
+}
+
+// ─── Opciones compartidas de header ──────────────────────────────────────────
+const sharedHeaderOptions = {
+  headerStyle: { backgroundColor: C.headerBg },
+  headerShadowVisible: false,
+  headerTitleAlign: 'left' as const,
+};
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
+        // ── Tab bar ──────────────────────────────────────────────────────────
+        tabBarStyle: {
+          backgroundColor: C.tabBg,
+          borderTopColor: C.headerBorder,
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+        },
+        tabBarActiveTintColor: C.tabActive,
+        tabBarInactiveTintColor: C.tabInactive,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}
     >
+      {/* ── RADAR ─────────────────────────────────────────────────────────── */}
       <Tabs.Screen
         name="radar"
         options={{
           tabBarLabel: 'Radar',
-          // funcion para el titulo y sus estilos
-          headerTitle: () => (
-            <HStack className="items-center">
-              {/* Icono */}
-
-              <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
-              {/* Estilo del Texto */}
-              <Text style={{
-                fontFamily: 'Orbitron',
-                color: '#22d3ee',
-                fontWeight: 'bold',
-                fontSize: 16,
-                letterSpacing: 3, // Esto separa las letras (efecto tracking)
-                marginLeft: 8, // Separación entre el icono y el texto
-                textShadowColor: 'rgba(34, 211, 238, 0.5)', // Brillo neón
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 8,
-              }}>
-                {/* Nombre del texto */}
-                RADAR ACTIVO
-              </Text>
-            </HStack>
+          ...sharedHeaderOptions,
+          headerTitle: () => <HeaderTitle label="Hola, Administrador" />,
+          headerRight: () => <UserAvatar />,
+          tabBarIcon: ({ color }) => (
+            <Icon as={ICONS.radar} style={{ color, width: 22, height: 22 }} />
           ),
-          tabBarIcon: ({ color }) => <Icon as={ICONS.radar} color={color} />,
         }}
       />
+
+      {/* ── EVENTOS ───────────────────────────────────────────────────────── */}
       <Tabs.Screen
         name="event"
         options={{
-          tabBarLabel: 'Buscar',
-          // funcion para el titulo y sus estilos
-          headerTitle: () => (
-            <HStack className="items-center">
-              {/* Icono */}
-
-              <Icon as={ICONS.radar} size="xl" className='text-cyan-400' />
-              {/* Estilo del Texto */}
-              <Text style={{
-                fontFamily: 'Orbitron',
-                color: '#22d3ee',
-                fontWeight: 'bold',
-                fontSize: 16,
-                letterSpacing: 3, // Esto separa las letras (efecto tracking)
-                marginLeft: 8, // Separación entre el icono y el texto
-                textShadowColor: 'rgba(34, 211, 238, 0.5)', // Brillo neón
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 8,
-              }}>
-                {/* Nombre del texto */}
-                RADAR ACTIVO
-              </Text>
-            </HStack>
+          tabBarLabel: 'Eventos',
+          ...sharedHeaderOptions,
+          headerTitle: () => <HeaderTitle label="Buscar Eventos" />,
+          tabBarIcon: ({ color }) => (
+            <Icon as={ICONS.Search} style={{ color, width: 22, height: 22 }} />
           ),
-          tabBarIcon: ({ color }) => <Icon as={ICONS.view} color={color} />,
         }}
       />
+
+      {/* ── ADMIN ─────────────────────────────────────────────────────────── */}
       <Tabs.Screen
         name="admin"
         options={{
-          tabBarLabel: 'Agregar',
-          // funcion para el titulo y sus estilos
-          headerTitle: () => (
-            <HStack className="items-center">
-              {/* Icono */}
-              <Icon as={ICONS.radar} size="xl" className='text-cyan-400' />
-              {/* Estilo del Texto */}
-              <Text style={{
-                fontFamily: 'Orbitron',
-                color: '#22d3ee',
-                fontWeight: 'bold',
-                fontSize: 16,
-                letterSpacing: 3, // Esto separa las letras (efecto tracking)
-                marginLeft: 8, // Separación entre el icono y el texto
-                textShadowColor: 'rgba(34, 211, 238, 0.5)', // Brillo neón
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 8,
-              }}>
-                {/* Nombre del texto */}
-                RADAR ACTIVO
-              </Text>
-            </HStack>
+          tabBarLabel: 'Admin',
+          ...sharedHeaderOptions,
+          headerTitle: () => <HeaderTitle label="Administrar" />,
+          tabBarIcon: ({ color }) => (
+            <Icon as={ICONS.badgePlus} style={{ color, width: 22, height: 22 }} />
           ),
-          tabBarIcon: ({ color }) => <Icon as={ICONS.badgePlus} color={color} />,
         }}
       />
+
+      {/* ── PERFIL ────────────────────────────────────────────────────────── */}
       <Tabs.Screen
         name="profile"
         options={{
           tabBarLabel: 'Perfil',
-          // funcion para el titulo y sus estilos
-          headerTitle: () => (
-            <HStack className="items-center">
-              {/* Icono */}
-
-              <Icon as={ICONS.radio} size="xl" className='text-cyan-400' />
-              {/* Estilo del Texto */}
-              <Text style={{
-                fontFamily: 'Orbitron',
-                color: '#22d3ee',
-                fontWeight: 'bold',
-                fontSize: 16,
-                letterSpacing: 3, // Esto separa las letras (efecto tracking)
-                marginLeft: 8, // Separación entre el icono y el texto
-                textShadowColor: 'rgba(34, 211, 238, 0.5)', // Brillo neón
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 8,
-              }}>
-                {/* Nombre del texto */}
-                RADAR ACTIVO
-              </Text>
-            </HStack>
+          ...sharedHeaderOptions,
+          headerTitle: () => <HeaderTitle label="Mi Perfil" />,
+          tabBarIcon: ({ color }) => (
+            <Icon as={ICONS.user} style={{ color, width: 22, height: 22 }} />
           ),
-          tabBarIcon: ({ color }) => <Icon as={ICONS.user} color={color} />,
         }}
       />
     </Tabs>
