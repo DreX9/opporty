@@ -81,7 +81,7 @@ export default function CrearUsuario() {
 
     const ejecutarCreacion = () => {
         Alert.alert('👑 ¡Usuario creado!', `La cuenta para "${form.nombre}" ha sido creada exitosamente.`, [
-            { text: 'Listo', onPress: () => router.replace('../admin') }
+            { text: 'Listo', onPress: () => router.replace('/tabs/admin') }
         ]);
     };
 

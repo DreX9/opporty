@@ -165,7 +165,7 @@ export default function AdminDashboard() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push(activeTab === 'usuarios' ? '../crear-usuario' : '../crear-evento')}
+          onPress={() => router.push(activeTab === 'usuarios' ? '/tabs/admin/crear-usuario' : '/tabs/admin/crear-evento')}
           className="px-4 py-2 rounded-full bg-cyan-400 items-center justify-center ml-auto"
         >
           <Text className="text-[#070B17] text-xs font-extrabold">
@@ -175,14 +175,9 @@ export default function AdminDashboard() {
       </HStack>
 
       <Box className="px-4">
-        {/* ==============================================
-            VISTA 1: DASHBOARD PRINCIPAL
-           ============================================== */}
         {activeTab === 'dashboard' && (
           <VStack>
-            {/* KPI STATS CARDS GRID (2x2) */}
             <HStack className="justify-between mb-4">
-              {/* Card 1: Total Eventos */}
               <Box
                 className="rounded-2xl p-4 bg-[#0D1324] border border-cyan-500/25 items-start relative overflow-hidden"
                 style={{
@@ -204,7 +199,6 @@ export default function AdminDashboard() {
                 </Text>
               </Box>
 
-              {/* Card 2: Eventos Activos */}
               <Box
                 className="rounded-2xl p-4 bg-[#0D1324] border border-emerald-500/25 items-start relative overflow-hidden"
                 style={{
@@ -228,7 +222,6 @@ export default function AdminDashboard() {
             </HStack>
 
             <HStack className="justify-between mb-6">
-              {/* Card 3: Usuarios */}
               <Box
                 className="rounded-2xl p-4 bg-[#0D1324] border border-fuchsia-500/25 items-start relative overflow-hidden"
                 style={{
@@ -250,7 +243,6 @@ export default function AdminDashboard() {
                 </Text>
               </Box>
 
-              {/* Card 4: Pendientes */}
               <Box
                 className="rounded-2xl p-4 bg-[#0D1324] border border-amber-500/25 items-start relative overflow-hidden"
                 style={{
@@ -273,7 +265,6 @@ export default function AdminDashboard() {
               </Box>
             </HStack>
 
-            {/* LISTA DE EVENTOS RECIENTES */}
             <VStack space="md" className="w-full mt-2">
               <Box className="mb-2">
                 <Text className="text-white text-xl font-bold tracking-wide">
