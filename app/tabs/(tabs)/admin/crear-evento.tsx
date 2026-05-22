@@ -119,7 +119,7 @@ export default function CrearEvento() {
     const ejecutarCreacion = () => {
         setEnviado(true);
         Alert.alert('✅ ¡Evento creado!', `El evento "${form.titulo}" se publicó correctamente en UniRadar.`, [
-            { text: 'Excelente', onPress: () => router.replace('../admin') }
+            { text: 'Excelente', onPress: () => router.replace('/tabs/admin') }
         ]);
     };
 
