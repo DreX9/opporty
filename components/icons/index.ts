@@ -10,7 +10,8 @@ import {
     CalendarDays, MapPin, Users, Search, Heart, Clock, Tag,
     ChevronRight, Star, Zap, Music2, Laptop, Trophy, FileText,
     PlusCircle, X, CheckCircle, AlertCircle, DollarSign, Type,
-    AlignLeft, Hash, Image as ImageIcon, ToggleLeft, ToggleRight
+    AlignLeft, Hash, Image as ImageIcon, ToggleLeft, ToggleRight,
+    Mail, Smile, Shield
 } from "lucide-react-native"
 
 export const ICONS = {
@@ -63,4 +64,7 @@ export const ICONS = {
     ImageIcon: ImageIcon,
     ToggleLeft: ToggleLeft,
     ToggleRight: ToggleRight,
+    Mail: Mail,
+    Smile: Smile,
+    Shield: Shield,
 }

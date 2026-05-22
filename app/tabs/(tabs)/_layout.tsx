@@ -84,14 +84,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="tab3"
+        name="admin"
         options={{
           tabBarLabel: 'Agregar',
           // funcion para el titulo y sus estilos
           headerTitle: () => (
             <HStack className="items-center">
               {/* Icono */}
-
               <Icon as={ICONS.radar} size="xl" className='text-cyan-400' />
               {/* Estilo del Texto */}
               <Text style={{
