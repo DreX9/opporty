@@ -11,7 +11,7 @@ import {
     ChevronRight, Star, Zap, Music2, Laptop, Trophy, FileText,
     PlusCircle, X, CheckCircle, AlertCircle, DollarSign, Type,
     AlignLeft, Hash, Image as ImageIcon, ToggleLeft, ToggleRight,
-    Mail, Smile, Shield
+    Mail, Smile, Shield, Layers, ChevronDown, Phone
 } from "lucide-react-native"
 
 export const ICONS = {
@@ -38,7 +38,7 @@ export const ICONS = {
     view: View,
     badgePlus: BadgePlus,
 
-    // Icon gustvo
+    // Icon gustavo
     CalendarDays: CalendarDays,
     MapPin: MapPin,
     Users: Users,
@@ -67,4 +67,7 @@ export const ICONS = {
     Mail: Mail,
     Smile: Smile,
     Shield: Shield,
+    Layers: Layers,
+    ChevronDown: ChevronDown,
+    Phone: Phone
 }
