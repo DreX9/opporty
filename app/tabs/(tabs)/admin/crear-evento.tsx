@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, TouchableOpacity, Alert, StyleSheet, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -10,8 +10,18 @@ import { Input, InputField } from '@/components/ui/input';
 import { ICONS } from '@/components/icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-
+import { SelectorMapaModal } from '@/components/SelectorMapaModal';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import {
+    Select,
+    SelectTrigger,
+    SelectInput,
+    SelectIcon,
+    SelectPortal,
+    SelectBackdrop,
+    SelectContent,
+    SelectItem
+} from '@/components/ui/select';
 
 const CATEGORIAS = ['Tecnología', 'Música', 'Deporte', 'Arte', 'Educación', 'Social'] as const;
 type Categoria = (typeof CATEGORIAS)[number];
@@ -20,13 +30,23 @@ const ESTADO_INICIAL = {
     titulo: '',
     fecha: '',
     hora: '',
+    horaFin: '',
     lugar: '',
+    latitud: 0,
+    longitud: 0,
     categoria: '',
-    precio: '',
     asistentes: '',
     descripcion: '',
     destacado: false,
     imagenUri: '',
+    tipo: '',
+    edadMinima: '',
+    requisitos: '',
+    codigoEmpleado: '',
+    cargo: '',
+    correo: '',
+    celular: '',
+    codigoAutorizacion: ''
 };
 
 export default function CrearEvento() {
@@ -34,12 +54,24 @@ export default function CrearEvento() {
     const [form, setForm] = useState(ESTADO_INICIAL);
     const [enviado, setEnviado] = useState(false);
     const [pasoActual, setPasoActual] = useState(1);
-    const totalPasos = 3;
+    const totalPasos = 4;
 
     // Estados para Date y Time Pickers
     const [dateValue, setDateValue] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
+    const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+    const [modalMapaVisible, setModalMapaVisible] = useState(false);
+    const TIPOS_EVENTO = [
+        'Conferencia',
+        'Taller',
+        'Seminario',
+        'Hackathon',
+        'Concierto',
+        'Competencia',
+        'Exposición',
+        'Networking'
+    ] as const;
 
     const actualizarCampo = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
         setForm(prev => ({ ...prev, [clave]: valor }));
@@ -48,6 +80,17 @@ export default function CrearEvento() {
     const actualizarCampoNumerico = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
         const soloNumeros = valor.replace(/[^0-9]/g, '');
         setForm(prev => ({ ...prev, [clave]: soloNumeros }));
+    };
+
+    const actualizarCampoEdadMinima = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+        const soloNumeros = valor.replace(/[^0-9]/g, '');
+        setForm(prev => ({ ...prev, [clave]: soloNumeros }));
+    };
+    const actualizarRequisitos = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+        setForm(prev => ({ ...prev, [clave]: valor }));
+    };
+    const actualizarCampoTexto = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+        setForm(prev => ({ ...prev, [clave]: valor }));
     };
 
     const onDateChange = (event: any, selectedDate?: Date) => {
@@ -61,15 +104,28 @@ export default function CrearEvento() {
         }
     };
 
-    const onTimeChange = (event: any, selectedDate?: Date) => {
-        setShowTimePicker(false);
+    // Función unificada utilizando Currying para controlar Inicio y Fin
+    const onTimeChange = (type: 'inicio' | 'fin') => (event: unknown, selectedDate?: Date) => {
+        if (type === 'inicio') {
+            setShowTimePicker(false);
+        } else {
+            setShowEndTimePicker(false);
+        }
+
         if (selectedDate) {
             setDateValue(selectedDate);
+
             let horas = selectedDate.getHours();
             const minutos = selectedDate.getMinutes().toString().padStart(2, '0');
             const ampm = horas >= 12 ? 'PM' : 'AM';
             horas = horas % 12 || 12;
-            setForm(prev => ({ ...prev, hora: `${horas.toString().padStart(2, '0')}:${minutos} ${ampm}` }));
+
+            const horaFormateada = `${horas.toString().padStart(2, '0')}:${minutos} ${ampm}`;
+
+            setForm(prev => ({
+                ...prev,
+                [type === 'inicio' ? 'hora' : 'horaFin']: horaFormateada
+            }));
         }
     };
 
@@ -77,26 +133,45 @@ export default function CrearEvento() {
         setForm(prev => ({ ...prev, categoria: cat }));
     };
 
-    // Validaciones del formulario
+    // Validaciones del formulario actualizadas
     const errores = {
         titulo: form.titulo.trim().length === 0,
         descripcion: form.descripcion.trim().length < 10,
         categoria: form.categoria === '',
+        tipo: form.tipo === '',
         fecha: form.fecha.trim().length === 0,
         hora: form.hora.trim().length === 0,
+        horaFin: form.horaFin.trim().length === 0,
         lugar: form.lugar.trim().length === 0,
+        codigoEmpleado: form.codigoEmpleado.trim().length === 0,
+        cargo: form.cargo.trim().length === 0,
+        correo: form.correo.trim().length === 0,
+        celular: form.celular.trim().length === 0,
+        codigoAutorizacion: form.codigoAutorizacion.trim().length === 0,
+        asistentes: form.asistentes.trim().length === 0,
+        edadMinima: form.edadMinima.trim().length === 0,
+        requisitos: form.requisitos.trim().length < 10,
     };
 
     const pasoSiguiente = () => {
-        // Validaciones por paso
         if (pasoActual === 1) {
-            if (errores.titulo || errores.descripcion || errores.categoria) {
-                Alert.alert('⚠️ Campos requeridos', 'Por favor, completa el Título, una Descripción detallada y selecciona una Categoría antes de avanzar.');
+            if (errores.titulo || errores.descripcion || errores.categoria || errores.tipo) {
+                Alert.alert('⚠️ Campos requeridos', 'Por favor, completa el Título, una Descripción detallada, selecciona una Categoría y el Tipo de evento antes de avanzar.');
                 return;
             }
         } else if (pasoActual === 2) {
-            if (errores.fecha || errores.hora || errores.lugar) {
-                Alert.alert('⚠️ Campos requeridos', 'Por favor, ingresa una Fecha, Hora y Lugar válido para el evento.');
+            if (errores.fecha || errores.hora || errores.horaFin || errores.lugar) {
+                Alert.alert('⚠️ Campos requeridos', 'Por favor, ingresa una Fecha, Hora de Inicio, Hoa Final y el Lugar del evento.');
+                return;
+            }
+        } else if (pasoActual === 3) {
+            if (errores.asistentes || errores.edadMinima || errores.requisitos) {
+                Alert.alert('⚠️ Campos requeridos', 'Por favor, ingresa el Número de Asistentes, la Edad Mínima y los Requisitos del evento.');
+                return;
+            }
+        } else if (pasoActual === 4) {
+            if (errores.codigoEmpleado || errores.cargo || errores.correo || errores.celular || errores.codigoAutorizacion) {
+                Alert.alert('⚠️ Campos requeridos', 'Por favor, ingresa el Código de Empleado, Cargo, Correo, Celular y Código de Autorización.');
                 return;
             }
         }
@@ -123,7 +198,6 @@ export default function CrearEvento() {
         ]);
     };
 
-    // Porcentaje de progreso de la barra
     const progresoWidth = `${(pasoActual / totalPasos) * 100}%` as any;
 
     return (
@@ -153,8 +227,8 @@ export default function CrearEvento() {
                 </VStack>
 
                 {/* ========================================================
-            PASO 1: DETALLES BÁSICOS DEL EVENTO
-           ======================================================== */}
+                PASO 1: DETALLES BÁSICOS DEL EVENTO
+                ======================================================== */}
                 {pasoActual === 1 && (
                     <VStack space="md" className="flex-1">
                         <Text className="text-white text-lg font-bold mb-1">Información General</Text>
@@ -216,126 +290,43 @@ export default function CrearEvento() {
                                 })}
                             </HStack>
                         </VStack>
-                    </VStack>
-                )}
 
-                {/* ========================================================
-            PASO 2: PROGRAMACIÓN Y FECHAS
-           ======================================================== */}
-                {pasoActual === 2 && (
-                    <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Fecha, Hora y Ubicación</Text>
-
-                        {/* Fila Fecha y Hora */}
-                        <HStack className="justify-between mb-4">
-                            {/* Selector de Fecha */}
-                            <TouchableOpacity
-                                onPress={() => setShowDatePicker(true)}
-                                style={{ width: '48%' }}
-                                className="bg-[#0D1324] border border-white/10 rounded-2xl p-4"
-                            >
-                                <HStack className="items-center mb-2" style={{ gap: 6 }}>
-                                    <Icon as={ICONS.CalendarDays} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Fecha *</Text>
-                                </HStack>
-                                <Text className="text-white text-sm font-bold mt-1">
-                                    {form.fecha || 'Seleccionar...'}
-                                </Text>
-                            </TouchableOpacity>
-
-                            {/* Selector de Hora */}
-                            <TouchableOpacity
-                                onPress={() => setShowTimePicker(true)}
-                                style={{ width: '48%' }}
-                                className="bg-[#0D1324] border border-white/10 rounded-2xl p-4"
-                            >
-                                <HStack className="items-center mb-2" style={{ gap: 6 }}>
-                                    <Icon as={ICONS.Clock} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Hora *</Text>
-                                </HStack>
-                                <Text className="text-white text-sm font-bold mt-1">
-                                    {form.hora || 'Seleccionar...'}
-                                </Text>
-                            </TouchableOpacity>
-                        </HStack>
-
-                        {showDatePicker && (
-                            <DateTimePicker
-                                value={dateValue}
-                                mode="date"
-                                display="default"
-                                onChange={onDateChange}
-                            />
-                        )}
-
-                        {showTimePicker && (
-                            <DateTimePicker
-                                value={dateValue}
-                                mode="time"
-                                display="default"
-                                onChange={onTimeChange}
-                            />
-                        )}
-
-                        {/* Campo Ubicación */}
+                        {/* Nuevo Campo: Tipo de Evento (Select de Gluestack) */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.MapPin} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Lugar del evento *</Text>
+                                <Icon as={ICONS.Layers} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Tipo de evento *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
-                                <InputField
-                                    placeholder="Ej: Campus San Isidro, Auditorio A"
-                                    className="text-white placeholder:text-gray-500"
-                                    value={form.lugar}
-                                    onChangeText={actualizarCampo('lugar')}
-                                />
-                            </Input>
+
+                            <Select
+                                selectedValue={form.tipo}
+                                onValueChange={(valor) => setForm(prev => ({ ...prev, tipo: valor }))}
+                            >
+                                <SelectTrigger className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400 justify-between px-4 flex-row items-center">
+                                    <SelectInput
+                                        placeholder="Seleccionar tipo"
+                                        className="text-white placeholder:text-gray-500 text-sm flex-1"
+                                    />
+                                    {/* Icono de la flecha hacia abajo */}
+                                    <SelectIcon as={ICONS.ChevronDown} className="text-cyan-400 w-4 h-4" />
+                                </SelectTrigger>
+
+                                <SelectPortal>
+                                    <SelectBackdrop />
+                                    <SelectContent className="bg-[#0D1324] border-t border-white/10">
+                                        {/* Mapeo de las opciones del Dropdown */}
+                                        {TIPOS_EVENTO.map((tipo) => (
+                                            <SelectItem
+                                                key={tipo}
+                                                label={tipo}
+                                                value={tipo}
+                                                className="hover:bg-white/5 focus:bg-cyan-400/10 py-3"
+                                            />
+                                        ))}
+                                    </SelectContent>
+                                </SelectPortal>
+                            </Select>
                         </VStack>
-                    </VStack>
-                )}
-
-                {/* ========================================================
-            PASO 3: CONFIGURACIÓN ADICIONAL
-           ======================================================== */}
-                {pasoActual === 3 && (
-                    <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Ajustes Finales y Registro</Text>
-
-                        {/* Campo Precio */}
-                        <HStack className="justify-between mb-4">
-                            <VStack space="xs" style={{ width: '48%' }}>
-                                <HStack className="items-center" style={{ gap: 4 }}>
-                                    <Icon as={ICONS.DollarSign} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Precio *</Text>
-                                </HStack>
-                                <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
-                                    <InputField
-                                        placeholder="Ej: Gratis / 25"
-                                        className="text-white placeholder:text-gray-500"
-                                        value={form.precio}
-                                        onChangeText={actualizarCampo('precio')}
-                                    />
-                                </Input>
-                            </VStack>
-
-                            <VStack space="xs" style={{ width: '48%' }}>
-                                <HStack className="items-center" style={{ gap: 4 }}>
-                                    <Icon as={ICONS.Users} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Aforos</Text>
-                                </HStack>
-                                <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
-                                    <InputField
-                                        placeholder="Ej: 150"
-                                        className="text-white placeholder:text-gray-500"
-                                        keyboardType="numeric"
-                                        value={form.asistentes}
-                                        onChangeText={actualizarCampoNumerico('asistentes')}
-                                    />
-                                </Input>
-                            </VStack>
-                        </HStack>
-
                         {/* Campo Imagen URL */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
@@ -352,24 +343,292 @@ export default function CrearEvento() {
                                 />
                             </Input>
                         </VStack>
+                    </VStack>
+                )}
 
-                        {/* Campo Destacado Switch */}
-                        <TouchableOpacity
-                            onPress={() => setForm(prev => ({ ...prev, destacado: !prev.destacado }))}
-                            className="bg-[#0D1324] border border-white/5 rounded-2xl p-4 flex-row items-center justify-between mt-2"
-                        >
-                            <HStack className="items-center" style={{ gap: 10 }}>
-                                <Icon as={ICONS.Star} className={form.destacado ? 'text-amber-400 w-5 h-5' : 'text-gray-500 w-5 h-5'} />
-                                <VStack>
-                                    <Text className="text-white text-sm font-bold">Destacar evento</Text>
-                                    <Text className="text-gray-400 text-2xs mt-0.5">Mostrar con insignia dorada en Radar</Text>
-                                </VStack>
-                            </HStack>
-                            <Icon
-                                as={form.destacado ? ICONS.ToggleRight : ICONS.ToggleLeft}
-                                className={form.destacado ? 'text-cyan-400 w-8 h-8' : 'text-gray-500 w-8 h-8'}
+                {/* ========================================================
+                PASO 2: PROGRAMACIÓN Y FECHAS
+                ======================================================== */}
+                {pasoActual === 2 && (
+                    <VStack space="md" className="flex-1">
+                        <Text className="text-white text-lg font-bold mb-1">Fecha, Hora y Ubicación</Text>
+
+                        {/* Contenedor Principal en Fila */}
+                        <HStack className="justify-between mb-4 items-start">
+
+                            {/* COLUMNA IZQUIERDA: Selector de Fecha */}
+                            <TouchableOpacity
+                                onPress={() => setShowDatePicker(true)}
+                                style={{ width: '48%' }}
+                                className="bg-[#0D1324] border border-white/10 rounded-2xl p-4"
+                            >
+                                <HStack className="items-center mb-2" style={{ gap: 6 }}>
+                                    <Icon as={ICONS.CalendarDays} className="text-cyan-400 w-4 h-4" />
+                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Fecha *</Text>
+                                </HStack>
+                                <Text className="text-white text-sm font-bold mt-1">
+                                    {form.fecha || 'Seleccionar...'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* COLUMNA DERECHA: Horas apiladas una sobre otra */}
+                            <VStack style={{ width: '48%', gap: 12 }}>
+
+                                {/* Selector de Hora Inicio */}
+                                <TouchableOpacity
+                                    onPress={() => setShowTimePicker(true)}
+                                    className="bg-[#0D1324] border border-white/10 rounded-2xl p-4 w-full"
+                                >
+                                    <HStack className="items-center mb-2" style={{ gap: 6 }}>
+                                        <Icon as={ICONS.Clock} className="text-cyan-400 w-4 h-4" />
+                                        <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Hora Inicio *</Text>
+                                    </HStack>
+                                    <Text className="text-white text-sm font-bold mt-1">
+                                        {form.hora || 'Seleccionar...'}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {/* Selector de Hora Final */}
+                                <TouchableOpacity
+                                    onPress={() => setShowEndTimePicker(true)}
+                                    className="bg-[#0D1324] border border-white/10 rounded-2xl p-4 w-full"
+                                >
+                                    <HStack className="items-center mb-2" style={{ gap: 6 }}>
+                                        <Icon as={ICONS.Clock} className="text-cyan-400 w-4 h-4" />
+                                        <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Hora Final *</Text>
+                                    </HStack>
+                                    <Text className="text-white text-sm font-bold mt-1">
+                                        {form.horaFin || 'Seleccionar...'}
+                                    </Text>
+                                </TouchableOpacity>
+
+                            </VStack>
+                        </HStack>
+
+                        {/* Modales de los Pickers */}
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={dateValue}
+                                mode="date"
+                                display="default"
+                                onChange={onDateChange}
                             />
-                        </TouchableOpacity>
+                        )}
+
+                        {showTimePicker && (
+                            <DateTimePicker
+                                value={dateValue}
+                                mode="time"
+                                display="default"
+                                onChange={onTimeChange('inicio')}
+                            />
+                        )}
+
+                        {showEndTimePicker && (
+                            <DateTimePicker
+                                value={dateValue}
+                                mode="time"
+                                display="default"
+                                onChange={onTimeChange('fin')}
+                            />
+                        )}
+
+                        {/* Campo Ubicación */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center justify-between">
+                                <HStack className="items-center" style={{ gap: 4 }}>
+                                    <Icon as={ICONS.MapPin} className="text-cyan-400 w-4 h-4" />
+                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Lugar del evento *</Text>
+                                </HStack>
+
+                                {/* Botón para abrir el selector visual */}
+                                <TouchableOpacity onPress={() => setModalMapaVisible(true)}>
+                                    <Text className="text-cyan-400 text-xs font-bold underline">Seleccionar en Mapa</Text>
+                                </TouchableOpacity>
+                            </HStack>
+
+                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <InputField
+                                    placeholder="Ej: Campus San Isidro, Auditorio A o búscalo en el mapa"
+                                    className="text-white placeholder:text-gray-500"
+                                    value={form.lugar}
+                                    onChangeText={actualizarCampo('lugar')}
+                                />
+                            </Input>
+                        </VStack>
+
+                        {/* Modal del mapa inyectado al final del Paso 2 */}
+                        <SelectorMapaModal
+                            visible={modalMapaVisible}
+                            onClose={() => setModalMapaVisible(false)}
+                            onUbicacionSeleccionada={(datos) => {
+                                setForm(prev => ({
+                                    ...prev,
+                                    lugar: datos.direccion,
+                                    latitud: datos.coords.lat,
+                                    longitud: datos.coords.lng
+                                }));
+                            }}
+                        />
+                    </VStack>
+                )}
+
+                {/* ========================================================
+                PASO 3: CONFIGURACIÓN ADICIONAL
+                ======================================================== */}
+                {pasoActual === 3 && (
+                    <VStack space="md" className="flex-1">
+                        <Text className="text-white text-lg font-bold mb-1">Ajustes Finales y Registro</Text>
+
+                        {/* Campo Aforo */}
+                        <HStack className="justify-between mb-4">
+                            <VStack space="xs" style={{ width: '48%' }}>
+                                <HStack className="items-center" style={{ gap: 4 }}>
+                                    <Icon as={ICONS.Users} className="text-cyan-400 w-4 h-4" />
+                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Aforo</Text>
+                                </HStack>
+                                <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                    <InputField
+                                        placeholder="Ej: 150"
+                                        className="text-white placeholder:text-gray-500"
+                                        keyboardType="numeric"
+                                        value={form.asistentes}
+                                        onChangeText={actualizarCampoNumerico('asistentes')}
+                                    />
+                                </Input>
+                            </VStack>
+                        </HStack>
+                        {/* Campo Edad minima */}
+                        <HStack className="justify-between mb-4">
+
+                            <VStack space="xs" style={{ width: '48%' }}>
+                                <HStack className="items-center" style={{ gap: 4 }}>
+                                    <Icon as={ICONS.Users} className="text-cyan-400 w-4 h-4" />
+                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Edad Minima</Text>
+                                </HStack>
+                                <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                    <InputField
+                                        placeholder="Ej: 18"
+                                        className="text-white placeholder:text-gray-500"
+                                        keyboardType="numeric"
+                                        value={form.edadMinima}
+                                        onChangeText={actualizarCampoEdadMinima('edadMinima')}
+                                    />
+                                </Input>
+                            </VStack>
+                        </HStack>
+
+                        {/* Campo Requisitos */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center" style={{ gap: 4 }}>
+                                <Icon as={ICONS.AlignLeft} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Requisitos del evento</Text>
+                            </HStack>
+                            <Input className="h-28 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400 py-2">
+                                <InputField
+                                    placeholder="Escribe los requisitos del evento (mínimo 10 caracteres)..."
+                                    className="text-white placeholder:text-gray-500"
+                                    multiline
+                                    numberOfLines={4}
+                                    value={form.requisitos}
+                                    onChangeText={actualizarRequisitos('requisitos')}
+                                />
+                            </Input>
+                        </VStack>
+                    </VStack>
+                )}
+
+                {/* ========================================================
+                PASO 4: VERIFICACIÓN 
+                ======================================================== */}
+                {pasoActual === 4 && (
+                    <VStack space="md" className="flex-1">
+                        <Text className="text-white text-lg font-bold mb-1">Verificación de Organizador</Text>
+                        <Text className="text-gray-300 text-sm mb-6">Para garantizar la autenticidad de los eventos, necesitamos verificar tu identidad como organizador autorizado.
+                        </Text>
+
+                        {/* Campo Código de Empleado */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center" style={{ gap: 4 }}>
+                                <Icon as={ICONS.Hash} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Código de Empleado</Text>
+                            </HStack>
+                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <InputField
+                                    placeholder="Escribe tu código de empleado..."
+                                    className="text-white placeholder:text-gray-500"
+                                    value={form.codigoEmpleado}
+                                    onChangeText={actualizarCampoTexto('codigoEmpleado')}
+                                />
+                            </Input>
+                        </VStack>
+
+                        {/* Campo Cargo */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center" style={{ gap: 4 }}>
+                                <Icon as={ICONS.Users} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Cargo</Text>
+                            </HStack>
+                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <InputField
+                                    placeholder="Escribe tu cargo..."
+                                    className="text-white placeholder:text-gray-500"
+                                    value={form.cargo}
+                                    onChangeText={actualizarCampoTexto('cargo')}
+                                />
+                            </Input>
+                        </VStack>
+
+                        {/* Campo Correo */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center" style={{ gap: 4 }}>
+                                <Icon as={ICONS.Mail} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Correo</Text>
+                            </HStack>
+                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <InputField
+                                    placeholder="Escribe tu correo..."
+                                    className="text-white placeholder:text-gray-500"
+                                    keyboardType="email-address"
+                                    value={form.correo}
+                                    onChangeText={actualizarCampoTexto('correo')}
+                                />
+                            </Input>
+                        </VStack>
+
+                        {/* Campo Celular */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center" style={{ gap: 4 }}>
+                                <Icon as={ICONS.Phone} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Celular</Text>
+                            </HStack>
+                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <InputField
+                                    placeholder="Escribe tu celular..."
+                                    className="text-white placeholder:text-gray-500"
+                                    keyboardType="phone-pad"
+                                    value={form.celular}
+                                    onChangeText={actualizarCampoTexto('celular')}
+                                />
+                            </Input>
+                        </VStack>
+
+                        {/* Campo Código de Autorización */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center" style={{ gap: 4 }}>
+                                <Icon as={ICONS.Shield} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Código de Autorización</Text>
+                            </HStack>
+                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <InputField
+                                    placeholder="Escribe el código de autorización..."
+                                    className="text-white placeholder:text-gray-500"
+                                    value={form.codigoAutorizacion}
+                                    onChangeText={actualizarCampoTexto('codigoAutorizacion')}
+                                />
+                            </Input>
+                        </VStack>
+
                     </VStack>
                 )}
 
@@ -395,7 +654,7 @@ export default function CrearEvento() {
                     </Button>
                 </HStack>
             </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView >
     );
 }
 
