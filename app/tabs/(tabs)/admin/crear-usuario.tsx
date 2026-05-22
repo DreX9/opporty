@@ -13,16 +13,14 @@ import { useRouter } from 'expo-router';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const EMOJIS = ['👨🏻‍💻', '👩‍💻', '👑', '🧑‍🎓', '🧑‍💻', '🤖', '🚀', '✨'] as const;
-const ROLES = ['Usuario', 'Admin'] as const;
-
 const ESTADO_INICIAL = {
     nombre: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    rol: 'Usuario' as 'Usuario' | 'Admin',
-    emoji: '👨🏻‍💻',
-    activo: true,
+    facultad: '',
+    rol: 'Usuario' as 'Usuario' | 'Admin' | 'Organizador' | 'Moderador',
+    departamento: '',
+    cargo: ''
 };
 
 export default function CrearUsuario() {
@@ -40,8 +38,9 @@ export default function CrearUsuario() {
         nombre: form.nombre.trim().length < 3,
         email: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email),
         password: form.password.length < 6,
-        confirmPassword: form.password !== form.confirmPassword,
     };
+    const ROLES = ['Usuario', 'Admin', 'Organizador', 'Moderador'] as const;
+    type Rol = (typeof ROLES)[number];
 
     const pasoSiguiente = () => {
         if (pasoActual === 1) {
@@ -56,10 +55,6 @@ export default function CrearUsuario() {
         } else if (pasoActual === 2) {
             if (errores.password) {
                 Alert.alert('⚠️ Contraseña débil', 'La contraseña debe tener al menos 6 caracteres.');
-                return;
-            }
-            if (errores.confirmPassword) {
-                Alert.alert('⚠️ Contraseña no coincide', 'Las contraseñas ingresadas no son iguales.');
                 return;
             }
         }
@@ -105,7 +100,7 @@ export default function CrearUsuario() {
                             Paso {pasoActual} de {totalPasos}
                         </Text>
                         <Text className="text-cyan-400 text-xs font-extrabold tracking-widest uppercase">
-                            {pasoActual === 1 ? 'Perfil Básico' : pasoActual === 2 ? 'Seguridad' : 'Confirmación'}
+                            {pasoActual === 1 ? 'Perfil Básico' : pasoActual === 2 ? 'Roles' : 'Confirmación'}
                         </Text>
                     </HStack>
                     <Box className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -154,61 +149,6 @@ export default function CrearUsuario() {
                             </Input>
                         </VStack>
 
-                        {/* Selector de Avatar Emoji */}
-                        <VStack space="xs" className="mb-4">
-                            <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Smile} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Selecciona Avatar *</Text>
-                            </HStack>
-                            <HStack className="flex-wrap" style={{ gap: 10 }}>
-                                {EMOJIS.map((emoji) => {
-                                    const activo = form.emoji === emoji;
-                                    return (
-                                        <TouchableOpacity
-                                            key={emoji}
-                                            onPress={() => actualizarCampo('emoji')(emoji)}
-                                            className={`w-12 h-12 rounded-full items-center justify-center border ${activo ? 'bg-cyan-400/10 border-cyan-400' : 'bg-[#0D1324] border-white/10'}`}
-                                        >
-                                            <Text className="text-xl">{emoji}</Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </HStack>
-                        </VStack>
-                    </VStack>
-                )}
-
-                {/* ========================================================
-            PASO 2: PRIVILEGIOS Y SEGURIDAD
-           ======================================================== */}
-                {pasoActual === 2 && (
-                    <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Seguridad & Privilegios</Text>
-
-                        {/* Selector de Rol */}
-                        <VStack space="xs" className="mb-4">
-                            <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Shield} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Rol de Acceso *</Text>
-                            </HStack>
-                            <HStack style={{ gap: 12 }}>
-                                {ROLES.map((rol) => {
-                                    const activo = form.rol === rol;
-                                    return (
-                                        <TouchableOpacity
-                                            key={rol}
-                                            onPress={() => actualizarCampo('rol')(rol)}
-                                            className={`flex-1 py-3 rounded-xl border items-center justify-center ${activo ? 'bg-cyan-400/10 border-cyan-400' : 'bg-[#0D1324] border-white/10'}`}
-                                        >
-                                            <Text className={`text-sm font-bold ${activo ? 'text-cyan-400' : 'text-gray-400'}`}>
-                                                {rol}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </HStack>
-                        </VStack>
-
                         {/* Campo Contraseña */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
@@ -227,22 +167,57 @@ export default function CrearUsuario() {
                             </Input>
                         </VStack>
 
-                        {/* Campo Confirmar Contraseña */}
+                        {/* Campo Facultad */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.lock} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Confirmar Contraseña *</Text>
+                                <Icon as={ICONS.GraduationCap} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Facultad *</Text>
                             </HStack>
                             <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
                                 <InputField
-                                    placeholder="Repite la contraseña"
+                                    placeholder="Ej: Ingeniería"
                                     className="text-white placeholder:text-gray-500"
-                                    secureTextEntry
-                                    autoCapitalize="none"
-                                    value={form.confirmPassword}
-                                    onChangeText={actualizarCampo('confirmPassword')}
+                                    value={form.facultad}
+                                    onChangeText={actualizarCampo('facultad')}
                                 />
                             </Input>
+                        </VStack>
+                    </VStack>
+                )}
+
+                {/* ========================================================
+            PASO 2: PRIVILEGIOS Y SEGURIDAD
+           ======================================================== */}
+                {pasoActual === 2 && (
+                    <VStack space="md" className="flex-1">
+                        <Text className="text-white text-lg font-bold mb-1">Roles</Text>
+
+                        {/* Selector de Rol */}
+                        <VStack space="xs" className="mb-4">
+                            <HStack className="items-center" style={{ gap: 4 }}>
+                                <Icon as={ICONS.Shield} className="text-cyan-400 w-4 h-4" />
+                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Rol de Acceso *</Text>
+                            </HStack>
+
+                            {/* Contenedor en fila con flex-wrap para crear la cuadrícula 2x2 */}
+                            <HStack className="flex-wrap justify-between" style={{ gap: 12 }}>
+                                {ROLES.map((rol) => {
+                                    const activo = form.rol === rol;
+                                    return (
+                                        <TouchableOpacity
+                                            key={rol}
+                                            onPress={() => actualizarCampo('rol')(rol)}
+                                            style={{ width: '48%' }} // <--- Controla que entren exactamente 2 por fila
+                                            className={`py-3 rounded-xl border items-center justify-center mb-1 ${activo ? 'bg-cyan-400/10 border-cyan-400' : 'bg-[#0D1324] border-white/10'
+                                                }`}
+                                        >
+                                            <Text className={`text-sm font-bold ${activo ? 'text-cyan-400' : 'text-gray-400'}`}>
+                                                {rol}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </HStack>
                         </VStack>
                     </VStack>
                 )}
@@ -256,43 +231,18 @@ export default function CrearUsuario() {
 
                         {/* Resumen Card */}
                         <Box className="w-full bg-[#0D1324] border border-white/5 rounded-2xl p-5 items-center mb-6">
-                            <Box className="w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-400/30 items-center justify-center mb-4">
-                                <Text className="text-3xl">{form.emoji}</Text>
-                            </Box>
-                            <Text className="text-white text-xl font-bold">{form.nombre}</Text>
-                            <Text className="text-gray-400 text-sm mt-1">{form.email}</Text>
-
+                            <Text className="text-white text-xl font-bold">Nombre: {form.nombre}</Text>
+                            <Text className="text-gray-400 text-sm mt-1">Email: {form.email}</Text>
+                            <Text className="text-gray-400 text-sm mt-1">Facultad: {form.facultad}</Text>
+                            <Text className="text-gray-400 text-sm mt-1">Cargo: {form.cargo}</Text>
                             <HStack className="mt-4" style={{ gap: 8 }}>
                                 <Box className="px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/30">
                                     <Text className="text-cyan-400 text-2xs font-extrabold uppercase tracking-wider">
                                         {form.rol}
                                     </Text>
                                 </Box>
-                                <Box className={`px-3 py-1 rounded-full ${form.activo ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-rose-500/10 border border-rose-500/30'}`}>
-                                    <Text className={`text-2xs font-extrabold uppercase tracking-wider ${form.activo ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                        {form.activo ? 'ACTIVO' : 'INACTIVO'}
-                                    </Text>
-                                </Box>
                             </HStack>
                         </Box>
-
-                        {/* Switch Activo */}
-                        <TouchableOpacity
-                            onPress={() => actualizarCampo('activo')(!form.activo)}
-                            className="bg-[#0D1324] border border-white/5 rounded-2xl p-4 flex-row items-center justify-between"
-                        >
-                            <HStack className="items-center" style={{ gap: 10 }}>
-                                <Icon as={ICONS.CheckCircle} className={form.activo ? 'text-emerald-400 w-5 h-5' : 'text-gray-500 w-5 h-5'} />
-                                <VStack>
-                                    <Text className="text-white text-sm font-bold">Activar Cuenta de Inmediato</Text>
-                                    <Text className="text-gray-400 text-2xs mt-0.5">El usuario podrá iniciar sesión inmediatamente</Text>
-                                </VStack>
-                            </HStack>
-                            <Icon
-                                as={form.activo ? ICONS.ToggleRight : ICONS.ToggleLeft}
-                                className={form.activo ? 'text-cyan-400 w-8 h-8' : 'text-gray-500 w-8 h-8'}
-                            />
-                        </TouchableOpacity>
                     </VStack>
                 )}
 
