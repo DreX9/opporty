@@ -16,12 +16,6 @@ export default function AdminLayout() {
       }}
     >
       <Stack.Screen
-        name="index"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
         name="crear-evento"
         options={{
           title: 'Crear Evento',

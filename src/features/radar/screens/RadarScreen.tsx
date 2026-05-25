@@ -12,135 +12,13 @@ import {
     View,
     TouchableOpacity,
     StyleSheet,
+    DimensionValue,
 } from 'react-native';
 
-// ─── Tipos ───────────────────────────────────────────────────────────────────
+import { C, DOTS, EVENTOS } from '../constants';
+import EventCard from '../components/EventCard';
 
-interface EventoDot {
-    id: string;
-    top: number;
-    left: number;
-    color: string;
-}
-
-interface EventoCard {
-    id: string;
-    titulo: string;
-    distancia: string;
-    asistentes: number;
-    fecha: string;
-    categoria: string;
-    activo: boolean;
-}
-
-// ─── Datos estáticos de muestra ───────────────────────────────────────────────
-
-const DOTS: EventoDot[] = [
-    { id: 'a', top: 0.48, left: 0.50, color: '#A82BFA' },   // centro (púrpura)
-    { id: 'b', top: 0.38, left: 0.72, color: '#22C55E' },   // derecha-arriba (verde)
-    { id: 'c', top: 0.60, left: 0.22, color: '#22C55E' },   // izquierda-abajo
-    { id: 'd', top: 0.68, left: 0.52, color: '#3B82F6' },   // abajo-centro (azul)
-];
-
-const EVENTOS: EventoCard[] = [
-    {
-        id: '1',
-        titulo: 'Hackathon Tech 2026',
-        distancia: '0.5 km',
-        asistentes: 150,
-        fecha: '24 may',
-        categoria: 'Tecnología',
-        activo: true,
-    },
-    {
-        id: '2',
-        titulo: 'Feria de Emprendimiento',
-        distancia: '1.2 km',
-        asistentes: 90,
-        fecha: '26 may',
-        categoria: 'Emprendimiento',
-        activo: false,
-    },
-    {
-        id: '3',
-        titulo: 'Concierto Universitario',
-        distancia: '0.8 km',
-        asistentes: 220,
-        fecha: '28 may',
-        categoria: 'Música',
-        activo: true,
-    },
-];
-
-// ─── Colores de la paleta ─────────────────────────────────────────────────────
-const C = {
-    bg: '#F4F4FB',           // fondo general ligeramente lila
-    radarBg: '#EEF0FA',      // fondo de la caja del radar
-    radarRing1: '#C084FC',   // uniradar-lightPurple
-    radarRing2: '#A78BFA',   // violeta medio
-    radarRing3: '#6366F1',   // uniradar-indigo
-    accent: '#6366F1',
-    accentPurple: '#A82BFA',
-    cardBg: '#FFFFFF',
-    cardBorder: '#E9EAF4',
-    textPrimary: '#111827',
-    textSecondary: '#6B7280',
-    tagBg: '#EEF2FF',
-    tagText: '#4F46E5',
-    green: '#22C55E',
-};
-
-// ─── Componentes locales ──────────────────────────────────────────────────────
-
-function InfoPill({ icon, label }: { icon: React.ComponentType; label: string }) {
-    return (
-        <HStack style={{ alignItems: 'center', gap: 3 }}>
-            <Icon as={icon} style={{ color: C.textSecondary, width: 12, height: 12 }} />
-            <Text style={{ color: C.textSecondary, fontSize: 11 }}>{label}</Text>
-        </HStack>
-    );
-}
-
-function EventCard({ evento }: { evento: EventoCard }) {
-    return (
-        <TouchableOpacity
-            activeOpacity={0.8}
-            style={[styles.card, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}
-        >
-            {/* Indicador activo */}
-            <View
-                style={[
-                    styles.activeDot,
-                    { backgroundColor: evento.activo ? C.green : C.textSecondary },
-                ]}
-            />
-
-            <VStack style={{ gap: 6 }}>
-                <Text style={{ color: C.textPrimary, fontWeight: '700', fontSize: 15 }}>
-                    {evento.titulo}
-                </Text>
-
-                {/* Meta info */}
-                <HStack style={{ alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <InfoPill icon={ICONS.MapPin} label={evento.distancia} />
-                    <InfoPill icon={ICONS.Users} label={`${evento.asistentes}`} />
-                    <InfoPill icon={ICONS.CalendarDays} label={evento.fecha} />
-                </HStack>
-
-                {/* Tag categoría */}
-                <View style={styles.tag}>
-                    <Text style={{ color: C.tagText, fontSize: 11, fontWeight: '600' }}>
-                        {evento.categoria}
-                    </Text>
-                </View>
-            </VStack>
-        </TouchableOpacity>
-    );
-}
-
-// ─── Pantalla principal ───────────────────────────────────────────────────────
-
-const RadarScreen = () => {
+export default function RadarScreen() {
     const RADAR_SIZE = 280;
 
     return (
@@ -225,8 +103,8 @@ const RadarScreen = () => {
                             styles.eventDot,
                             {
                                 backgroundColor: dot.color,
-                                top: `${dot.top * 100}%` as unknown as number,
-                                left: `${dot.left * 100}%` as unknown as number,
+                                top: `${dot.top * 100}%` as DimensionValue,
+                                left: `${dot.left * 100}%` as DimensionValue,
                                 transform: [{ translateX: -6 }, { translateY: -6 }],
                             },
                         ]}
@@ -253,9 +131,7 @@ const RadarScreen = () => {
             </VStack>
         </ScrollView>
     );
-};
-
-// ─── Estilos ──────────────────────────────────────────────────────────────────
+}
 
 const styles = StyleSheet.create({
     searchBar: {
@@ -311,27 +187,4 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         zIndex: 10,
     },
-    card: {
-        borderRadius: 16,
-        borderWidth: 1,
-        padding: 14,
-        position: 'relative',
-    },
-    activeDot: {
-        position: 'absolute',
-        top: 14,
-        right: 14,
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-    },
-    tag: {
-        alignSelf: 'flex-start',
-        backgroundColor: '#EEF2FF',
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        paddingVertical: 3,
-    },
 });
-
-export default RadarScreen;

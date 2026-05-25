@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, TouchableOpacity, Alert, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, DimensionValue } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -10,26 +10,16 @@ import { Input, InputField } from '@/components/ui/input';
 import { ICONS } from '@/components/icons';
 import { useRouter } from 'expo-router';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { ESTADO_INICIAL_USUARIO, ROLES } from '../constants';
+import { FormCrearUsuario, Rol } from '../types';
 
-const EMOJIS = ['👨🏻‍💻', '👩‍💻', '👑', '🧑‍🎓', '🧑‍💻', '🤖', '🚀', '✨'] as const;
-const ESTADO_INICIAL = {
-    nombre: '',
-    email: '',
-    password: '',
-    facultad: '',
-    rol: 'Usuario' as 'Usuario' | 'Admin' | 'Organizador' | 'Moderador',
-    departamento: '',
-    cargo: ''
-};
-
-export default function CrearUsuario() {
+export default function CrearUsuarioScreen() {
     const router = useRouter();
-    const [form, setForm] = useState(ESTADO_INICIAL);
+    const [form, setForm] = useState<FormCrearUsuario>(ESTADO_INICIAL_USUARIO);
     const [pasoActual, setPasoActual] = useState(1);
     const totalPasos = 3;
 
-    const actualizarCampo = (clave: keyof typeof ESTADO_INICIAL) => (valor: string | boolean) => {
+    const actualizarCampo = (clave: keyof FormCrearUsuario) => (valor: string | Rol) => {
         setForm(prev => ({ ...prev, [clave]: valor }));
     };
 
@@ -39,8 +29,6 @@ export default function CrearUsuario() {
         email: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email),
         password: form.password.length < 6,
     };
-    const ROLES = ['Usuario', 'Admin', 'Organizador', 'Moderador'] as const;
-    type Rol = (typeof ROLES)[number];
 
     const pasoSiguiente = () => {
         if (pasoActual === 1) {
@@ -80,7 +68,7 @@ export default function CrearUsuario() {
         ]);
     };
 
-    const progresoWidth = `${(pasoActual / totalPasos) * 100}%` as any;
+    const progresoWidth = `${(pasoActual / totalPasos) * 100}%` as DimensionValue;
 
     return (
         <KeyboardAvoidingView
@@ -207,7 +195,7 @@ export default function CrearUsuario() {
                                         <TouchableOpacity
                                             key={rol}
                                             onPress={() => actualizarCampo('rol')(rol)}
-                                            style={{ width: '48%' }} // <--- Controla que entren exactamente 2 por fila
+                                            style={{ width: '48%' }}
                                             className={`py-3 rounded-xl border items-center justify-center mb-1 ${activo ? 'bg-indigo-50 border-indigo-600/30' : 'bg-white border-[#E9EAF4]'
                                                 }`}
                                         >

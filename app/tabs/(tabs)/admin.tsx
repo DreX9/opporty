@@ -1,5 +1,5 @@
-import Index from '@/src/features/admin/index';
+import AdminDashboardScreen from '@/src/features/admin/screens/AdminDashboardScreen';
 
 export default function Admin() {
-    return <Index />;
+    return <AdminDashboardScreen />;
 }
