@@ -56,6 +56,18 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+    // --- CÁLCULO DINÁMICO DEL USERNAME ---
+    const getGeneratedUsername = () => {
+        const hasDni = dni.length === 8;
+        const hasDate = fechaNacimiento.length === 10;
+        const dd = hasDate ? fechaNacimiento.substring(0, 2) : 'DD';
+        const mm = hasDate ? fechaNacimiento.substring(3, 5) : 'MM';
+        const yy = hasDate ? fechaNacimiento.substring(8, 10) : 'YY';
+        const xx = hasDni ? dni.substring(6, 8) : 'XX';
+        return `std${dd}${mm}${yy}${xx}`;
+    };
+    const generatedUsername = getGeneratedUsername();
+
     const handleClose = () => {
         // Reset states
         setPasoActual(1);
@@ -325,6 +337,14 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                         </Text>
                                     </HStack>
                                 </TouchableOpacity>
+
+                                {/* Nombre de usuario generado automáticamente (Solo lectura) */}
+                                <View style={[styles.inputBox, { backgroundColor: '#F0F1FA', borderColor: '#D7DAF0', opacity: 0.85 }]}>
+                                    <Icon as={ICONS.user} style={styles.inputIcon} />
+                                    <Text style={{ color: C.textSecondary, fontSize: 14, fontWeight: '500', flex: 1 }}>
+                                        Nombre de usuario: <Text style={{ color: C.accent, fontWeight: '700' }}>{generatedUsername}</Text>
+                                    </Text>
+                                </View>
 
                                 {showDatePicker && (
                                     <DateTimePicker

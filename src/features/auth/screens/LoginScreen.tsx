@@ -10,15 +10,15 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
 import { ICONS } from '@/components/icons';
 
-import { MOCK_USERS } from '../constants';
 import RegisterModal from '../components/RegisterModal';
 import { DatosRegistro } from '../types';
+import { authService } from '../services/authService';
 
 export default function LoginScreen() {
     const router = useRouter();
 
     // --- ESTADOS PARA LOS INPUTS ---
-    const [email, setEmail] = useState<string>('');
+    const [user, setUser] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
 
@@ -26,8 +26,8 @@ export default function LoginScreen() {
     const [showModal, setShowModal] = useState<boolean>(false);
 
     // --- LÓGICA DE LOGIN ---
-    const handleLogin = () => {
-        if (!email || !password) {
+    const handleLogin = async () => {
+        if (!user || !password) {
             Alert.alert(
                 "Campos incompletos",
                 "Por favor, ingresa tu usuario y contraseña."
@@ -35,27 +35,35 @@ export default function LoginScreen() {
             return;
         }
 
-        const userFound = MOCK_USERS.find(
-            (u) => u.email === email.trim().toLowerCase() && u.password === password
-        );
-
-        if (userFound) {
-            setEmail('');
+        try {
+            await authService.login(user.trim(), password);
+            setUser('');
             setPassword('');
             router.push('/tabs/radar');
-        } else {
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "El usuario o la contraseña no son correctos.";
             Alert.alert(
                 "Acceso Denegado",
-                "El usuario o la contraseña no son correctos. Por favor, verifica tus datos e inténtalo de nuevo.",
+                `No se pudo iniciar sesión: ${msg}`,
                 [{ text: "Entendido", style: "default" }]
             );
         }
     };
 
     // --- LÓGICA DE REGISTRO ---
-    const handleRegister = (datos: DatosRegistro) => {
-        Alert.alert("¡Éxito!", `La cuenta para ${datos.nombres} ${datos.apellidos} (${datos.email}) ha sido creada.`);
-        setShowModal(false);
+    const handleRegister = async (datos: DatosRegistro) => {
+        try {
+            const responseData = await authService.registerStudent(datos);
+            const usernameGenerated = responseData.user?.username || "generado";
+            Alert.alert(
+                "¡Éxito!", 
+                `Tu cuenta ha sido creada exitosamente.\n\nTu nombre de usuario es: ${usernameGenerated}\n\nPor favor, úsalo para iniciar sesión.`
+            );
+            setShowModal(false);
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "Error al conectar con el servidor.";
+            Alert.alert("Error al Registrar", `No se pudo crear la cuenta: ${msg}`);
+        }
     };
 
     return (
@@ -97,7 +105,7 @@ export default function LoginScreen() {
 
                         {/* FORMULARIO DE ACCESO */}
                         <VStack className="w-full">
-                            {/* INPUT EMAIL */}
+                            {/* INPUT USERNAME */}
                             <Input 
                                 className="mb-4 h-14 rounded-full px-5 flex-row items-center border"
                                 style={{
@@ -108,12 +116,11 @@ export default function LoginScreen() {
                                 <InputField
                                     className="text-white flex-1 text-base"
                                     style={{ color: '#ffffff' }}
-                                    placeholder="Correo universitario"
+                                    placeholder="Usuario (ej. std12032667)"
                                     placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                                    value={email}
-                                    onChangeText={setEmail}
+                                    value={user}
+                                    onChangeText={setUser}
                                     autoCapitalize="none"
-                                    keyboardType="email-address"
                                 />
                             </Input>
 
