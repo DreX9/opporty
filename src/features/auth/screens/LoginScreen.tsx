@@ -117,7 +117,7 @@ const LoginScreen = () => {
 
                         {/* TÍTULO PRINCIPAL */}
                         <Text className="text-white text-4xl font-extrabold mb-2 text-center" style={{ fontFamily: 'System' }}>
-                            UniRadar
+                            Echo
                         </Text>
 
                         {/* SUBTÍTULO */}

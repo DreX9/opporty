@@ -206,7 +206,7 @@ export default function CrearEvento() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             <ScrollView
-                className="flex-1 bg-[#070B17]"
+                className="flex-1 bg-[#F4F4FB]"
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 }}
                 keyboardShouldPersistTaps="handled"
@@ -214,15 +214,15 @@ export default function CrearEvento() {
                 {/* 📊 BARRA DE PROGRESO */}
                 <VStack className="mb-6">
                     <HStack className="justify-between items-center mb-2">
-                        <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+                        <Text className="text-gray-500 text-xs font-bold uppercase tracking-widest">
                             Paso {pasoActual} de {totalPasos}
                         </Text>
-                        <Text className="text-cyan-400 text-xs font-extrabold tracking-widest uppercase">
-                            {pasoActual === 1 ? 'Detalles Básicos' : pasoActual === 2 ? 'Programación' : 'Ajustes Finales'}
+                        <Text className="text-indigo-600 text-xs font-extrabold tracking-widest uppercase">
+                            {pasoActual === 1 ? 'Detalles Básicos' : pasoActual === 2 ? 'Programación' : pasoActual === 3 ? 'Ajustes Finales' : 'Verificación'}
                         </Text>
                     </HStack>
-                    <Box className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <Box className="h-full bg-cyan-400" style={{ width: progresoWidth }} />
+                    <Box className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <Box className="h-full bg-indigo-600" style={{ width: progresoWidth }} />
                     </Box>
                 </VStack>
 
@@ -231,18 +231,18 @@ export default function CrearEvento() {
                 ======================================================== */}
                 {pasoActual === 1 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Información General</Text>
+                        <Text className="text-[#111827] text-lg font-bold mb-1">Información General</Text>
 
                         {/* Campo Título */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Type} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Título del evento *</Text>
+                                <Icon as={ICONS.Type} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Título del evento *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Ej: Torneo Gaming UTP 2026"
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.titulo}
                                     onChangeText={actualizarCampo('titulo')}
                                 />
@@ -252,13 +252,13 @@ export default function CrearEvento() {
                         {/* Campo Descripción */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.AlignLeft} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Descripción del evento *</Text>
+                                <Icon as={ICONS.AlignLeft} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Descripción del evento *</Text>
                             </HStack>
-                            <Input className="h-28 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400 py-2">
+                            <Input className="h-28 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 py-2">
                                 <InputField
                                     placeholder="Escribe detalles del evento (mínimo 10 caracteres)..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     multiline
                                     numberOfLines={4}
                                     value={form.descripcion}
@@ -270,8 +270,8 @@ export default function CrearEvento() {
                         {/* Campo Categoría */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Tag} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Categoría *</Text>
+                                <Icon as={ICONS.Tag} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Categoría *</Text>
                             </HStack>
                             <HStack className="flex-wrap" style={{ gap: 8 }}>
                                 {CATEGORIAS.map((cat) => {
@@ -280,9 +280,9 @@ export default function CrearEvento() {
                                         <TouchableOpacity
                                             key={cat}
                                             onPress={() => seleccionarCategoria(cat)}
-                                            className={`px-4 py-2 rounded-full border ${activo ? 'bg-cyan-400/10 border-cyan-400' : 'bg-[#0D1324] border-white/10'}`}
+                                            className={`px-4 py-2 rounded-full border ${activo ? 'bg-indigo-50 border-indigo-600/30' : 'bg-white border-[#E9EAF4]'}`}
                                         >
-                                            <Text className={`text-xs font-bold ${activo ? 'text-cyan-400' : 'text-gray-400'}`}>
+                                            <Text className={`text-xs font-bold ${activo ? 'text-indigo-600' : 'text-gray-500'}`}>
                                                 {cat}
                                             </Text>
                                         </TouchableOpacity>
@@ -294,33 +294,33 @@ export default function CrearEvento() {
                         {/* Nuevo Campo: Tipo de Evento (Select de Gluestack) */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Layers} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Tipo de evento *</Text>
+                                <Icon as={ICONS.Layers} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Tipo de evento *</Text>
                             </HStack>
 
                             <Select
                                 selectedValue={form.tipo}
                                 onValueChange={(valor) => setForm(prev => ({ ...prev, tipo: valor }))}
                             >
-                                <SelectTrigger className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400 justify-between px-4 flex-row items-center">
+                                <SelectTrigger className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 justify-between px-4 flex-row items-center">
                                     <SelectInput
                                         placeholder="Seleccionar tipo"
-                                        className="text-white placeholder:text-gray-500 text-sm flex-1"
+                                        className="text-[#111827] placeholder:text-gray-400 text-sm flex-1"
                                     />
                                     {/* Icono de la flecha hacia abajo */}
-                                    <SelectIcon as={ICONS.ChevronDown} className="text-cyan-400 w-4 h-4" />
+                                    <SelectIcon as={ICONS.ChevronDown} className="text-indigo-600 w-4 h-4" />
                                 </SelectTrigger>
 
                                 <SelectPortal>
                                     <SelectBackdrop />
-                                    <SelectContent className="bg-[#0D1324] border-t border-white/10">
+                                    <SelectContent className="bg-white border-t border-[#E9EAF4]">
                                         {/* Mapeo de las opciones del Dropdown */}
                                         {TIPOS_EVENTO.map((tipo) => (
                                             <SelectItem
                                                 key={tipo}
                                                 label={tipo}
                                                 value={tipo}
-                                                className="hover:bg-white/5 focus:bg-cyan-400/10 py-3"
+                                                className="hover:bg-gray-50 focus:bg-indigo-50 py-3 text-[#111827]"
                                             />
                                         ))}
                                     </SelectContent>
@@ -330,13 +330,13 @@ export default function CrearEvento() {
                         {/* Campo Imagen URL */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.ImageIcon} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">URL de portada (Opcional)</Text>
+                                <Icon as={ICONS.ImageIcon} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">URL de portada (Opcional)</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="https://images.unsplash.com/..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.imagenUri}
                                     onChangeText={actualizarCampo('imagenUri')}
                                     autoCapitalize="none"
@@ -351,7 +351,7 @@ export default function CrearEvento() {
                 ======================================================== */}
                 {pasoActual === 2 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Fecha, Hora y Ubicación</Text>
+                        <Text className="text-[#111827] text-lg font-bold mb-1">Fecha, Hora y Ubicación</Text>
 
                         {/* Contenedor Principal en Fila */}
                         <HStack className="justify-between mb-4 items-start">
@@ -360,13 +360,13 @@ export default function CrearEvento() {
                             <TouchableOpacity
                                 onPress={() => setShowDatePicker(true)}
                                 style={{ width: '48%' }}
-                                className="bg-[#0D1324] border border-white/10 rounded-2xl p-4"
+                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-2" style={{ gap: 6 }}>
-                                    <Icon as={ICONS.CalendarDays} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Fecha *</Text>
+                                    <Icon as={ICONS.CalendarDays} className="text-indigo-600 w-4 h-4" />
+                                    <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Fecha *</Text>
                                 </HStack>
-                                <Text className="text-white text-sm font-bold mt-1">
+                                <Text className="text-[#111827] text-sm font-bold mt-1">
                                     {form.fecha || 'Seleccionar...'}
                                 </Text>
                             </TouchableOpacity>
@@ -377,13 +377,13 @@ export default function CrearEvento() {
                                 {/* Selector de Hora Inicio */}
                                 <TouchableOpacity
                                     onPress={() => setShowTimePicker(true)}
-                                    className="bg-[#0D1324] border border-white/10 rounded-2xl p-4 w-full"
+                                    className="bg-white border border-[#E9EAF4] rounded-2xl p-4 w-full"
                                 >
                                     <HStack className="items-center mb-2" style={{ gap: 6 }}>
-                                        <Icon as={ICONS.Clock} className="text-cyan-400 w-4 h-4" />
-                                        <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Hora Inicio *</Text>
+                                        <Icon as={ICONS.Clock} className="text-indigo-600 w-4 h-4" />
+                                        <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Hora Inicio *</Text>
                                     </HStack>
-                                    <Text className="text-white text-sm font-bold mt-1">
+                                    <Text className="text-[#111827] text-sm font-bold mt-1">
                                         {form.hora || 'Seleccionar...'}
                                     </Text>
                                 </TouchableOpacity>
@@ -391,13 +391,13 @@ export default function CrearEvento() {
                                 {/* Selector de Hora Final */}
                                 <TouchableOpacity
                                     onPress={() => setShowEndTimePicker(true)}
-                                    className="bg-[#0D1324] border border-white/10 rounded-2xl p-4 w-full"
+                                    className="bg-white border border-[#E9EAF4] rounded-2xl p-4 w-full"
                                 >
                                     <HStack className="items-center mb-2" style={{ gap: 6 }}>
-                                        <Icon as={ICONS.Clock} className="text-cyan-400 w-4 h-4" />
-                                        <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Hora Final *</Text>
+                                        <Icon as={ICONS.Clock} className="text-indigo-600 w-4 h-4" />
+                                        <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Hora Final *</Text>
                                     </HStack>
-                                    <Text className="text-white text-sm font-bold mt-1">
+                                    <Text className="text-[#111827] text-sm font-bold mt-1">
                                         {form.horaFin || 'Seleccionar...'}
                                     </Text>
                                 </TouchableOpacity>
@@ -437,20 +437,20 @@ export default function CrearEvento() {
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center justify-between">
                                 <HStack className="items-center" style={{ gap: 4 }}>
-                                    <Icon as={ICONS.MapPin} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Lugar del evento *</Text>
+                                    <Icon as={ICONS.MapPin} className="text-indigo-600 w-4 h-4" />
+                                    <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Lugar del evento *</Text>
                                 </HStack>
 
                                 {/* Botón para abrir el selector visual */}
                                 <TouchableOpacity onPress={() => setModalMapaVisible(true)}>
-                                    <Text className="text-cyan-400 text-xs font-bold underline">Seleccionar en Mapa</Text>
+                                    <Text className="text-indigo-600 text-xs font-bold underline">Seleccionar en Mapa</Text>
                                 </TouchableOpacity>
                             </HStack>
 
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Ej: Campus San Isidro, Auditorio A o búscalo en el mapa"
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.lugar}
                                     onChangeText={actualizarCampo('lugar')}
                                 />
@@ -478,19 +478,19 @@ export default function CrearEvento() {
                 ======================================================== */}
                 {pasoActual === 3 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Ajustes Finales y Registro</Text>
+                        <Text className="text-[#111827] text-lg font-bold mb-1">Ajustes Finales y Registro</Text>
 
                         {/* Campo Aforo */}
                         <HStack className="justify-between mb-4">
                             <VStack space="xs" style={{ width: '48%' }}>
                                 <HStack className="items-center" style={{ gap: 4 }}>
-                                    <Icon as={ICONS.Users} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Aforo</Text>
+                                    <Icon as={ICONS.Users} className="text-indigo-600 w-4 h-4" />
+                                    <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Aforo</Text>
                                 </HStack>
-                                <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                     <InputField
                                         placeholder="Ej: 150"
-                                        className="text-white placeholder:text-gray-500"
+                                        className="text-[#111827] placeholder:text-gray-400"
                                         keyboardType="numeric"
                                         value={form.asistentes}
                                         onChangeText={actualizarCampoNumerico('asistentes')}
@@ -503,13 +503,13 @@ export default function CrearEvento() {
 
                             <VStack space="xs" style={{ width: '48%' }}>
                                 <HStack className="items-center" style={{ gap: 4 }}>
-                                    <Icon as={ICONS.Users} className="text-cyan-400 w-4 h-4" />
-                                    <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Edad Minima</Text>
+                                    <Icon as={ICONS.Users} className="text-indigo-600 w-4 h-4" />
+                                    <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Edad Minima</Text>
                                 </HStack>
-                                <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                                <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                     <InputField
                                         placeholder="Ej: 18"
-                                        className="text-white placeholder:text-gray-500"
+                                        className="text-[#111827] placeholder:text-gray-400"
                                         keyboardType="numeric"
                                         value={form.edadMinima}
                                         onChangeText={actualizarCampoEdadMinima('edadMinima')}
@@ -521,13 +521,13 @@ export default function CrearEvento() {
                         {/* Campo Requisitos */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.AlignLeft} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Requisitos del evento</Text>
+                                <Icon as={ICONS.AlignLeft} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Requisitos del evento</Text>
                             </HStack>
-                            <Input className="h-28 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400 py-2">
+                            <Input className="h-28 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 py-2">
                                 <InputField
                                     placeholder="Escribe los requisitos del evento (mínimo 10 caracteres)..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     multiline
                                     numberOfLines={4}
                                     value={form.requisitos}
@@ -543,20 +543,20 @@ export default function CrearEvento() {
                 ======================================================== */}
                 {pasoActual === 4 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Verificación de Organizador</Text>
-                        <Text className="text-gray-300 text-sm mb-6">Para garantizar la autenticidad de los eventos, necesitamos verificar tu identidad como organizador autorizado.
+                        <Text className="text-[#111827] text-lg font-bold mb-1">Verificación de Organizador</Text>
+                        <Text className="text-gray-500 text-sm mb-6">Para garantizar la autenticidad de los eventos, necesitamos verificar tu identidad como organizador autorizado.
                         </Text>
 
                         {/* Campo Código de Empleado */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Hash} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Código de Empleado</Text>
+                                <Icon as={ICONS.Hash} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Código de Empleado</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Escribe tu código de empleado..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.codigoEmpleado}
                                     onChangeText={actualizarCampoTexto('codigoEmpleado')}
                                 />
@@ -566,13 +566,13 @@ export default function CrearEvento() {
                         {/* Campo Cargo */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Users} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Cargo</Text>
+                                <Icon as={ICONS.Users} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Cargo</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Escribe tu cargo..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.cargo}
                                     onChangeText={actualizarCampoTexto('cargo')}
                                 />
@@ -582,13 +582,13 @@ export default function CrearEvento() {
                         {/* Campo Correo */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Mail} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Correo</Text>
+                                <Icon as={ICONS.Mail} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Correo</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Escribe tu correo..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     keyboardType="email-address"
                                     value={form.correo}
                                     onChangeText={actualizarCampoTexto('correo')}
@@ -599,13 +599,13 @@ export default function CrearEvento() {
                         {/* Campo Celular */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Phone} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Celular</Text>
+                                <Icon as={ICONS.Phone} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Celular</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Escribe tu celular..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     keyboardType="phone-pad"
                                     value={form.celular}
                                     onChangeText={actualizarCampoTexto('celular')}
@@ -616,13 +616,13 @@ export default function CrearEvento() {
                         {/* Campo Código de Autorización */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Shield} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Código de Autorización</Text>
+                                <Icon as={ICONS.Shield} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Código de Autorización</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Escribe el código de autorización..."
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.codigoAutorizacion}
                                     onChangeText={actualizarCampoTexto('codigoAutorizacion')}
                                 />
@@ -637,24 +637,24 @@ export default function CrearEvento() {
                     <Button
                         onPress={pasoAnterior}
                         variant="outline"
-                        className="flex-1 h-14 rounded-2xl border-white/10"
+                        className="flex-1 h-14 rounded-2xl border-[#E9EAF4] bg-white"
                     >
-                        <ButtonText className="text-gray-300 font-bold uppercase tracking-wider">
+                        <ButtonText className="text-gray-600 font-bold uppercase tracking-wider">
                             {pasoActual === 1 ? 'Cancelar' : 'Atrás'}
                         </ButtonText>
                     </Button>
 
                     <Button
                         onPress={pasoSiguiente}
-                        className="flex-1 h-14 rounded-2xl bg-cyan-400"
+                        className="flex-1 h-14 rounded-2xl bg-indigo-600"
                     >
-                        <ButtonText className="text-[#070B17] font-extrabold uppercase tracking-wider">
+                        <ButtonText className="text-white font-extrabold uppercase tracking-wider">
                             {pasoActual === totalPasos ? 'Publicar' : 'Siguiente'}
                         </ButtonText>
                     </Button>
                 </HStack>
             </ScrollView>
-        </KeyboardAvoidingView >
+        </KeyboardAvoidingView>
     );
 }
 

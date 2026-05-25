@@ -92,24 +92,24 @@ export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada }:
 
                 {/* Panel Inferior con detalles y acciones */}
                 <VStack style={styles.floatingPanel} space="md">
-                    <Text className="text-white text-sm font-bold">
+                    <Text className="text-[#111827] text-sm font-bold">
                         {marcador ? "Lugar seleccionado:" : "Toca el mapa para marcar el punto"}
                     </Text>
 
-                    <Text className="text-gray-300 text-xs" numberOfLines={2}>
+                    <Text className="text-gray-500 text-xs" numberOfLines={2}>
                         {cargandoDireccion ? "Buscando dirección..." : (direccionTexto || "Ninguna ubicación marcada todavía.")}
                     </Text>
 
                     <HStack style={{ gap: 10 }}>
-                        <Button variant="outline" className="flex-1 h-12 rounded-xl border-white/10" onPress={onClose}>
-                            <ButtonText className="text-gray-300 font-bold uppercase tracking-wider text-xs">Cancelar</ButtonText>
+                        <Button variant="outline" className="flex-1 h-12 rounded-xl border-[#E9EAF4] bg-white" onPress={onClose}>
+                            <ButtonText className="text-gray-600 font-bold uppercase tracking-wider text-xs">Cancelar</ButtonText>
                         </Button>
                         <Button
-                            className="flex-1 h-12 rounded-xl bg-cyan-400"
+                            className="flex-1 h-12 rounded-xl bg-indigo-600"
                             onPress={manejarConfirmar}
                             disabled={!marcador || cargandoDireccion}
                         >
-                            <ButtonText className="text-[#070B17] font-extrabold uppercase tracking-wider text-xs">Confirmar</ButtonText>
+                            <ButtonText className="text-white font-extrabold uppercase tracking-wider text-xs">Confirmar</ButtonText>
                         </Button>
                     </HStack>
                 </VStack>
@@ -126,9 +126,9 @@ const styles = StyleSheet.create({
         bottom: 24,
         left: 20,
         right: 20,
-        backgroundColor: '#0D1324',
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: '#E9EAF4',
         borderRadius: 24,
         padding: 20,
     }
