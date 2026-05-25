@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, TouchableOpacity, Alert, StyleSheet, Dimensions, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, TouchableOpacity, Alert, DimensionValue, KeyboardAvoidingView, Platform } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -8,10 +8,10 @@ import { Icon } from '@/components/ui/icon';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Input, InputField } from '@/components/ui/input';
 import { ICONS } from '@/components/icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { SelectorMapaModal } from '@/components/SelectorMapaModal';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
 import {
     Select,
     SelectTrigger,
@@ -23,36 +23,13 @@ import {
     SelectItem
 } from '@/components/ui/select';
 
-const CATEGORIAS = ['Tecnología', 'Música', 'Deporte', 'Arte', 'Educación', 'Social'] as const;
-type Categoria = (typeof CATEGORIAS)[number];
+import { ESTADO_INICIAL_EVENTO, CATEGORIAS, TIPOS_EVENTO, Categoria } from '../constants';
+import { FormCrearEvento } from '../types';
 
-const ESTADO_INICIAL = {
-    titulo: '',
-    fecha: '',
-    hora: '',
-    horaFin: '',
-    lugar: '',
-    latitud: 0,
-    longitud: 0,
-    categoria: '',
-    asistentes: '',
-    descripcion: '',
-    destacado: false,
-    imagenUri: '',
-    tipo: '',
-    edadMinima: '',
-    requisitos: '',
-    codigoEmpleado: '',
-    cargo: '',
-    correo: '',
-    celular: '',
-    codigoAutorizacion: ''
-};
-
-export default function CrearEvento() {
+export default function CrearEventoScreen() {
     const router = useRouter();
-    const [form, setForm] = useState(ESTADO_INICIAL);
-    const [enviado, setEnviado] = useState(false);
+    const [form, setForm] = useState<FormCrearEvento>(ESTADO_INICIAL_EVENTO);
+    const [, setEnviado] = useState(false);
     const [pasoActual, setPasoActual] = useState(1);
     const totalPasos = 4;
 
@@ -62,38 +39,28 @@ export default function CrearEvento() {
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [showEndTimePicker, setShowEndTimePicker] = useState(false);
     const [modalMapaVisible, setModalMapaVisible] = useState(false);
-    const TIPOS_EVENTO = [
-        'Conferencia',
-        'Taller',
-        'Seminario',
-        'Hackathon',
-        'Concierto',
-        'Competencia',
-        'Exposición',
-        'Networking'
-    ] as const;
 
-    const actualizarCampo = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+    const actualizarCampo = (clave: keyof FormCrearEvento) => (valor: string) => {
         setForm(prev => ({ ...prev, [clave]: valor }));
     };
 
-    const actualizarCampoNumerico = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+    const actualizarCampoNumerico = (clave: keyof FormCrearEvento) => (valor: string) => {
         const soloNumeros = valor.replace(/[^0-9]/g, '');
         setForm(prev => ({ ...prev, [clave]: soloNumeros }));
     };
 
-    const actualizarCampoEdadMinima = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+    const actualizarCampoEdadMinima = (clave: keyof FormCrearEvento) => (valor: string) => {
         const soloNumeros = valor.replace(/[^0-9]/g, '');
         setForm(prev => ({ ...prev, [clave]: soloNumeros }));
     };
-    const actualizarRequisitos = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+    const actualizarRequisitos = (clave: keyof FormCrearEvento) => (valor: string) => {
         setForm(prev => ({ ...prev, [clave]: valor }));
     };
-    const actualizarCampoTexto = (clave: keyof typeof ESTADO_INICIAL) => (valor: string) => {
+    const actualizarCampoTexto = (clave: keyof FormCrearEvento) => (valor: string) => {
         setForm(prev => ({ ...prev, [clave]: valor }));
     };
 
-    const onDateChange = (event: any, selectedDate?: Date) => {
+    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
         setShowDatePicker(false);
         if (selectedDate) {
             setDateValue(selectedDate);
@@ -104,8 +71,7 @@ export default function CrearEvento() {
         }
     };
 
-    // Función unificada utilizando Currying para controlar Inicio y Fin
-    const onTimeChange = (type: 'inicio' | 'fin') => (event: unknown, selectedDate?: Date) => {
+    const onTimeChange = (type: 'inicio' | 'fin') => (event: DateTimePickerEvent, selectedDate?: Date) => {
         if (type === 'inicio') {
             setShowTimePicker(false);
         } else {
@@ -161,7 +127,7 @@ export default function CrearEvento() {
             }
         } else if (pasoActual === 2) {
             if (errores.fecha || errores.hora || errores.horaFin || errores.lugar) {
-                Alert.alert('⚠️ Campos requeridos', 'Por favor, ingresa una Fecha, Hora de Inicio, Hoa Final y el Lugar del evento.');
+                Alert.alert('⚠️ Campos requeridos', 'Por favor, ingresa una Fecha, Hora de Inicio, Hora Final y el Lugar del evento.');
                 return;
             }
         } else if (pasoActual === 3) {
@@ -198,7 +164,7 @@ export default function CrearEvento() {
         ]);
     };
 
-    const progresoWidth = `${(pasoActual / totalPasos) * 100}%` as any;
+    const progresoWidth = `${(pasoActual / totalPasos) * 100}%` as DimensionValue;
 
     return (
         <KeyboardAvoidingView
@@ -291,7 +257,7 @@ export default function CrearEvento() {
                             </HStack>
                         </VStack>
 
-                        {/* Nuevo Campo: Tipo de Evento (Select de Gluestack) */}
+                        {/* Campo: Tipo de Evento (Select de Gluestack) */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
                                 <Icon as={ICONS.Layers} className="text-indigo-600 w-4 h-4" />
@@ -307,14 +273,12 @@ export default function CrearEvento() {
                                         placeholder="Seleccionar tipo"
                                         className="text-[#111827] placeholder:text-gray-400 text-sm flex-1"
                                     />
-                                    {/* Icono de la flecha hacia abajo */}
                                     <SelectIcon as={ICONS.ChevronDown} className="text-indigo-600 w-4 h-4" />
                                 </SelectTrigger>
 
                                 <SelectPortal>
                                     <SelectBackdrop />
                                     <SelectContent className="bg-white border-t border-[#E9EAF4]">
-                                        {/* Mapeo de las opciones del Dropdown */}
                                         {TIPOS_EVENTO.map((tipo) => (
                                             <SelectItem
                                                 key={tipo}
@@ -371,7 +335,7 @@ export default function CrearEvento() {
                                 </Text>
                             </TouchableOpacity>
 
-                            {/* COLUMNA DERECHA: Horas apiladas una sobre otra */}
+                            {/* COLUMNA DERECHA: Horas apiladas */}
                             <VStack style={{ width: '48%', gap: 12 }}>
 
                                 {/* Selector de Hora Inicio */}
@@ -441,7 +405,6 @@ export default function CrearEvento() {
                                     <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Lugar del evento *</Text>
                                 </HStack>
 
-                                {/* Botón para abrir el selector visual */}
                                 <TouchableOpacity onPress={() => setModalMapaVisible(true)}>
                                     <Text className="text-indigo-600 text-xs font-bold underline">Seleccionar en Mapa</Text>
                                 </TouchableOpacity>
@@ -457,7 +420,6 @@ export default function CrearEvento() {
                             </Input>
                         </VStack>
 
-                        {/* Modal del mapa inyectado al final del Paso 2 */}
                         <SelectorMapaModal
                             visible={modalMapaVisible}
                             onClose={() => setModalMapaVisible(false)}
@@ -488,7 +450,7 @@ export default function CrearEvento() {
                                     <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Aforo</Text>
                                 </HStack>
                                 <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
-                                    <InputField
+                                    <InputVitalsFieldEvent
                                         placeholder="Ej: 150"
                                         className="text-[#111827] placeholder:text-gray-400"
                                         keyboardType="numeric"
@@ -507,7 +469,7 @@ export default function CrearEvento() {
                                     <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Edad Minima</Text>
                                 </HStack>
                                 <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
-                                    <InputField
+                                    <InputVitalsFieldEvent
                                         placeholder="Ej: 18"
                                         className="text-[#111827] placeholder:text-gray-400"
                                         keyboardType="numeric"
@@ -525,7 +487,7 @@ export default function CrearEvento() {
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Requisitos del evento</Text>
                             </HStack>
                             <Input className="h-28 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 py-2">
-                                <InputField
+                                <InputVitalsFieldEvent
                                     placeholder="Escribe los requisitos del evento (mínimo 10 caracteres)..."
                                     className="text-[#111827] placeholder:text-gray-400"
                                     multiline
@@ -658,4 +620,5 @@ export default function CrearEvento() {
     );
 }
 
-const styles = StyleSheet.create({});
+// Un pequeño alias para compatibilidad interna de campos que pueden usar multilineas
+const InputVitalsFieldEvent = InputField;

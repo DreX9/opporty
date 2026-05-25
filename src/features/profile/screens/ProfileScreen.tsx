@@ -10,163 +10,12 @@ import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { ICONS } from '@/components/icons';
 
-// ─── Paleta (tokens locales que mapean a uniradar en tailwind) ─────────────────
-const C = {
-    bg: '#F4F4FB',
-    cardBg: '#FFFFFF',
-    cardBorder: '#E9EAF4',
-    heroBg: '#6366F1',          // indigo (fondo del banner de perfil)
-    accent: '#6366F1',          // uniradar-indigo
-    accentPurple: '#A82BFA',    // uniradar-purple
-    accentLight: '#EEF2FF',     // uniradar-tagBg
-    danger: '#EF4444',
-    dangerBg: '#FEF2F2',
-    dangerBorder: '#FECACA',
-    textPrimary: '#111827',
-    textSecondary: '#6B7280',
-    textWhite: '#FFFFFF',
-    textWhite70: 'rgba(255,255,255,0.7)',
-    badgeBg: '#EAB308',         // amarillo para el badge de rol
-    badgeText: '#FFFFFF',
-    interestActive: '#EEF2FF',
-    interestActiveBorder: '#6366F1',
-    interestInactiveText: '#374151',
-    dotNotif: '#EF4444',
-};
+import { C, INTERESES_INICIAL, MENU_ITEMS } from '../constants';
+import { Interes } from '../types';
+import InterestChip from '../components/InterestChip';
+import MenuRow from '../components/MenuRow';
 
-// ─── Tipos ─────────────────────────────────────────────────────────────────────
-
-interface Interes {
-    id: number;
-    nombre: string;
-    emoji: string;
-    activo: boolean;
-}
-
-interface MenuItem {
-    id: string;
-    icono: React.ComponentType;
-    etiqueta: string;
-    badge?: string;
-    peligro?: boolean;
-    info?: string;
-}
-
-// ─── Datos estáticos ───────────────────────────────────────────────────────────
-
-const INTERESES_INICIAL: Interes[] = [
-    { id: 1, nombre: 'Tecnología', emoji: '💻', activo: true },
-    { id: 2, nombre: 'Música',     emoji: '🎵', activo: true },
-    { id: 3, nombre: 'Deportes',   emoji: '⚽', activo: false },
-    { id: 4, nombre: 'Arte',       emoji: '🎨', activo: true },
-    { id: 5, nombre: 'Gastronomía',emoji: '🍕', activo: false },
-    { id: 6, nombre: 'Emprendimiento', emoji: '💼', activo: true },
-];
-
-const MENU_ITEMS: MenuItem[] = [
-    { id: 'eventos',    icono: ICONS.CalendarDays, etiqueta: 'Mis Eventos',           info: '5 eventos' },
-    { id: 'notif',      icono: ICONS.radar,        etiqueta: 'Notificaciones',         badge: 'dot' },
-    { id: 'privacidad', icono: ICONS.Shield,       etiqueta: 'Privacidad y Seguridad' },
-];
-
-// ─── Sub-componentes ───────────────────────────────────────────────────────────
-
-function InterestChip({
-    interes,
-    onToggle,
-}: {
-    interes: Interes;
-    onToggle: (id: number) => void;
-}) {
-    return (
-        <TouchableOpacity
-            onPress={() => onToggle(interes.id)}
-            activeOpacity={0.75}
-            style={[
-                styles.chip,
-                {
-                    backgroundColor: interes.activo ? C.interestActive : C.cardBg,
-                    borderColor: interes.activo ? C.interestActiveBorder : C.cardBorder,
-                },
-            ]}
-            accessibilityLabel={`Interés: ${interes.nombre}`}
-            accessibilityRole="button"
-        >
-            <Text style={styles.chipEmoji}>{interes.emoji}</Text>
-            <Text
-                style={[
-                    styles.chipLabel,
-                    { color: interes.activo ? C.accent : C.interestInactiveText },
-                ]}
-            >
-                {interes.nombre}
-            </Text>
-        </TouchableOpacity>
-    );
-}
-
-function MenuRow({ item }: { item: MenuItem }) {
-    return (
-        <TouchableOpacity
-            activeOpacity={0.75}
-            style={[
-                styles.menuRow,
-                {
-                    backgroundColor: item.peligro ? C.dangerBg : C.cardBg,
-                    borderColor: item.peligro ? C.dangerBorder : C.cardBorder,
-                },
-            ]}
-            accessibilityLabel={item.etiqueta}
-            accessibilityRole="button"
-        >
-            <View style={styles.menuLeft}>
-                <View
-                    style={[
-                        styles.menuIconBox,
-                        { backgroundColor: item.peligro ? C.dangerBg : C.accentLight },
-                    ]}
-                >
-                    <Icon
-                        as={item.icono}
-                        style={{
-                            color: item.peligro ? C.danger : C.accent,
-                            width: 18,
-                            height: 18,
-                        }}
-                    />
-                </View>
-                <Text
-                    style={[
-                        styles.menuLabel,
-                        { color: item.peligro ? C.danger : C.textPrimary },
-                    ]}
-                >
-                    {item.etiqueta}
-                </Text>
-            </View>
-
-            {/* Lado derecho */}
-            <View style={styles.menuRight}>
-                {item.badge === 'dot' && (
-                    <View style={[styles.notifDot, { backgroundColor: C.dotNotif }]} />
-                )}
-                {item.info !== undefined && (
-                    <Text style={{ color: C.textSecondary, fontSize: 12 }}>{item.info}</Text>
-                )}
-                {!item.peligro && (
-                    <Icon
-                        as={ICONS.ChevronRight}
-                        style={{ color: C.textSecondary, width: 16, height: 16, marginLeft: 6 }}
-                    />
-                )}
-            </View>
-        </TouchableOpacity>
-    );
-}
-
-// ─── Pantalla principal ────────────────────────────────────────────────────────
-
-const ProfileScreen = () => {
+export default function ProfileScreen() {
     const [intereses, setIntereses] = useState<Interes[]>(INTERESES_INICIAL);
 
     const totalActivos = intereses.filter((i) => i.activo).length;
@@ -271,20 +120,15 @@ const ProfileScreen = () => {
                 ))}
 
                 {/* Cerrar sesión (separado para énfasis) */}
-                <TouchableOpacity
+                <MenuRow
+                    item={{
+                        id: 'logout',
+                        icono: ICONS.arrrowDownUp,
+                        etiqueta: 'Cerrar Sesión',
+                        peligro: true,
+                    }}
                     onPress={handleLogout}
-                    activeOpacity={0.75}
-                    style={[styles.menuRow, { backgroundColor: C.dangerBg, borderColor: C.dangerBorder }]}
-                    accessibilityLabel="Cerrar sesión"
-                    accessibilityRole="button"
-                >
-                    <View style={styles.menuLeft}>
-                        <View style={[styles.menuIconBox, { backgroundColor: C.dangerBg }]}>
-                            <Icon as={ICONS.arrrowDownUp} style={{ color: C.danger, width: 18, height: 18 }} />
-                        </View>
-                        <Text style={[styles.menuLabel, { color: C.danger }]}>Cerrar Sesión</Text>
-                    </View>
-                </TouchableOpacity>
+                />
             </View>
 
             {/* ── Footer ───────────────────────────────────────────────────── */}
@@ -294,9 +138,7 @@ const ProfileScreen = () => {
             </View>
         </ScrollView>
     );
-};
-
-// ─── Estilos ───────────────────────────────────────────────────────────────────
+}
 
 const styles = StyleSheet.create({
     // Hero banner
@@ -431,22 +273,6 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         gap: 10,
     },
-    chip: {
-        width: '47%',
-        borderRadius: 12,
-        borderWidth: 1.5,
-        paddingVertical: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-    },
-    chipEmoji: {
-        fontSize: 26,
-    },
-    chipLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
 
     // Menú
     menuContainer: {
@@ -454,40 +280,12 @@ const styles = StyleSheet.create({
         marginTop: 16,
         gap: 10,
     },
-    menuRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        borderRadius: 14,
-        borderWidth: 1,
-        paddingHorizontal: 14,
-        paddingVertical: 14,
-    },
-    menuLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    menuRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
     menuIconBox: {
         width: 36,
         height: 36,
         borderRadius: 10,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    menuLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    notifDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 4,
     },
 
     // Footer
@@ -506,5 +304,3 @@ const styles = StyleSheet.create({
         fontSize: 11,
     },
 });
-
-export default ProfileScreen;

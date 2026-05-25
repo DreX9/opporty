@@ -10,45 +10,24 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
 import { ICONS } from '@/components/icons';
 
-// Modal
-import {
-    Modal,
-    ModalBackdrop,
-    ModalContent,
-    ModalHeader,
-    ModalCloseButton,
-    ModalBody,
-    ModalFooter
-} from '@/components/ui/modal';
+import RegisterModal from '../components/RegisterModal';
+import { DatosRegistro } from '../types';
+import { authService } from '../services/authService';
 
-interface MockUser {
-    email: string;
-    password: string;
-}
-
-const MOCK_USERS: MockUser[] = [
-    { email: 'admin@admin.com', password: '123' },
-    { email: 'alex@test.com', password: 'password' }
-];
-
-const LoginScreen = () => {
+export default function LoginScreen() {
     const router = useRouter();
 
     // --- ESTADOS PARA LOS INPUTS ---
-    const [email, setEmail] = useState<string>('');
+    const [user, setUser] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
 
     // --- ESTADOS DEL MODAL DE REGISTRO ---
     const [showModal, setShowModal] = useState<boolean>(false);
-    const [regName, setRegName] = useState<string>('');
-    const [regLastName, setRegLastName] = useState<string>('');
-    const [regEmail, setRegEmail] = useState<string>('');
-    const [regPassword, setRegPassword] = useState<string>('');
 
     // --- LÓGICA DE LOGIN ---
-    const handleLogin = () => {
-        if (!email || !password) {
+    const handleLogin = async () => {
+        if (!user || !password) {
             Alert.alert(
                 "Campos incompletos",
                 "Por favor, ingresa tu usuario y contraseña."
@@ -56,36 +35,35 @@ const LoginScreen = () => {
             return;
         }
 
-        const userFound = MOCK_USERS.find(
-            (u) => u.email === email.trim().toLowerCase() && u.password === password
-        );
-
-        if (userFound) {
-            setEmail('');
+        try {
+            await authService.login(user.trim(), password);
+            setUser('');
             setPassword('');
             router.push('/tabs/radar');
-        } else {
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "El usuario o la contraseña no son correctos.";
             Alert.alert(
                 "Acceso Denegado",
-                "El usuario o la contraseña no son correctos. Por favor, verifica tus datos e inténtalo de nuevo.",
+                `No se pudo iniciar sesión: ${msg}`,
                 [{ text: "Entendido", style: "default" }]
             );
         }
     };
 
     // --- LÓGICA DE REGISTRO ---
-    const handleRegister = () => {
-        if (!regName || !regLastName || !regEmail || !regPassword) {
-            Alert.alert("Campos incompletos", "Por favor, llena todos los datos para crear tu cuenta.");
-            return;
+    const handleRegister = async (datos: DatosRegistro) => {
+        try {
+            const responseData = await authService.registerStudent(datos);
+            const usernameGenerated = responseData.user?.username || "generado";
+            Alert.alert(
+                "¡Éxito!", 
+                `Tu cuenta ha sido creada exitosamente.\n\nTu nombre de usuario es: ${usernameGenerated}\n\nPor favor, úsalo para iniciar sesión.`
+            );
+            setShowModal(false);
+        } catch (error: any) {
+            const msg = error.response?.data?.message || error.message || "Error al conectar con el servidor.";
+            Alert.alert("Error al Registrar", `No se pudo crear la cuenta: ${msg}`);
         }
-        Alert.alert("¡Éxito!", `La cuenta para ${regName} ha sido creada.`);
-        setShowModal(false);
-
-        setRegName('');
-        setRegLastName('');
-        setRegEmail('');
-        setRegPassword('');
     };
 
     return (
@@ -127,7 +105,7 @@ const LoginScreen = () => {
 
                         {/* FORMULARIO DE ACCESO */}
                         <VStack className="w-full">
-                            {/* INPUT EMAIL */}
+                            {/* INPUT USERNAME */}
                             <Input 
                                 className="mb-4 h-14 rounded-full px-5 flex-row items-center border"
                                 style={{
@@ -138,12 +116,11 @@ const LoginScreen = () => {
                                 <InputField
                                     className="text-white flex-1 text-base"
                                     style={{ color: '#ffffff' }}
-                                    placeholder="Correo universitario"
+                                    placeholder="Usuario (ej. std12032667)"
                                     placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                                    value={email}
-                                    onChangeText={setEmail}
+                                    value={user}
+                                    onChangeText={setUser}
                                     autoCapitalize="none"
-                                    keyboardType="email-address"
                                 />
                             </Input>
 
@@ -197,104 +174,13 @@ const LoginScreen = () => {
                     </Box>
                 </ScrollView>
 
-                {/* ===================================================
-                    MODAL DE REGISTRO
-                =================================================== */}
-                <Modal
-                    isOpen={showModal}
-                    onClose={() => setShowModal(false)}
-                    size="md"
-                >
-                    <ModalBackdrop />
-                    <ModalContent className="bg-[#0D1324] border border-white/10 rounded-3xl mx-4">
-
-                        <ModalHeader className="border-b border-white/5 pb-4">
-                            <Text className="text-white font-bold text-xl">Crear Nueva Cuenta</Text>
-                            <ModalCloseButton>
-                                <Icon as={ICONS.X} className="text-gray-400 w-5 h-5" style={{ color: '#9CA3AF' }} />
-                            </ModalCloseButton>
-                        </ModalHeader>
-
-                        <ModalBody className="pt-4">
-                            <ScrollView showsVerticalScrollIndicator={false}>
-
-                                <Box className="mb-4">
-                                    <Text className="text-gray-400 mb-2 text-sm">Nombre</Text>
-                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
-                                        <InputField 
-                                            placeholder="Ej. Alex" 
-                                            placeholderTextColor="#6B7280"
-                                            value={regName} 
-                                            onChangeText={setRegName}
-                                            style={{ color: '#ffffff' }}
-                                        />
-                                    </Input>
-                                </Box>
-
-                                <Box className="mb-4">
-                                    <Text className="text-gray-400 mb-2 text-sm">Apellido</Text>
-                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
-                                        <InputField 
-                                            placeholder="Ej. Rivera" 
-                                            placeholderTextColor="#6B7280"
-                                            value={regLastName} 
-                                            onChangeText={setRegLastName}
-                                            style={{ color: '#ffffff' }}
-                                        />
-                                    </Input>
-                                </Box>
-
-                                <Box className="mb-4">
-                                    <Text className="text-gray-400 mb-2 text-sm">Correo Electrónico</Text>
-                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
-                                        <InputField
-                                            placeholder="correo@ejemplo.com"
-                                            placeholderTextColor="#6B7280"
-                                            value={regEmail}
-                                            onChangeText={setRegEmail}
-                                            autoCapitalize="none"
-                                            keyboardType="email-address"
-                                            style={{ color: '#ffffff' }}
-                                        />
-                                    </Input>
-                                </Box>
-
-                                <Box className="mb-4">
-                                    <Text className="text-gray-400 mb-2 text-sm">Contraseña</Text>
-                                    <Input className="h-12 rounded-xl bg-white/5 border border-white/10 px-3">
-                                        <InputField
-                                            placeholder="Crea una contraseña segura"
-                                            placeholderTextColor="#6B7280"
-                                            secureTextEntry
-                                            value={regPassword}
-                                            onChangeText={setRegPassword}
-                                            style={{ color: '#ffffff' }}
-                                        />
-                                    </Input>
-                                </Box>
-
-                            </ScrollView>
-                        </ModalBody>
-
-                        <ModalFooter className="border-t border-white/5 pt-4">
-                            <Button
-                                variant="outline"
-                                action="secondary"
-                                className="mr-3 border-white/10 rounded-xl"
-                                onPress={() => setShowModal(false)}
-                            >
-                                <ButtonText className="text-gray-300">Cancelar</ButtonText>
-                            </Button>
-                            <Button className="bg-uniradar-blue rounded-xl px-6" style={{ backgroundColor: '#1E3FFF' }} onPress={handleRegister}>
-                                <ButtonText className="text-white font-bold">Registrarse</ButtonText>
-                            </Button>
-                        </ModalFooter>
-
-                    </ModalContent>
-                </Modal>
+                {/* MODAL DE REGISTRO */}
+                <RegisterModal 
+                    isOpen={showModal} 
+                    onClose={() => setShowModal(false)} 
+                    onRegister={handleRegister} 
+                />
             </KeyboardAvoidingView>
         </LinearGradient>
     );
-};
-
-export default LoginScreen;
+}
