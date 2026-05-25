@@ -88,7 +88,7 @@ export default function CrearUsuario() {
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             <ScrollView
-                className="flex-1 bg-[#070B17]"
+                className="flex-1 bg-[#F4F4FB]"
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 }}
                 keyboardShouldPersistTaps="handled"
@@ -96,15 +96,15 @@ export default function CrearUsuario() {
                 {/* 📊 BARRA DE PROGRESO */}
                 <VStack className="mb-6">
                     <HStack className="justify-between items-center mb-2">
-                        <Text className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+                        <Text className="text-gray-500 text-xs font-bold uppercase tracking-widest">
                             Paso {pasoActual} de {totalPasos}
                         </Text>
-                        <Text className="text-cyan-400 text-xs font-extrabold tracking-widest uppercase">
+                        <Text className="text-indigo-600 text-xs font-extrabold tracking-widest uppercase">
                             {pasoActual === 1 ? 'Perfil Básico' : pasoActual === 2 ? 'Roles' : 'Confirmación'}
                         </Text>
                     </HStack>
-                    <Box className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                        <Box className="h-full bg-cyan-400" style={{ width: progresoWidth }} />
+                    <Box className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <Box className="h-full bg-indigo-600" style={{ width: progresoWidth }} />
                     </Box>
                 </VStack>
 
@@ -113,18 +113,18 @@ export default function CrearUsuario() {
            ======================================================== */}
                 {pasoActual === 1 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Información de Cuenta</Text>
+                        <Text className="text-[#111827] text-lg font-bold mb-1">Información de Cuenta</Text>
 
                         {/* Campo Nombre */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.user} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Nombre Completo *</Text>
+                                <Icon as={ICONS.user} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Nombre Completo *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Ej: Sofia Rivera"
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.nombre}
                                     onChangeText={actualizarCampo('nombre')}
                                 />
@@ -134,13 +134,13 @@ export default function CrearUsuario() {
                         {/* Campo Correo */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Mail} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Correo Electrónico *</Text>
+                                <Icon as={ICONS.Mail} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Correo Electrónico *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="sofia@test.com"
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                     value={form.email}
@@ -152,13 +152,13 @@ export default function CrearUsuario() {
                         {/* Campo Contraseña */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.lock} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Contraseña *</Text>
+                                <Icon as={ICONS.lock} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Contraseña *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Mínimo 6 caracteres"
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     secureTextEntry
                                     autoCapitalize="none"
                                     value={form.password}
@@ -170,13 +170,13 @@ export default function CrearUsuario() {
                         {/* Campo Facultad */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.GraduationCap} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Facultad *</Text>
+                                <Icon as={ICONS.GraduationCap} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Facultad *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-[#0D1324] border-white/10 focus:border-cyan-400">
+                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
                                 <InputField
                                     placeholder="Ej: Ingeniería"
-                                    className="text-white placeholder:text-gray-500"
+                                    className="text-[#111827] placeholder:text-gray-400"
                                     value={form.facultad}
                                     onChangeText={actualizarCampo('facultad')}
                                 />
@@ -190,13 +190,13 @@ export default function CrearUsuario() {
            ======================================================== */}
                 {pasoActual === 2 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Roles</Text>
+                        <Text className="text-[#111827] text-lg font-bold mb-1">Roles</Text>
 
                         {/* Selector de Rol */}
                         <VStack space="xs" className="mb-4">
                             <HStack className="items-center" style={{ gap: 4 }}>
-                                <Icon as={ICONS.Shield} className="text-cyan-400 w-4 h-4" />
-                                <Text className="text-gray-300 text-xs font-bold uppercase tracking-wider">Rol de Acceso *</Text>
+                                <Icon as={ICONS.Shield} className="text-indigo-600 w-4 h-4" />
+                                <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Rol de Acceso *</Text>
                             </HStack>
 
                             {/* Contenedor en fila con flex-wrap para crear la cuadrícula 2x2 */}
@@ -208,10 +208,10 @@ export default function CrearUsuario() {
                                             key={rol}
                                             onPress={() => actualizarCampo('rol')(rol)}
                                             style={{ width: '48%' }} // <--- Controla que entren exactamente 2 por fila
-                                            className={`py-3 rounded-xl border items-center justify-center mb-1 ${activo ? 'bg-cyan-400/10 border-cyan-400' : 'bg-[#0D1324] border-white/10'
+                                            className={`py-3 rounded-xl border items-center justify-center mb-1 ${activo ? 'bg-indigo-50 border-indigo-600/30' : 'bg-white border-[#E9EAF4]'
                                                 }`}
                                         >
-                                            <Text className={`text-sm font-bold ${activo ? 'text-cyan-400' : 'text-gray-400'}`}>
+                                            <Text className={`text-sm font-bold ${activo ? 'text-indigo-600' : 'text-gray-500'}`}>
                                                 {rol}
                                             </Text>
                                         </TouchableOpacity>
@@ -227,17 +227,17 @@ export default function CrearUsuario() {
            ======================================================== */}
                 {pasoActual === 3 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-white text-lg font-bold mb-1">Confirmación de Registro</Text>
+                        <Text className="text-[#111827] text-lg font-bold mb-1">Confirmación de Registro</Text>
 
                         {/* Resumen Card */}
-                        <Box className="w-full bg-[#0D1324] border border-white/5 rounded-2xl p-5 items-center mb-6">
-                            <Text className="text-white text-xl font-bold">Nombre: {form.nombre}</Text>
-                            <Text className="text-gray-400 text-sm mt-1">Email: {form.email}</Text>
-                            <Text className="text-gray-400 text-sm mt-1">Facultad: {form.facultad}</Text>
-                            <Text className="text-gray-400 text-sm mt-1">Cargo: {form.cargo}</Text>
+                        <Box className="w-full bg-white border border-[#E9EAF4] rounded-2xl p-5 items-center mb-6">
+                            <Text className="text-[#111827] text-xl font-bold">Nombre: {form.nombre}</Text>
+                            <Text className="text-gray-500 text-sm mt-1">Email: {form.email}</Text>
+                            <Text className="text-gray-500 text-sm mt-1">Facultad: {form.facultad}</Text>
+                            <Text className="text-gray-500 text-sm mt-1">Cargo: {form.cargo}</Text>
                             <HStack className="mt-4" style={{ gap: 8 }}>
-                                <Box className="px-3 py-1 rounded-full bg-cyan-400/10 border border-cyan-400/30">
-                                    <Text className="text-cyan-400 text-2xs font-extrabold uppercase tracking-wider">
+                                <Box className="px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200">
+                                    <Text className="text-indigo-600 text-2xs font-extrabold uppercase tracking-wider">
                                         {form.rol}
                                     </Text>
                                 </Box>
@@ -251,18 +251,18 @@ export default function CrearUsuario() {
                     <Button
                         onPress={pasoAnterior}
                         variant="outline"
-                        className="flex-1 h-14 rounded-2xl border-white/10"
+                        className="flex-1 h-14 rounded-2xl border-[#E9EAF4] bg-white"
                     >
-                        <ButtonText className="text-gray-300 font-bold uppercase tracking-wider">
+                        <ButtonText className="text-gray-600 font-bold uppercase tracking-wider">
                             {pasoActual === 1 ? 'Cancelar' : 'Atrás'}
                         </ButtonText>
                     </Button>
 
                     <Button
                         onPress={pasoSiguiente}
-                        className="flex-1 h-14 rounded-2xl bg-cyan-400"
+                        className="flex-1 h-14 rounded-2xl bg-indigo-600"
                     >
-                        <ButtonText className="text-[#070B17] font-extrabold uppercase tracking-wider">
+                        <ButtonText className="text-white font-extrabold uppercase tracking-wider">
                             {pasoActual === totalPasos ? 'Crear' : 'Siguiente'}
                         </ButtonText>
                     </Button>
