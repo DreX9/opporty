@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs } from 'expo-router';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Icon } from '@/components/ui/icon';
 import { ICONS } from '@/components/icons';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
-import { View } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
+import QrScannerModal from '@/src/features/event/components/QrScannerModal';
 
 // ─── Paleta de la app ────────────────────────────────────────────────────────
 const C = {
@@ -19,7 +20,20 @@ const C = {
 };
 
 // ─── Título de header reutilizable ───────────────────────────────────────────
-function HeaderTitle({ label }: { label: string }) {
+function HeaderTitle({ label, subtitle }: { label: string; subtitle?: string }) {
+  if (subtitle) {
+    return (
+      <View style={{ gap: 2, paddingLeft: 4 }}>
+        <Text style={{ color: C.headerText, fontWeight: '800', fontSize: 20 }}>
+          {label}
+        </Text>
+        <Text style={{ color: '#6B7280', fontWeight: '600', fontSize: 13 }}>
+          {subtitle}
+        </Text>
+      </View>
+    );
+  }
+  
   return (
     <HStack style={{ alignItems: 'center', gap: 8 }}>
       <Icon
@@ -33,22 +47,41 @@ function HeaderTitle({ label }: { label: string }) {
   );
 }
 
-// ─── Avatar de usuario (cabecera derecha del Radar) ──────────────────────────
-function UserAvatar() {
+// ─── Cabecera derecha con botón QR y Avatar ──────────────────────────────────
+function HeaderRightButtons({ onQrPress }: { onQrPress: () => void }) {
   return (
-    <View
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: C.accent,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 16,
-      }}
-    >
-      <Icon as={ICONS.user} style={{ color: '#FFFFFF', width: 18, height: 18 }} />
-    </View>
+    <HStack style={{ alignItems: 'center', gap: 10, marginRight: 16 }}>
+      {/* Botón Lector QR */}
+      <TouchableOpacity
+        onPress={onQrPress}
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: '#EEF2FF', // light indigo background
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderWidth: 1,
+          borderColor: '#E0E7FF',
+        }}
+      >
+        <Icon as={ICONS.radar} style={{ color: '#6366F1', width: 18, height: 18 }} />
+      </TouchableOpacity>
+
+      {/* Avatar */}
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          backgroundColor: C.accent,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Icon as={ICONS.user} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+      </View>
+    </HStack>
   );
 }
 
@@ -60,75 +93,91 @@ const sharedHeaderOptions = {
 };
 
 export default function TabLayout() {
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: useClientOnlyValue(false, true),
-        // ── Tab bar ──────────────────────────────────────────────────────────
-        tabBarStyle: {
-          backgroundColor: C.tabBg,
-          borderTopColor: C.headerBorder,
-          borderTopWidth: 1,
-          height: 60,
-          paddingBottom: 8,
-        },
-        tabBarActiveTintColor: C.tabActive,
-        tabBarInactiveTintColor: C.tabInactive,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
-      }}
-    >
-      {/* ── RADAR ─────────────────────────────────────────────────────────── */}
-      <Tabs.Screen
-        name="radar"
-        options={{
-          tabBarLabel: 'Radar',
-          ...sharedHeaderOptions,
-          headerTitle: () => <HeaderTitle label="Hola, Administrador" />,
-          headerRight: () => <UserAvatar />,
-          tabBarIcon: ({ color }) => (
-            <Icon as={ICONS.radar} style={{ color, width: 22, height: 22 }} />
-          ),
+    <>
+      <Tabs
+        screenOptions={{
+          headerShown: useClientOnlyValue(false, true),
+          // ── Tab bar ──────────────────────────────────────────────────────────
+          tabBarStyle: {
+            backgroundColor: C.tabBg,
+            borderTopColor: C.headerBorder,
+            borderTopWidth: 1,
+            height: 60,
+            paddingBottom: 8,
+          },
+          tabBarActiveTintColor: C.tabActive,
+          tabBarInactiveTintColor: C.tabInactive,
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         }}
-      />
+      >
+        {/* ── RADAR ─────────────────────────────────────────────────────────── */}
+        <Tabs.Screen
+          name="radar"
+          options={{
+            tabBarLabel: 'Radar',
+            ...sharedHeaderOptions,
+            headerTitle: () => <HeaderTitle label="Hola, Usuario" subtitle="Universidad Demo" />,
+            headerRight: () => <HeaderRightButtons onQrPress={() => setIsQrOpen(true)} />,
+            tabBarIcon: ({ color }) => (
+              <Icon as={ICONS.radar} style={{ color, width: 22, height: 22 }} />
+            ),
+          }}
+        />
 
-      {/* ── EVENTOS ───────────────────────────────────────────────────────── */}
-      <Tabs.Screen
-        name="event"
-        options={{
-          tabBarLabel: 'Eventos',
-          ...sharedHeaderOptions,
-          headerTitle: () => <HeaderTitle label="Buscar Eventos" />,
-          tabBarIcon: ({ color }) => (
-            <Icon as={ICONS.Search} style={{ color, width: 22, height: 22 }} />
-          ),
-        }}
-      />
+        {/* ── EVENTOS ───────────────────────────────────────────────────────── */}
+        <Tabs.Screen
+          name="event"
+          options={{
+            tabBarLabel: 'Eventos',
+            ...sharedHeaderOptions,
+            headerTitle: () => <HeaderTitle label="Buscar Eventos" />,
+            headerRight: () => <HeaderRightButtons onQrPress={() => setIsQrOpen(true)} />,
+            tabBarIcon: ({ color }) => (
+              <Icon as={ICONS.Search} style={{ color, width: 22, height: 22 }} />
+            ),
+          }}
+        />
 
-      {/* ── ADMIN ─────────────────────────────────────────────────────────── */}
-      <Tabs.Screen
-        name="admin"
-        options={{
-          tabBarLabel: 'Admin',
-          ...sharedHeaderOptions,
-          headerTitle: () => <HeaderTitle label="Administrar" />,
-          tabBarIcon: ({ color }) => (
-            <Icon as={ICONS.badgePlus} style={{ color, width: 22, height: 22 }} />
-          ),
-        }}
-      />
+        {/* ── ADMIN ─────────────────────────────────────────────────────────── */}
+        <Tabs.Screen
+          name="admin"
+          options={{
+            tabBarLabel: 'Admin',
+            ...sharedHeaderOptions,
+            headerTitle: () => <HeaderTitle label="Administrar" />,
+            tabBarIcon: ({ color }) => (
+              <Icon as={ICONS.badgePlus} style={{ color, width: 22, height: 22 }} />
+            ),
+          }}
+        />
 
-      {/* ── PERFIL ────────────────────────────────────────────────────────── */}
-      <Tabs.Screen
-        name="profile"
-        options={{
-          tabBarLabel: 'Perfil',
-          ...sharedHeaderOptions,
-          headerTitle: () => <HeaderTitle label="Mi Perfil" />,
-          tabBarIcon: ({ color }) => (
-            <Icon as={ICONS.user} style={{ color, width: 22, height: 22 }} />
-          ),
+        {/* ── PERFIL ────────────────────────────────────────────────────────── */}
+        <Tabs.Screen
+          name="profile"
+          options={{
+            tabBarLabel: 'Perfil',
+            ...sharedHeaderOptions,
+            headerTitle: () => <HeaderTitle label="Mi Perfil" />,
+            tabBarIcon: ({ color }) => (
+              <Icon as={ICONS.user} style={{ color, width: 22, height: 22 }} />
+            ),
+          }}
+        />
+      </Tabs>
+
+      {/* Modal Lector QR global */}
+      <QrScannerModal
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
+        onSelectEvent={(eventId) => {
+          setSelectedEventId(eventId);
+          // Puedes despachar eventos o pasar callbacks si es necesario
         }}
       />
-    </Tabs>
+    </>
   );
 }
