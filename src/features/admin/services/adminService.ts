@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import axios from 'axios';
 import { authStateManager } from '../../auth/state';
-import { BackendRole, TeacherFormData, TeacherRegisterResponse } from '../types';
+import { BackendRole, TeacherFormData, TeacherRegisterResponse, AdminUser, UsersViewDTO } from '../types';
 
 
 const API_URL =
@@ -78,6 +78,56 @@ export const adminService = {
         };
 
         const response = await apiClient.post<TeacherRegisterResponse>('/teachers/register', payload, {
+            headers: getAuthHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
+     * Obtiene todos los usuarios del sistema.
+     * Endpoint: GET /api/v1/users
+     */
+    async fetchUsers(): Promise<AdminUser[]> {
+        const response = await apiClient.get<UsersViewDTO[]>('/users', {
+            headers: getAuthHeaders(),
+        });
+        return response.data.map(u => ({
+            id: String(u.id),
+            nombre: u.nombre || u.username,
+            email: u.email,
+            rol: u.role.name,
+            emoji: u.role.name === 'STUDENT' ? '🧑‍🎓' : u.role.name === 'ADMIN' ? '👑' : u.role.name === 'TEACHER' ? '🧑‍💻' : '👨🏻‍💻',
+            status: (u.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE',
+            career: u.career,
+            specialty: u.specialty,
+            ciclo: u.ciclo,
+            dni: u.dni,
+            fechaNacimiento: u.fechaNacimiento,
+            phoneNumber: u.phoneNumber,
+            biography: u.biography,
+            hiringDate: u.hiringDate,
+            titulo: u.titulo,
+            username: u.username
+        }));
+    },
+
+    /**
+     * Actualiza el estado activo/inactivo de un usuario.
+     * Endpoint: PUT /api/v1/users/{id}/status
+     */
+    async updateUserStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): Promise<UsersViewDTO> {
+        const response = await apiClient.put<UsersViewDTO>(`/users/${id}/status`, { status }, {
+            headers: getAuthHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
+     * Actualiza el rol de un usuario (TEACHER, MANAGER, ADMIN).
+     * Endpoint: PUT /api/v1/users/{id}/role
+     */
+    async updateUserRole(id: string, role: string): Promise<UsersViewDTO> {
+        const response = await apiClient.put<UsersViewDTO>(`/users/${id}/role`, { role }, {
             headers: getAuthHeaders(),
         });
         return response.data;

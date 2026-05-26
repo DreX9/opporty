@@ -43,6 +43,36 @@ export interface AdminUser {
   email: string;
   rol: string;
   emoji: string;
+  status?: 'ACTIVE' | 'INACTIVE';
+  career?: string;
+  specialty?: string;
+  ciclo?: number;
+  dni?: string;
+  fechaNacimiento?: string;
+  phoneNumber?: string;
+  biography?: string;
+  hiringDate?: string;
+  titulo?: string;
+  username?: string;
+}
+
+export interface UsersViewDTO {
+  id: number;
+  username: string;
+  email: string;
+  enabled: boolean;
+  role: BackendRole;
+  status: string;
+  nombre: string;
+  career?: string;
+  specialty?: string;
+  ciclo?: number;
+  dni?: string;
+  fechaNacimiento?: string;
+  phoneNumber?: string;
+  biography?: string;
+  hiringDate?: string;
+  titulo?: string;
 }
 
 export interface TeacherFormData {

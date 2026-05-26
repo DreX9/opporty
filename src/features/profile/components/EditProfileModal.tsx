@@ -25,7 +25,8 @@ import { useAuthState, authStateManager } from '../../auth/state';
 import { profileService } from '../services/profileService';
 import { StudentProfile, TeacherProfile, StudentWriteData, TeacherWriteData } from '../types';
 import DropdownSelect from '@/components/DropdownSelect';
-import { LISTA_CARRERAS } from '../../auth/components/RegisterModal';
+import { LISTA_CARRERAS, LISTA_CICLOS_REGISTRO } from '../../auth/components/RegisterModal';
+import { LISTA_ESPECIALIDADES } from '../../admin/screens/CrearUsuarioScreen';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -75,6 +76,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
     // --- ESTADOS PROFESIONALES (Profesor / Admin) ---
     const [titulo, setTitulo] = useState('');
     const [especialidad, setEspecialidad] = useState('');
+    const [selectedSpecialtyOption, setSelectedSpecialtyOption] = useState('');
     const [biography, setBiography] = useState('');
     const [hiringDate, setHiringDate] = useState('');
 
@@ -109,7 +111,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         setFechaNacimiento(fromIsoDate(profile.fechaNacimiento));
                         setPhoneNumber(profile.phoneNumber || '');
                         setCarrera(profile.carrera || '');
-                        setCiclo(profile.ciclo ? profile.ciclo.toString() : '');
+                        setCiclo(profile.ciclo ? `Ciclo ${profile.ciclo}` : '');
                         
                         if (profile.fechaNacimiento) {
                             setBirthDateValue(new Date(profile.fechaNacimiento + 'T12:00:00'));
@@ -131,6 +133,15 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         setPhoneNumber(profile.telefono || '');
                         setTitulo(profile.titulo || '');
                         setEspecialidad(profile.especialidad || '');
+                        if (profile.especialidad) {
+                            if (LISTA_ESPECIALIDADES.includes(profile.especialidad)) {
+                                setSelectedSpecialtyOption(profile.especialidad);
+                            } else {
+                                setSelectedSpecialtyOption('Otro (Escribir manualmente)');
+                            }
+                        } else {
+                            setSelectedSpecialtyOption('');
+                        }
                         setBiography(profile.biography || '');
                         setHiringDate(fromIsoDate(profile.hiringDate));
                         
@@ -149,6 +160,15 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
             }
         }
     }, [isOpen]);
+
+    const handleSpecialtyChange = (val: string) => {
+        setSelectedSpecialtyOption(val);
+        if (val === 'Otro (Escribir manualmente)') {
+            setEspecialidad('');
+        } else {
+            setEspecialidad(val);
+        }
+    };
 
     // Handlers de fecha
     const onBirthDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -183,7 +203,8 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
 
         if (isStudent) {
             if (carrera.trim().length < 2) return 'La carrera es obligatoria.';
-            if (!ciclo || isNaN(Number(ciclo)) || Number(ciclo) < 1) return 'El ciclo debe ser un número válido.';
+            const cicloNum = Number(ciclo.replace('Ciclo ', ''));
+            if (!ciclo || isNaN(cicloNum) || cicloNum < 1 || cicloNum > 10) return 'El ciclo debe ser un número válido entre 1 y 10.';
         }
 
         if (contrasena) {
@@ -212,7 +233,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                     fechaNacimiento,
                     phoneNumber: phoneNumber.trim() || undefined,
                     carrera: carrera.trim(),
-                    ciclo: Number(ciclo),
+                    ciclo: Number(ciclo.replace('Ciclo ', '')),
                     status: studentProfile.status,
                     userId: studentProfile.user.id,
                     password: contrasena ? contrasena : undefined,
@@ -322,7 +343,8 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                 <Text style={styles.sectionTitle}>Datos Personales</Text>
                                 
                                 <HStack style={{ gap: 12 }}>
-                                    <VStack style={{ flex: 1 }}>
+                                    <VStack style={{ flex: 1, gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Nombre</Text>
                                         <Input style={[styles.inputBox, focusedInput === 'nombres' ? styles.inputBoxFocused : {}]}>
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
                                             <InputField
@@ -336,7 +358,8 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                             />
                                         </Input>
                                     </VStack>
-                                    <VStack style={{ flex: 1 }}>
+                                    <VStack style={{ flex: 1, gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Apellido</Text>
                                         <Input style={[styles.inputBox, focusedInput === 'apellidos' ? styles.inputBoxFocused : {}]}>
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
                                             <InputField
@@ -352,48 +375,57 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                     </VStack>
                                 </HStack>
 
-                                <Input style={[styles.inputBox, focusedInput === 'dni' ? styles.inputBoxFocused : {}]}>
-                                    <Icon as={ICONS.FileText} style={styles.inputIcon} />
-                                    <InputField
-                                        placeholder="DNI (8 dígitos)"
-                                        placeholderTextColor={C.placeholder}
-                                        value={dni}
-                                        onChangeText={(v) => setDni(v.replace(/[^0-9]/g, ''))}
-                                        onFocus={() => setFocusedInput('dni')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        keyboardType="numeric"
-                                        maxLength={8}
-                                        style={{ color: C.textPrimary }}
-                                    />
-                                </Input>
+                                <VStack style={{ gap: 4 }}>
+                                    <Text style={styles.inputLabel}>DNI</Text>
+                                    <Input style={[styles.inputBox, focusedInput === 'dni' ? styles.inputBoxFocused : {}]}>
+                                        <Icon as={ICONS.FileText} style={styles.inputIcon} />
+                                        <InputField
+                                            placeholder="DNI (8 dígitos)"
+                                            placeholderTextColor={C.placeholder}
+                                            value={dni}
+                                            onChangeText={(v) => setDni(v.replace(/[^0-9]/g, ''))}
+                                            onFocus={() => setFocusedInput('dni')}
+                                            onBlur={() => setFocusedInput(null)}
+                                            keyboardType="numeric"
+                                            maxLength={8}
+                                            style={{ color: C.textPrimary }}
+                                        />
+                                    </Input>
+                                </VStack>
 
-                                <TouchableOpacity
-                                    activeOpacity={0.9}
-                                    onPress={() => setShowBirthPicker(true)}
-                                    style={[styles.pickerBox, focusedInput === 'fechaNacimiento' ? styles.inputBoxFocused : {}]}
-                                >
-                                    <HStack style={{ alignItems: 'center', gap: 10, flex: 1 }}>
-                                        <Icon as={ICONS.CalendarDays} style={styles.inputIcon} />
-                                        <Text style={{ color: fechaNacimiento ? C.textPrimary : C.placeholder, fontSize: 14, fontWeight: '500' }}>
-                                            {fechaNacimiento || 'Fecha de nacimiento'}
-                                        </Text>
-                                    </HStack>
-                                </TouchableOpacity>
+                                <VStack style={{ gap: 4 }}>
+                                    <Text style={styles.inputLabel}>Fecha de Nacimiento</Text>
+                                    <TouchableOpacity
+                                        activeOpacity={0.9}
+                                        onPress={() => setShowBirthPicker(true)}
+                                        style={[styles.pickerBox, focusedInput === 'fechaNacimiento' ? styles.inputBoxFocused : {}]}
+                                    >
+                                        <HStack style={{ alignItems: 'center', gap: 10, flex: 1 }}>
+                                            <Icon as={ICONS.CalendarDays} style={styles.inputIcon} />
+                                            <Text style={{ color: fechaNacimiento ? C.textPrimary : C.placeholder, fontSize: 14, fontWeight: '500' }}>
+                                                {fechaNacimiento || 'Fecha de nacimiento'}
+                                            </Text>
+                                        </HStack>
+                                    </TouchableOpacity>
+                                </VStack>
 
-                                <Input style={[styles.inputBox, focusedInput === 'phoneNumber' ? styles.inputBoxFocused : {}]}>
-                                    <Icon as={ICONS.Phone} style={styles.inputIcon} />
-                                    <InputField
-                                        placeholder="Teléfono (9 dígitos)"
-                                        placeholderTextColor={C.placeholder}
-                                        value={phoneNumber}
-                                        onChangeText={(v) => setPhoneNumber(v.replace(/[^0-9]/g, ''))}
-                                        onFocus={() => setFocusedInput('phoneNumber')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        keyboardType="phone-pad"
-                                        maxLength={9}
-                                        style={{ color: C.textPrimary }}
-                                    />
-                                </Input>
+                                <VStack style={{ gap: 4 }}>
+                                    <Text style={styles.inputLabel}>Teléfono (Opcional)</Text>
+                                    <Input style={[styles.inputBox, focusedInput === 'phoneNumber' ? styles.inputBoxFocused : {}]}>
+                                        <Icon as={ICONS.Phone} style={styles.inputIcon} />
+                                        <InputField
+                                            placeholder="Teléfono (9 dígitos)"
+                                            placeholderTextColor={C.placeholder}
+                                            value={phoneNumber}
+                                            onChangeText={(v) => setPhoneNumber(v.replace(/[^0-9]/g, ''))}
+                                            onFocus={() => setFocusedInput('phoneNumber')}
+                                            onBlur={() => setFocusedInput(null)}
+                                            keyboardType="phone-pad"
+                                            maxLength={9}
+                                            style={{ color: C.textPrimary }}
+                                        />
+                                    </Input>
+                                </VStack>
                             </VStack>
 
                             {/* SECCIÓN 2: DATOS ACADÉMICOS / PROFESIONALES */}
@@ -401,91 +433,127 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                 <VStack style={{ gap: 14, marginTop: 24 }}>
                                     <Text style={styles.sectionTitle}>Datos Académicos</Text>
 
-                                    <DropdownSelect
-                                        selectedValue={carrera}
-                                        onValueChange={setCarrera}
-                                        options={LISTA_CARRERAS}
-                                        placeholder="Seleccionar carrera..."
-                                        icon={ICONS.Laptop}
-                                        style={[
-                                            styles.inputBox,
-                                            focusedInput === 'carrera' ? styles.inputBoxFocused : {}
-                                        ]}
-                                        inputIconStyle={styles.inputIcon}
-                                        textStyle={{ fontSize: 14 }}
-                                    />
-
-                                    <Input style={[styles.inputBox, focusedInput === 'ciclo' ? styles.inputBoxFocused : {}]}>
-                                        <Icon as={ICONS.Layers} style={styles.inputIcon} />
-                                        <InputField
-                                            placeholder="Ciclo académico"
-                                            placeholderTextColor={C.placeholder}
-                                            value={ciclo}
-                                            onChangeText={(v) => setCiclo(v.replace(/[^0-9]/g, ''))}
-                                            onFocus={() => setFocusedInput('ciclo')}
-                                            onBlur={() => setFocusedInput(null)}
-                                            keyboardType="numeric"
-                                            maxLength={2}
-                                            style={{ color: C.textPrimary }}
+                                    <VStack style={{ gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Carrera</Text>
+                                        <DropdownSelect
+                                            selectedValue={carrera}
+                                            onValueChange={setCarrera}
+                                            options={LISTA_CARRERAS}
+                                            placeholder="Seleccionar carrera..."
+                                            icon={ICONS.Laptop}
+                                            style={[
+                                                styles.inputBox,
+                                                focusedInput === 'carrera' ? styles.inputBoxFocused : {}
+                                            ]}
+                                            inputIconStyle={styles.inputIcon}
+                                            textStyle={{ fontSize: 14 }}
                                         />
-                                    </Input>
+                                    </VStack>
+
+                                    <VStack style={{ gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Ciclo Académico</Text>
+                                        <DropdownSelect
+                                            selectedValue={ciclo}
+                                            onValueChange={setCiclo}
+                                            options={LISTA_CICLOS_REGISTRO}
+                                            placeholder="Seleccionar ciclo..."
+                                            icon={ICONS.Layers}
+                                            style={[
+                                                styles.inputBox,
+                                                focusedInput === 'ciclo' ? styles.inputBoxFocused : {}
+                                            ]}
+                                            inputIconStyle={styles.inputIcon}
+                                            textStyle={{ fontSize: 14 }}
+                                        />
+                                    </VStack>
                                 </VStack>
                             ) : (
                                 <VStack style={{ gap: 14, marginTop: 24 }}>
                                     <Text style={styles.sectionTitle}>Datos Profesionales</Text>
 
-                                    <Input style={[styles.inputBox, focusedInput === 'titulo' ? styles.inputBoxFocused : {}]}>
-                                        <Icon as={ICONS.GraduationCap} style={styles.inputIcon} />
-                                        <InputField
-                                            placeholder="Título Académico"
-                                            placeholderTextColor={C.placeholder}
-                                            value={titulo}
-                                            onChangeText={setTitulo}
-                                            onFocus={() => setFocusedInput('titulo')}
-                                            onBlur={() => setFocusedInput(null)}
-                                            style={{ color: C.textPrimary }}
-                                        />
-                                    </Input>
+                                    <VStack style={{ gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Título Académico</Text>
+                                        <Input style={[styles.inputBox, focusedInput === 'titulo' ? styles.inputBoxFocused : {}]}>
+                                            <Icon as={ICONS.GraduationCap} style={styles.inputIcon} />
+                                            <InputField
+                                                placeholder="Título Académico"
+                                                placeholderTextColor={C.placeholder}
+                                                value={titulo}
+                                                onChangeText={setTitulo}
+                                                onFocus={() => setFocusedInput('titulo')}
+                                                onBlur={() => setFocusedInput(null)}
+                                                style={{ color: C.textPrimary }}
+                                            />
+                                        </Input>
+                                    </VStack>
 
-                                    <Input style={[styles.inputBox, focusedInput === 'especialidad' ? styles.inputBoxFocused : {}]}>
-                                        <Icon as={ICONS.Laptop} style={styles.inputIcon} />
-                                        <InputField
-                                            placeholder="Especialidad"
-                                            placeholderTextColor={C.placeholder}
-                                            value={especialidad}
-                                            onChangeText={setEspecialidad}
-                                            onFocus={() => setFocusedInput('especialidad')}
-                                            onBlur={() => setFocusedInput(null)}
-                                            style={{ color: C.textPrimary }}
+                                    <VStack style={{ gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Especialidad</Text>
+                                        <DropdownSelect
+                                            selectedValue={selectedSpecialtyOption}
+                                            onValueChange={handleSpecialtyChange}
+                                            options={LISTA_ESPECIALIDADES}
+                                            placeholder="Seleccionar especialidad..."
+                                            icon={ICONS.Laptop}
+                                            style={[
+                                                styles.inputBox,
+                                                focusedInput === 'especialidad' ? styles.inputBoxFocused : {}
+                                            ]}
+                                            inputIconStyle={styles.inputIcon}
+                                            textStyle={{ fontSize: 14 }}
                                         />
-                                    </Input>
+                                    </VStack>
 
-                                    <TouchableOpacity
-                                        activeOpacity={0.9}
-                                        onPress={() => setShowHiringPicker(true)}
-                                        style={[styles.pickerBox, focusedInput === 'hiringDate' ? styles.inputBoxFocused : {}]}
-                                    >
-                                        <HStack style={{ alignItems: 'center', gap: 10, flex: 1 }}>
-                                            <Icon as={ICONS.CalendarDays} style={styles.inputIcon} />
-                                            <Text style={{ color: hiringDate ? C.textPrimary : C.placeholder, fontSize: 14, fontWeight: '500' }}>
-                                                {hiringDate || 'Fecha de Contratación'}
-                                            </Text>
-                                        </HStack>
-                                    </TouchableOpacity>
+                                    {selectedSpecialtyOption === 'Otro (Escribir manualmente)' && (
+                                        <VStack style={{ gap: 4 }}>
+                                            <Text style={styles.inputLabel}>Escribir Especialidad</Text>
+                                            <Input style={[styles.inputBox, focusedInput === 'especialidad_custom' ? styles.inputBoxFocused : {}]}>
+                                                <Icon as={ICONS.Type} style={styles.inputIcon} />
+                                                <InputField
+                                                    placeholder="Escribe tu especialidad aquí..."
+                                                    placeholderTextColor={C.placeholder}
+                                                    value={especialidad}
+                                                    onChangeText={setEspecialidad}
+                                                    onFocus={() => setFocusedInput('especialidad_custom')}
+                                                    onBlur={() => setFocusedInput(null)}
+                                                    style={{ color: C.textPrimary }}
+                                                />
+                                            </Input>
+                                        </VStack>
+                                    )}
 
-                                    <Input style={[styles.inputBox, focusedInput === 'biography' ? styles.inputBoxFocused : {}, { minHeight: 80 }]}>
-                                        <InputField
-                                            placeholder="Biografía breve..."
-                                            placeholderTextColor={C.placeholder}
-                                            multiline
-                                            numberOfLines={3}
-                                            value={biography}
-                                            onChangeText={setBiography}
-                                            onFocus={() => setFocusedInput('biography')}
-                                            onBlur={() => setFocusedInput(null)}
-                                            style={{ color: C.textPrimary, textAlignVertical: 'top', paddingTop: 8 }}
-                                        />
-                                    </Input>
+                                    <VStack style={{ gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Fecha de Contratación</Text>
+                                        <TouchableOpacity
+                                            activeOpacity={0.9}
+                                            onPress={() => setShowHiringPicker(true)}
+                                            style={[styles.pickerBox, focusedInput === 'hiringDate' ? styles.inputBoxFocused : {}]}
+                                        >
+                                            <HStack style={{ alignItems: 'center', gap: 10, flex: 1 }}>
+                                                <Icon as={ICONS.CalendarDays} style={styles.inputIcon} />
+                                                <Text style={{ color: hiringDate ? C.textPrimary : C.placeholder, fontSize: 14, fontWeight: '500' }}>
+                                                    {hiringDate || 'Fecha de Contratación'}
+                                                </Text>
+                                            </HStack>
+                                        </TouchableOpacity>
+                                    </VStack>
+
+                                    <VStack style={{ gap: 4 }}>
+                                        <Text style={styles.inputLabel}>Biografía</Text>
+                                        <Input style={[styles.inputBox, focusedInput === 'biography' ? styles.inputBoxFocused : {}, { minHeight: 80 }]}>
+                                            <InputField
+                                                placeholder="Biografía breve..."
+                                                placeholderTextColor={C.placeholder}
+                                                multiline
+                                                numberOfLines={3}
+                                                value={biography}
+                                                onChangeText={setBiography}
+                                                onFocus={() => setFocusedInput('biography')}
+                                                onBlur={() => setFocusedInput(null)}
+                                                style={{ color: C.textPrimary, textAlignVertical: 'top', paddingTop: 8 }}
+                                            />
+                                        </Input>
+                                    </VStack>
                                 </VStack>
                             )}
 
@@ -493,39 +561,45 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                             <VStack style={{ gap: 14, marginTop: 24 }}>
                                 <Text style={styles.sectionTitle}>Cambiar Contraseña (Opcional)</Text>
 
-                                <Input style={[styles.inputBox, focusedInput === 'contrasena' ? styles.inputBoxFocused : {}]}>
-                                    <Icon as={ICONS.lock} style={styles.inputIcon} />
-                                    <InputField
-                                        placeholder="Nueva contraseña (mín. 6 caracteres)"
-                                        placeholderTextColor={C.placeholder}
-                                        secureTextEntry={!showPassword}
-                                        value={contrasena}
-                                        onChangeText={setContrasena}
-                                        onFocus={() => setFocusedInput('contrasena')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        style={{ color: C.textPrimary }}
-                                    />
-                                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                        <Icon as={showPassword ? ICONS.eye : ICONS.eyeOff} style={{ color: C.textSecondary, width: 18, height: 18 }} />
-                                    </TouchableOpacity>
-                                </Input>
+                                <VStack style={{ gap: 4 }}>
+                                    <Text style={styles.inputLabel}>Nueva contraseña</Text>
+                                    <Input style={[styles.inputBox, focusedInput === 'contrasena' ? styles.inputBoxFocused : {}]}>
+                                        <Icon as={ICONS.lock} style={styles.inputIcon} />
+                                        <InputField
+                                            placeholder="Nueva contraseña (mín. 6 caracteres)"
+                                            placeholderTextColor={C.placeholder}
+                                            secureTextEntry={!showPassword}
+                                            value={contrasena}
+                                            onChangeText={setContrasena}
+                                            onFocus={() => setFocusedInput('contrasena')}
+                                            onBlur={() => setFocusedInput(null)}
+                                            style={{ color: C.textPrimary }}
+                                        />
+                                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                            <Icon as={showPassword ? ICONS.eye : ICONS.eyeOff} style={{ color: C.textSecondary, width: 18, height: 18 }} />
+                                        </TouchableOpacity>
+                                    </Input>
+                                </VStack>
 
-                                <Input style={[styles.inputBox, focusedInput === 'confirmarContrasena' ? styles.inputBoxFocused : {}]}>
-                                    <Icon as={ICONS.lock} style={styles.inputIcon} />
-                                    <InputField
-                                        placeholder="Confirmar nueva contraseña"
-                                        placeholderTextColor={C.placeholder}
-                                        secureTextEntry={!showConfirmPassword}
-                                        value={confirmarContrasena}
-                                        onChangeText={setConfirmarContrasena}
-                                        onFocus={() => setFocusedInput('confirmarContrasena')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        style={{ color: C.textPrimary }}
-                                    />
-                                    <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                                        <Icon as={showConfirmPassword ? ICONS.eye : ICONS.eyeOff} style={{ color: C.textSecondary, width: 18, height: 18 }} />
-                                    </TouchableOpacity>
-                                </Input>
+                                <VStack style={{ gap: 4 }}>
+                                    <Text style={styles.inputLabel}>Confirmar nueva contraseña</Text>
+                                    <Input style={[styles.inputBox, focusedInput === 'confirmarContrasena' ? styles.inputBoxFocused : {}]}>
+                                        <Icon as={ICONS.lock} style={styles.inputIcon} />
+                                        <InputField
+                                            placeholder="Confirmar nueva contraseña"
+                                            placeholderTextColor={C.placeholder}
+                                            secureTextEntry={!showConfirmPassword}
+                                            value={confirmarContrasena}
+                                            onChangeText={setConfirmarContrasena}
+                                            onFocus={() => setFocusedInput('confirmarContrasena')}
+                                            onBlur={() => setFocusedInput(null)}
+                                            style={{ color: C.textPrimary }}
+                                        />
+                                        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                                            <Icon as={showConfirmPassword ? ICONS.eye : ICONS.eyeOff} style={{ color: C.textSecondary, width: 18, height: 18 }} />
+                                        </TouchableOpacity>
+                                    </Input>
+                                </VStack>
                             </VStack>
 
                             {/* BOTÓN GUARDAR CAMBIOS */}
@@ -652,6 +726,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         alignItems: 'center',
         flexDirection: 'row',
+    },
+    inputLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#6B7280',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 4,
+        marginTop: 4,
     },
     inputBoxFocused: {
         borderColor: '#6366F1',
