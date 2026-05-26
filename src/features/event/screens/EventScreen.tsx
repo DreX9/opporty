@@ -16,11 +16,15 @@ import { ICONS } from '@/components/icons';
 import { C, CATS, EVENTOS } from '../constants';
 import { Evento } from '../types';
 import EventCard from '../components/EventCard';
+import EventDetailModal from '../components/EventDetailModal';
+import { useEventState } from '../state';
 
 export default function EventScreen() {
+    const eventState = useEventState();
     const [busqueda, setBusqueda] = useState<string>('');
     const [favoritos, setFavoritos] = useState<Set<string>>(new Set());
     const [filtroActivo, setFiltroActivo] = useState<string>('Todos');
+    const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
 
     const totalFavoritos = favoritos.size;
 
@@ -39,12 +43,9 @@ export default function EventScreen() {
         });
     };
 
-    const verDetalle = (ev: Evento) =>
-        Alert.alert(
-            `📅 ${ev.titulo}`,
-            `Categoría: ${ev.categoria}\nFecha: ${ev.fecha} — ${ev.hora}\nLugar: ${ev.lugar}\nPrecio: ${ev.precio}\n\n${ev.descripcion}`,
-            [{ text: '¡Anotado!' }]
-        );
+    const verDetalle = (ev: Evento) => {
+        setEventoSeleccionado(ev);
+    };
 
     const cambiarFiltro = (cat: string) => {
         setFiltroActivo(cat);
@@ -186,6 +187,14 @@ export default function EventScreen() {
                 )}
                 <Box style={{ height: 16 }} />
             </ScrollView>
+
+            <EventDetailModal
+                visible={eventoSeleccionado !== null}
+                evento={eventoSeleccionado}
+                onClose={() => setEventoSeleccionado(null)}
+                favorito={eventoSeleccionado ? favoritos.has(eventoSeleccionado.id) : false}
+                onToggleFavorito={toggleFav}
+            />
         </Box>
     );
 }

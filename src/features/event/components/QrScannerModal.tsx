@@ -1,0 +1,526 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Modal,
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    TextInput,
+    Alert,
+    Dimensions,
+} from 'react-native';
+import { Icon } from '@/components/ui/icon';
+import { ICONS } from '@/components/icons';
+import { eventStateManager, useEventState } from '../state';
+import { EVENTOS } from '../constants';
+import { useRouter } from 'expo-router';
+
+// ── Anulación de tipos para Reanimated si es necesario ──
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withRepeat,
+    withTiming,
+    Easing,
+} from 'react-native-reanimated';
+
+interface QrScannerModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSelectEvent?: (eventId: string) => void;
+}
+
+const { width: SW } = Dimensions.get('window');
+
+export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrScannerModalProps) {
+    const router = useRouter();
+    const eventState = useEventState();
+    const [manualCode, setManualCode] = useState('');
+    const [scannedResult, setScannedResult] = useState<string | null>(null);
+
+    // Animación de la línea láser
+    const translateY = useSharedValue(0);
+
+    useEffect(() => {
+        if (isOpen) {
+            translateY.value = 0;
+            translateY.value = withRepeat(
+                withTiming(200, {
+                    duration: 2000,
+                    easing: Easing.inOut(Easing.ease),
+                }),
+                -1,
+                true
+            );
+        }
+    }, [isOpen]);
+
+    const laserStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateY: translateY.value }],
+        };
+    });
+
+    if (!isOpen) return null;
+
+    // Procesar el payload del QR (JSON o String)
+    const processQRData = (dataStr: string) => {
+        try {
+            // Intentar parsear como JSON
+            const data = JSON.parse(dataStr);
+            if (data.eventId && data.tipo) {
+                const isReg = eventStateManager.isRegistered(data.eventId);
+                if (!isReg) {
+                    Alert.alert(
+                        'No Registrado',
+                        `Debes registrarte primero al evento "${data.titulo || 'Evento'}" antes de poder registrar tu asistencia.`,
+                        [{ text: 'Entendido' }]
+                    );
+                    return;
+                }
+
+                const unlocked = eventStateManager.unlockInsignia(data.eventId, data.tipo);
+                const ev = EVENTOS.find(e => e.id === data.eventId);
+
+                if (unlocked) {
+                    // Mostrar pantalla de éxito
+                    setScannedResult(`¡Insignia de ${data.tipo.toUpperCase()} desbloqueada con éxito! 🏆`);
+                    setTimeout(() => {
+                        setScannedResult(null);
+                        onClose();
+                        // Redireccionar a la pantalla de eventos y notificar éxito
+                        router.push('/tabs/event');
+                        if (onSelectEvent) {
+                            onSelectEvent(data.eventId);
+                        } else {
+                            Alert.alert(
+                                '🎉 ¡Felicitaciones!',
+                                `Has desbloqueado la Insignia de ${data.tipo === 'ingreso' ? 'Ingreso' : 'Salida'} para "${ev?.titulo}".`
+                            );
+                        }
+                    }, 1800);
+                } else {
+                    Alert.alert(
+                        'Información',
+                        `Ya tenías desbloqueada la Insignia de ${data.tipo.toUpperCase()} para este evento.`
+                    );
+                }
+            } else {
+                throw new Error('Formato inválido');
+            }
+        } catch (e) {
+            // Si no es JSON, ver si es formato texto plano
+            Alert.alert(
+                'Código Inválido',
+                'El código QR escaneado no pertenece al sistema de asistencia UniRadar.'
+            );
+        }
+    };
+
+    const handleSimulate = (eventId: string, tipo: 'ingreso' | 'salida') => {
+        const ev = EVENTOS.find(e => e.id === eventId);
+        const payload = JSON.stringify({
+            eventId,
+            tipo,
+            titulo: ev?.titulo || 'Evento'
+        });
+        processQRData(payload);
+    };
+
+    const handleManualSubmit = () => {
+        if (!manualCode.trim()) return;
+        processQRData(manualCode.trim());
+        setManualCode('');
+    };
+
+    // Obtener los eventos a los que el alumno está registrado
+    const registradosInfo = EVENTOS.filter(ev => eventState.registrados.has(ev.id));
+
+    return (
+        <Modal
+            visible={isOpen}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={onClose}
+        >
+            <View style={styles.modalBg}>
+                <View style={styles.container}>
+                    {/* Cabecera */}
+                    <View style={styles.header}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <View style={styles.qrBadge}>
+                                <Icon as={ICONS.radar} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                            </View>
+                            <Text style={styles.headerTitle}>Lector QR Asistencia</Text>
+                        </View>
+                        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                            <Icon as={ICONS.X} style={{ color: '#6B7280', width: 20, height: 20 }} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {scannedResult ? (
+                        /* Vista de Éxito al Escanear */
+                        <View style={styles.successContainer}>
+                            <View style={styles.successCircle}>
+                                <Icon as={ICONS.CheckCircle} style={{ color: '#22C55E', width: 56, height: 56 }} />
+                            </View>
+                            <Text style={styles.successTitle}>¡Escaneo Exitoso!</Text>
+                            <Text style={styles.successText}>{scannedResult}</Text>
+                        </View>
+                    ) : (
+                        /* Vista del Escáner Activo */
+                        <View style={{ flex: 1 }}>
+                            {/* Visor de Cámara Simulado */}
+                            <View style={styles.cameraBox}>
+                                <View style={styles.scannerOverlay}>
+                                    {/* Esquinas del visor */}
+                                    <View style={[styles.corner, styles.topLeft]} />
+                                    <View style={[styles.corner, styles.topRight]} />
+                                    <View style={[styles.corner, styles.bottomLeft]} />
+                                    <View style={[styles.corner, styles.bottomRight]} />
+
+                                    {/* Línea láser animada */}
+                                    <Animated.View style={[styles.laserLine, laserStyle]} />
+
+                                    <Text style={styles.scanText}>
+                                        Enfoque el código QR del evento
+                                    </Text>
+                                </View>
+                            </View>
+
+                            {/* Panel interactivo inferior */}
+                            <View style={styles.actionsPanel}>
+                                <Text style={styles.panelTitle}>Simulador de Escaneo Escolar</Text>
+                                <Text style={styles.panelSubtitle}>
+                                    Selecciona una insignia para simular que escaneas el QR del administrador:
+                                </Text>
+
+                                {registradosInfo.length > 0 ? (
+                                    <View style={styles.simulationList}>
+                                        {registradosInfo.map((ev) => {
+                                            const ins = eventState.insignias[ev.id] || { ingreso: false, salida: false };
+                                            return (
+                                                <View key={ev.id} style={styles.simCard}>
+                                                    <Text style={styles.simCardTitle} numberOfLines={1}>
+                                                        {ev.titulo}
+                                                    </Text>
+                                                    <View style={styles.simBtnRow}>
+                                                        <TouchableOpacity
+                                                            onPress={() => handleSimulate(ev.id, 'ingreso')}
+                                                            style={[
+                                                                styles.simBtn,
+                                                                ins.ingreso ? styles.simBtnDisabled : styles.simBtnIngreso
+                                                            ]}
+                                                            disabled={ins.ingreso}
+                                                        >
+                                                            <Icon as={ins.ingreso ? ICONS.CheckCircle : ICONS.Zap} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
+                                                            <Text style={styles.simBtnText}>
+                                                                {ins.ingreso ? 'Ingreso OK' : 'QR Ingreso'}
+                                                            </Text>
+                                                        </TouchableOpacity>
+
+                                                        <TouchableOpacity
+                                                            onPress={() => handleSimulate(ev.id, 'salida')}
+                                                            style={[
+                                                                styles.simBtn,
+                                                                ins.salida ? styles.simBtnDisabled : styles.simBtnSalida
+                                                            ]}
+                                                            disabled={ins.salida}
+                                                        >
+                                                            <Icon as={ins.salida ? ICONS.CheckCircle : ICONS.Trophy} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
+                                                            <Text style={styles.simBtnText}>
+                                                                {ins.salida ? 'Salida OK' : 'QR Salida'}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                ) : (
+                                    <View style={styles.noEventsBox}>
+                                        <Icon as={ICONS.AlertCircle} style={{ color: '#9CA3AF', width: 22, height: 22 }} />
+                                        <Text style={styles.noEventsText}>
+                                            Aún no te has registrado a ningún evento. Regístrate en la pestaña "Eventos" para poder simular la asistencia.
+                                        </Text>
+                                    </View>
+                                )}
+
+                                {/* Ingreso Manual de Payload */}
+                                <View style={styles.manualInputRow}>
+                                    <TextInput
+                                        placeholder="Pegar payload de QR..."
+                                        placeholderTextColor="#9CA3AF"
+                                        value={manualCode}
+                                        onChangeText={setManualCode}
+                                        style={styles.manualInput}
+                                    />
+                                    <TouchableOpacity
+                                        onPress={handleManualSubmit}
+                                        style={styles.manualBtn}
+                                    >
+                                        <Text style={styles.manualBtnText}>Procesar</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+                </View>
+            </View>
+        </Modal>
+    );
+}
+
+const styles = StyleSheet.create({
+    modalBg: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.75)',
+        justifyContent: 'flex-end',
+    },
+    container: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        height: '90%',
+        width: '100%',
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 10,
+        overflow: 'hidden',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+    },
+    qrBadge: {
+        backgroundColor: '#6366F1',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    headerTitle: {
+        color: '#1E293B',
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    closeBtn: {
+        padding: 4,
+    },
+    cameraBox: {
+        height: 240,
+        backgroundColor: '#0F172A',
+        marginHorizontal: 20,
+        marginTop: 20,
+        borderRadius: 20,
+        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    scannerOverlay: {
+        width: 200,
+        height: 200,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        position: 'relative',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        paddingBottom: 8,
+    },
+    laserLine: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        height: 3,
+        backgroundColor: '#EF4444',
+        shadowColor: '#EF4444',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
+    },
+    corner: {
+        position: 'absolute',
+        width: 20,
+        height: 20,
+        borderColor: '#6366F1',
+        borderWidth: 3,
+    },
+    topLeft: {
+        top: 0,
+        left: 0,
+        borderRightWidth: 0,
+        borderBottomWidth: 0,
+    },
+    topRight: {
+        top: 0,
+        right: 0,
+        borderLeftWidth: 0,
+        borderBottomWidth: 0,
+    },
+    bottomLeft: {
+        bottom: 0,
+        left: 0,
+        borderRightWidth: 0,
+        borderTopWidth: 0,
+    },
+    bottomRight: {
+        bottom: 0,
+        right: 0,
+        borderLeftWidth: 0,
+        borderTopWidth: 0,
+    },
+    scanText: {
+        color: '#94A3B8',
+        fontSize: 11,
+        fontWeight: '600',
+        letterSpacing: 0.5,
+    },
+    actionsPanel: {
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 18,
+    },
+    panelTitle: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#1E293B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 4,
+    },
+    panelSubtitle: {
+        fontSize: 12,
+        color: '#64748B',
+        lineHeight: 16,
+        marginBottom: 12,
+    },
+    simulationList: {
+        gap: 10,
+        maxHeight: 190,
+    },
+    simCard: {
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 14,
+        padding: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+    },
+    simCardTitle: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#334155',
+        flex: 1,
+    },
+    simBtnRow: {
+        flexDirection: 'row',
+        gap: 6,
+    },
+    simBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+    },
+    simBtnIngreso: {
+        backgroundColor: '#6366F1',
+    },
+    simBtnSalida: {
+        backgroundColor: '#A82BFA',
+    },
+    simBtnDisabled: {
+        backgroundColor: '#94A3B8',
+    },
+    simBtnText: {
+        color: '#FFFFFF',
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    noEventsBox: {
+        backgroundColor: '#F1F5F9',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 14,
+        padding: 16,
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10,
+    },
+    noEventsText: {
+        color: '#64748B',
+        fontSize: 12,
+        textAlign: 'center',
+        lineHeight: 17,
+    },
+    manualInputRow: {
+        flexDirection: 'row',
+        marginTop: 'auto',
+        marginBottom: 16,
+        gap: 8,
+    },
+    manualInput: {
+        flex: 1,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        fontSize: 12,
+        color: '#334155',
+        height: 38,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    manualBtn: {
+        backgroundColor: '#334155',
+        borderRadius: 10,
+        paddingHorizontal: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: 38,
+    },
+    manualBtnText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    successContainer: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 32,
+    },
+    successCircle: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#DCFCE7',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 18,
+    },
+    successTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: '#15803D',
+        marginBottom: 8,
+    },
+    successText: {
+        fontSize: 14,
+        color: '#3F6212',
+        textAlign: 'center',
+        lineHeight: 20,
+    },
+});
