@@ -9,9 +9,9 @@ export interface DatosRegistro {
     email: string;
     dni: string;
     fechaNacimiento: string;
-    universidad: string;
     carrera: string;
     ciclo: string;
+    phoneNumber: string;
     contrasena: string;
 }
 

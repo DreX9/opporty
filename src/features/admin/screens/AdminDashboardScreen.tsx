@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { INICIAL_EVENTOS, INICIAL_USUARIOS } from '../constants';
 import { AdminEvent, AdminUser } from '../types';
 
+import { useAuthState } from '@/src/features/auth/state';
 import StatsGrid from '../components/StatsGrid';
 import RecentEvents from '../components/RecentEvents';
 import EventManagement from '../components/EventManagement';
@@ -17,6 +18,7 @@ import UserManagement from '../components/UserManagement';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
+  const { role } = useAuthState();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'eventos' | 'usuarios'>('dashboard');
   const [eventos, setEventos] = useState<AdminEvent[]>(INICIAL_EVENTOS);
   const [usuarios, setUsuarios] = useState<AdminUser[]>(INICIAL_USUARIOS);
@@ -117,7 +119,7 @@ export default function AdminDashboardScreen() {
         <HStack className="justify-between items-center">
           <VStack>
             <Text className="text-white text-3xl font-extrabold tracking-tight">
-              Panel de Administrador
+              {role === 'ADMIN' ? 'Panel de Administrador' : role === 'MANAGER' ? 'Panel de Manager' : role === 'TEACHER' ? 'Panel de Docente' : 'Panel de Control'}
             </Text>
             <Text className="text-white/80 text-sm font-semibold mt-1">
               Gestión del sistema Echo
@@ -125,7 +127,7 @@ export default function AdminDashboardScreen() {
           </VStack>
           <Box className="bg-white/20 border border-white/30 rounded-full px-3 py-1">
             <Text className="text-white text-2xs font-extrabold tracking-widest uppercase">
-              ADMIN
+              {role || 'USER'}
             </Text>
           </Box>
         </HStack>
@@ -142,38 +144,44 @@ export default function AdminDashboardScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => setActiveTab('eventos')}
-          className={`px-4 py-2 rounded-full border ${activeTab === 'eventos' ? 'bg-indigo-50 border-indigo-600/30' : 'bg-transparent border-transparent'}`}
-        >
-          <Text className={`text-xs font-bold tracking-wider ${activeTab === 'eventos' ? 'text-indigo-600' : 'text-gray-500'}`}>
-            Eventos
-          </Text>
-        </TouchableOpacity>
+        {(role === 'ADMIN' || role === 'MANAGER') && (
+          <TouchableOpacity
+            onPress={() => setActiveTab('eventos')}
+            className={`px-4 py-2 rounded-full border ${activeTab === 'eventos' ? 'bg-indigo-50 border-indigo-600/30' : 'bg-transparent border-transparent'}`}
+          >
+            <Text className={`text-xs font-bold tracking-wider ${activeTab === 'eventos' ? 'text-indigo-600' : 'text-gray-500'}`}>
+              Eventos
+            </Text>
+          </TouchableOpacity>
+        )}
 
-        <TouchableOpacity
-          onPress={() => setActiveTab('usuarios')}
-          className={`px-4 py-2 rounded-full border ${activeTab === 'usuarios' ? 'bg-indigo-50 border-indigo-600/30' : 'bg-transparent border-transparent'}`}
-        >
-          <Text className={`text-xs font-bold tracking-wider ${activeTab === 'usuarios' ? 'text-indigo-600' : 'text-gray-500'}`}>
-            Usuarios
-          </Text>
-        </TouchableOpacity>
+        {role === 'ADMIN' && (
+          <TouchableOpacity
+            onPress={() => setActiveTab('usuarios')}
+            className={`px-4 py-2 rounded-full border ${activeTab === 'usuarios' ? 'bg-indigo-50 border-indigo-600/30' : 'bg-transparent border-transparent'}`}
+          >
+            <Text className={`text-xs font-bold tracking-wider ${activeTab === 'usuarios' ? 'text-indigo-600' : 'text-gray-500'}`}>
+              Usuarios
+            </Text>
+          </TouchableOpacity>
+        )}
 
-        <TouchableOpacity
-          onPress={handleNavigationToCreation}
-          className="px-4 py-2 rounded-full bg-indigo-600 items-center justify-center ml-auto"
-        >
-          <Text className="text-white text-xs font-extrabold">
-            {activeTab === 'usuarios' ? '+ Crear Us' : '+ Crear Ev'}
-          </Text>
-        </TouchableOpacity>
+        {(role === 'ADMIN' || role === 'MANAGER') && (
+          <TouchableOpacity
+            onPress={handleNavigationToCreation}
+            className="px-4 py-2 rounded-full bg-indigo-600 items-center justify-center ml-auto"
+          >
+            <Text className="text-white text-xs font-extrabold">
+              {activeTab === 'usuarios' ? '+ Crear Us' : '+ Crear Ev'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </HStack>
 
       <Box className="px-4">
         {activeTab === 'dashboard' && (
           <VStack>
-            <StatsGrid stats={stats} />
+            <StatsGrid stats={stats} isAdmin={role === 'ADMIN'} />
             <RecentEvents eventos={eventos} />
           </VStack>
         )}
@@ -181,7 +189,7 @@ export default function AdminDashboardScreen() {
         {/* ==============================================
             VISTA 2: GESTIÓN DE EVENTOS
            ============================================== */}
-        {activeTab === 'eventos' && (
+        {activeTab === 'eventos' && (role === 'ADMIN' || role === 'MANAGER') && (
           <EventManagement
             eventos={eventos}
             onAprobar={handleAprobarEvento}
@@ -193,7 +201,7 @@ export default function AdminDashboardScreen() {
         {/* ==============================================
             VISTA 3: GESTIÓN DE USUARIOS
            ============================================== */}
-        {activeTab === 'usuarios' && (
+        {activeTab === 'usuarios' && role === 'ADMIN' && (
           <UserManagement
             usuarios={usuarios}
             onCambiarRol={handleCambiarRol}

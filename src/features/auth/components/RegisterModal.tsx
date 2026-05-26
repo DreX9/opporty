@@ -19,8 +19,27 @@ import { Input, InputField } from '@/components/ui/input';
 import { Button, ButtonText } from '@/components/ui/button';
 import { ICONS } from '@/components/icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import * as Clipboard from 'expo-clipboard';
 
 import { RegisterModalProps, DatosRegistro } from '../types';
+import DropdownSelect from '@/components/DropdownSelect';
+
+export const LISTA_CARRERAS = [
+    'Ingeniería de Sistemas',
+    'Ingeniería de Software',
+    'Ingeniería Civil',
+    'Ingeniería Industrial',
+    'Ingeniería Electrónica',
+    'Arquitectura',
+    'Derecho',
+    'Medicina',
+    'Administración',
+    'Contabilidad',
+    'Psicología',
+    'Marketing',
+    'Diseño Gráfico',
+    'Comunicación'
+];
 
 const C = {
     bg: '#F7F8FC',             // Fondo lila muy claro
@@ -43,7 +62,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     const [email, setEmail] = useState('');
     const [dni, setDni] = useState('');
     const [fechaNacimiento, setFechaNacimiento] = useState('');
-    const [universidad, setUniversidad] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
     const [carrera, setCarrera] = useState('');
     const [ciclo, setCiclo] = useState('');
     const [contrasena, setContrasena] = useState('');
@@ -55,6 +74,11 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     const [dateValue, setDateValue] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
+
+    const copyToClipboard = async () => {
+        await Clipboard.setStringAsync(generatedUsername);
+        Alert.alert('¡Copiado! 📋', 'El nombre de usuario sugerido ha sido copiado al portapapeles.');
+    };
 
     // --- CÁLCULO DINÁMICO DEL USERNAME ---
     const getGeneratedUsername = () => {
@@ -76,7 +100,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         setEmail('');
         setDni('');
         setFechaNacimiento('');
-        setUniversidad('');
+        setPhoneNumber('');
         setCarrera('');
         setCiclo('');
         setContrasena('');
@@ -106,9 +130,9 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     };
 
     const erroresPaso2 = {
-        universidad: universidad.trim().length < 2,
         carrera: carrera.trim().length < 2,
         ciclo: ciclo.trim().length === 0,
+        phoneNumber: phoneNumber.trim().length > 0 && !/^\d{9}$/.test(phoneNumber),
         contrasena: contrasena.length < 6,
         confirmarContrasena: contrasena !== confirmarContrasena,
     };
@@ -133,8 +157,12 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
             }
             setPasoActual(2);
         } else {
-            if (erroresPaso2.universidad || erroresPaso2.carrera || erroresPaso2.ciclo) {
-                Alert.alert('⚠️ Información académica incompleta', 'Por favor ingresa tu universidad, carrera y ciclo.');
+            if (erroresPaso2.carrera || erroresPaso2.ciclo) {
+                Alert.alert('⚠️ Información académica incompleta', 'Por favor ingresa tu carrera y ciclo.');
+                return;
+            }
+            if (erroresPaso2.phoneNumber) {
+                Alert.alert('⚠️ Teléfono inválido', 'El número de teléfono debe tener exactamente 9 dígitos.');
                 return;
             }
             if (erroresPaso2.contrasena) {
@@ -152,9 +180,9 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                 email,
                 dni,
                 fechaNacimiento,
-                universidad,
                 carrera,
                 ciclo,
+                phoneNumber,
                 contrasena
             };
             onRegister(datos);
@@ -338,15 +366,9 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                     </HStack>
                                 </TouchableOpacity>
 
-                                {/* Nombre de usuario generado automáticamente (Solo lectura) */}
-                                <View style={[styles.inputBox, { backgroundColor: '#F0F1FA', borderColor: '#D7DAF0', opacity: 0.85 }]}>
-                                    <Icon as={ICONS.user} style={styles.inputIcon} />
-                                    <Text style={{ color: C.textSecondary, fontSize: 14, fontWeight: '500', flex: 1 }}>
-                                        Nombre de usuario: <Text style={{ color: C.accent, fontWeight: '700' }}>{generatedUsername}</Text>
-                                    </Text>
-                                </View>
 
                                 {showDatePicker && (
+
                                     <DateTimePicker
                                         value={dateValue}
                                         mode="date"
@@ -363,45 +385,43 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                         ======================================================== */}
                         {pasoActual === 2 && (
                             <VStack style={{ gap: 16 }}>
-                                {/* Universidad */}
+                                {/* Teléfono (opcional, 9 dígitos) */}
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'universidad' ? styles.inputBoxFocused : {}
+                                        focusedInput === 'phoneNumber' ? styles.inputBoxFocused : {}
                                     ]}
                                 >
-                                    <Icon as={ICONS.GraduationCap} style={styles.inputIcon} />
+                                    <Icon as={ICONS.Phone} style={styles.inputIcon} />
                                     <InputField
-                                        placeholder="Universidad"
+                                        placeholder="Teléfono (9 dígitos, opcional)"
                                         placeholderTextColor={C.placeholder}
-                                        value={universidad}
-                                        onChangeText={setUniversidad}
-                                        onFocus={() => setFocusedInput('universidad')}
+                                        value={phoneNumber}
+                                        onChangeText={(v) => setPhoneNumber(v.replace(/[^0-9]/g, ''))}
+                                        onFocus={() => setFocusedInput('phoneNumber')}
                                         onBlur={() => setFocusedInput(null)}
+                                        keyboardType="phone-pad"
+                                        maxLength={9}
                                         className="text-gray-900 text-sm flex-1"
                                         style={{ color: '#111827' }}
                                     />
                                 </Input>
 
                                 {/* Carrera */}
-                                <Input
+                                {/* Carrera */}
+                                <DropdownSelect
+                                    selectedValue={carrera}
+                                    onValueChange={setCarrera}
+                                    options={LISTA_CARRERAS}
+                                    placeholder="Seleccionar carrera..."
+                                    icon={ICONS.Laptop}
                                     style={[
                                         styles.inputBox,
                                         focusedInput === 'carrera' ? styles.inputBoxFocused : {}
                                     ]}
-                                >
-                                    <Icon as={ICONS.Laptop} style={styles.inputIcon} />
-                                    <InputField
-                                        placeholder="Carrera"
-                                        placeholderTextColor={C.placeholder}
-                                        value={carrera}
-                                        onChangeText={setCarrera}
-                                        onFocus={() => setFocusedInput('carrera')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        className="text-gray-900 text-sm flex-1"
-                                        style={{ color: '#111827' }}
-                                    />
-                                </Input>
+                                    inputIconStyle={styles.inputIcon}
+                                    textStyle={{ fontSize: 14 }}
+                                />
 
                                 {/* Ciclo */}
                                 <Input
@@ -475,11 +495,38 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                             </VStack>
                         )}
 
+                        {/* Nombre de usuario generado (Persistente en todo el formulario) */}
+                        <VStack style={styles.suggestedUserCard}>
+                            <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                                <HStack style={{ alignItems: 'center', gap: 8, flex: 1 }}>
+                                    <Icon as={ICONS.user} style={{ color: C.accent, width: 18, height: 18 }} />
+                                    <VStack style={{ flex: 1 }}>
+                                        <Text style={{ color: C.textSecondary, fontSize: 10, fontWeight: '700', letterSpacing: 0.5 }}>
+                                            USUARIO SUGERIDO
+                                        </Text>
+                                        <Text style={{ color: C.accent, fontSize: 16, fontWeight: '800' }}>
+                                            {generatedUsername}
+                                        </Text>
+                                    </VStack>
+                                </HStack>
+                                <TouchableOpacity
+                                    onPress={copyToClipboard}
+                                    style={styles.copyBadgeBtn}
+                                    accessibilityLabel="Copiar usuario generado"
+                                    accessibilityRole="button"
+                                >
+                                    <Icon as={ICONS.Copy} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
+                                    <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>Copiar</Text>
+                                </TouchableOpacity>
+                            </HStack>
+                        </VStack>
+
                         {/* BOTÓN CONTINUAR / CREAR CUENTA */}
                         <Button
                             onPress={handleSiguiente}
                             style={styles.continueBtn}
                         >
+
                             <ButtonText style={styles.continueBtnText}>
                                 {pasoActual === 1 ? 'Continuar' : 'Crear Cuenta'}
                             </ButtonText>
@@ -596,4 +643,23 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
     },
+    suggestedUserCard: {
+        backgroundColor: '#EEF2FF',
+        borderColor: '#E0E7FF',
+        borderWidth: 1,
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginTop: 20,
+    },
+    copyBadgeBtn: {
+        backgroundColor: '#6366F1',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 10,
+    },
 });
+

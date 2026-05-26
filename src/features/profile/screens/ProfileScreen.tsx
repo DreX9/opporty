@@ -12,22 +12,39 @@ import { Text } from '@/components/ui/text';
 import { ICONS } from '@/components/icons';
 import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
+import { useRouter } from 'expo-router';
+import { useAuthState, authStateManager } from '../../auth/state';
+import * as Clipboard from 'expo-clipboard';
 
 import { C, INTERESES_INICIAL, MENU_ITEMS } from '../constants';
 import { Interes } from '../types';
 import InterestChip from '../components/InterestChip';
 import MenuRow from '../components/MenuRow';
+import EditProfileModal from '../components/EditProfileModal';
 import { eventStateManager, useEventState } from '../../event/state';
 import { EVENTOS } from '../../event/constants';
 import { Evento } from '../../event/types';
 
 export default function ProfileScreen() {
+    const router = useRouter();
+    const { payload, role } = useAuthState();
+    const isAdmin = role === 'ADMIN';
+
     const eventState = useEventState();
     const [intereses, setIntereses] = useState<Interes[]>(INTERESES_INICIAL);
     const [selectedConstanciaEvento, setSelectedConstanciaEvento] = useState<Evento | null>(null);
     const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+
 
     const totalActivos = intereses.filter((i) => i.activo).length;
+
+    const copyUsername = async () => {
+        if (payload?.sub) {
+            await Clipboard.setStringAsync(payload.sub);
+            Alert.alert('¡Copiado! 📋', 'El nombre de usuario ha sido copiado al portapapeles.');
+        }
+    };
 
     const toggleInteres = (id: number) => {
         setIntereses((prev) =>
@@ -52,7 +69,14 @@ export default function ProfileScreen() {
     const handleLogout = () => {
         Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
             { text: 'Cancelar', style: 'cancel' },
-            { text: 'Salir', style: 'destructive', onPress: () => {} },
+            { 
+                text: 'Salir', 
+                style: 'destructive', 
+                onPress: () => {
+                    authStateManager.clearSession();
+                    router.replace('/');
+                } 
+            },
         ]);
     };
 
@@ -66,10 +90,12 @@ export default function ProfileScreen() {
             <View style={styles.heroBanner}>
                 {/* Botón de ajustes */}
                 <TouchableOpacity
+                    onPress={() => setIsEditOpen(true)}
                     style={styles.settingsBtn}
                     accessibilityLabel="Ajustes"
                     accessibilityRole="button"
                 >
+
                     <Icon as={ICONS.edit2} style={{ color: C.accent, width: 20, height: 20 }} />
                 </TouchableOpacity>
 
@@ -81,12 +107,27 @@ export default function ProfileScreen() {
                 </View>
 
                 {/* Nombre y email */}
-                <Text style={styles.heroName}>Alex Rivera</Text>
-                <Text style={styles.heroEmail}>alex@test.com</Text>
+                <Text style={styles.heroName}>
+                    {payload?.firstName && payload?.lastName
+                        ? `${payload.firstName} ${payload.lastName}`
+                        : (payload?.sub || 'Usuario')}
+                </Text>
+                
+                <HStack style={styles.usernameRow}>
+                    <Text style={styles.heroEmail}>@{payload?.sub || 'username'}</Text>
+                    <TouchableOpacity
+                        onPress={copyUsername}
+                        style={styles.smallCopyBtn}
+                        accessibilityLabel="Copiar usuario"
+                        accessibilityRole="button"
+                    >
+                        <Icon as={ICONS.Copy} style={{ color: 'rgba(255, 255, 255, 0.8)', width: 12, height: 12 }} />
+                    </TouchableOpacity>
+                </HStack>
 
                 {/* Badge de rol */}
                 <View style={styles.roleBadge}>
-                    <Text style={styles.roleBadgeText}>Alumno UTP</Text>
+                    <Text style={styles.roleBadgeText}>{isAdmin ? 'Administrador' : 'Alumno UTP'}</Text>
                 </View>
             </View>
 
@@ -263,7 +304,11 @@ export default function ProfileScreen() {
                                             Se otorga el presente reconocimiento y constancia a:
                                         </Text>
 
-                                        <Text style={styles.diplomaStudent}>ALEX RIVERA</Text>
+                                        <Text style={styles.diplomaStudent}>
+                                            {payload?.firstName && payload?.lastName
+                                                ? `${payload.firstName} ${payload.lastName}`.toUpperCase()
+                                                : 'ALEX RIVERA'}
+                                        </Text>
 
                                         <Text style={styles.diplomaBodyText}>
                                             Por haber registrado su asistencia (Ingreso y Salida) y participado activamente en el evento académico:
@@ -314,7 +359,17 @@ export default function ProfileScreen() {
                     </View>
                 </Modal>
             )}
+
+            {/* ── MODAL DE EDICIÓN DE PERFIL ── */}
+            <EditProfileModal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                onProfileUpdated={() => {
+                    // La reactividad de authStateManager actualiza automáticamente los datos locales
+                }}
+            />
         </ScrollView>
+
     );
 }
 
@@ -362,9 +417,22 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     heroEmail: {
-        color: 'rgba(255,255,255,0.75)',
+        color: 'rgba(255,255,255,0.9)',
         fontSize: 13,
+        fontWeight: '600',
+    },
+    usernameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
         marginBottom: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.18)',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 20,
+    },
+    smallCopyBtn: {
+        padding: 2,
     },
     roleBadge: {
         backgroundColor: '#EAB308',
