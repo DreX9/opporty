@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { ScrollView, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { ScrollView, TouchableOpacity, Alert, StatusBar, ActivityIndicator } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 
 import { INICIAL_EVENTOS, INICIAL_USUARIOS } from '../constants';
 import { AdminEvent, AdminUser } from '../types';
+import { adminService } from '../services/adminService';
 
 import { useAuthState } from '@/src/features/auth/state';
 import StatsGrid from '../components/StatsGrid';
@@ -21,7 +22,28 @@ export default function AdminDashboardScreen() {
   const { role } = useAuthState();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'eventos' | 'usuarios'>('dashboard');
   const [eventos, setEventos] = useState<AdminEvent[]>(INICIAL_EVENTOS);
-  const [usuarios, setUsuarios] = useState<AdminUser[]>(INICIAL_USUARIOS);
+  const [usuarios, setUsuarios] = useState<AdminUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
+
+  const loadUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const data = await adminService.fetchUsers();
+      setUsuarios(data);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'No se pudieron cargar los usuarios del servidor.';
+      console.error('Error al cargar usuarios:', err);
+      Alert.alert('Error', msg);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'usuarios') {
+      loadUsers();
+    }
+  }, [activeTab]);
 
   // Estadísticas calculadas dinámicamente
   const stats = useMemo(() => {
@@ -71,24 +93,49 @@ export default function AdminDashboardScreen() {
   };
 
   // Acciones de administración de usuarios
-  const handleCambiarRol = (id: string) => {
-    setUsuarios(prev =>
-      prev.map(u => u.id === id ? { ...u, rol: u.rol === 'Admin' ? 'Usuario' : 'Admin' } : u)
-    );
-    Alert.alert('Éxito', 'Rol de usuario actualizado.');
+  const handleCambiarRol = async (id: string, newRole: string) => {
+    try {
+      await adminService.updateUserRole(id, newRole);
+      setUsuarios(prev =>
+        prev.map(u => u.id === id ? { ...u, rol: newRole, emoji: newRole === 'ADMIN' ? '👑' : newRole === 'TEACHER' ? '🧑‍💻' : '👨🏻‍💻' } : u)
+      );
+      Alert.alert('Éxito', `El rol del usuario ha sido actualizado a ${newRole}.`);
+    } catch (err: unknown) {
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'No se pudo actualizar el rol.')
+        : (err instanceof Error ? err.message : 'Error desconocido al actualizar el rol.');
+      Alert.alert('Error', msg);
+    }
   };
 
-  const handleEliminarUsuario = (id: string) => {
+  const handleToggleUserStatus = async (id: string, currentStatus: 'ACTIVE' | 'INACTIVE') => {
+    const newStatus: 'ACTIVE' | 'INACTIVE' = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const actionText = newStatus === 'INACTIVE' ? 'desactivar' : 'activar';
+    const confirmMessage = newStatus === 'INACTIVE'
+      ? '¿Estás seguro de que deseas desactivar este usuario? Ya no podrá iniciar sesión en el sistema.'
+      : '¿Deseas activar nuevamente este usuario? Podrá volver a iniciar sesión.';
+
     Alert.alert(
-      'Eliminar usuario',
-      '¿Deseas revocar el acceso de este usuario?',
+      `${newStatus === 'INACTIVE' ? 'Desactivar' : 'Activar'} usuario`,
+      confirmMessage,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Revocar',
-          style: 'destructive',
-          onPress: () => {
-            setUsuarios(prev => prev.filter(u => u.id !== id));
+          text: newStatus === 'INACTIVE' ? 'Desactivar' : 'Activar',
+          style: newStatus === 'INACTIVE' ? 'destructive' : 'default',
+          onPress: async () => {
+            try {
+              await adminService.updateUserStatus(id, newStatus);
+              setUsuarios(prev =>
+                prev.map(u => u.id === id ? { ...u, status: newStatus } : u)
+              );
+              Alert.alert('Éxito', `El usuario ha sido ${newStatus === 'INACTIVE' ? 'desactivado' : 'activado'} correctamente.`);
+            } catch (err: unknown) {
+              const msg = err && typeof err === 'object' && 'response' in err
+                ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'No se pudo actualizar el estado.')
+                : (err instanceof Error ? err.message : 'Error desconocido al actualizar el estado.');
+              Alert.alert('Error', msg);
+            }
           }
         }
       ]
@@ -205,7 +252,8 @@ export default function AdminDashboardScreen() {
           <UserManagement
             usuarios={usuarios}
             onCambiarRol={handleCambiarRol}
-            onEliminar={handleEliminarUsuario}
+            onToggleStatus={handleToggleUserStatus}
+            loading={loadingUsers}
           />
         )}
       </Box>

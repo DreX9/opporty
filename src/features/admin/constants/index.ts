@@ -26,11 +26,11 @@ export const INICIAL_EVENTOS: AdminEvent[] = [
 ];
 
 export const INICIAL_USUARIOS: AdminUser[] = [
-  { id: '1', nombre: 'Alex Rivera', email: 'alex@test.com', rol: 'STUDENT', emoji: '👨🏻‍💻' },
-  { id: '2', nombre: 'Administrador principal', email: 'admin@admin.com', rol: 'ADMIN', emoji: '👑' },
-  { id: '3', nombre: 'Carlos Gomez', email: 'carlos@test.com', rol: 'STUDENT', emoji: '🧑‍🎓' },
-  { id: '4', nombre: 'Sofia Rojas', email: 'sofia@test.com', rol: 'STUDENT', emoji: '👩‍💻' },
-  { id: '5', nombre: 'Juan Perez', email: 'juan@test.com', rol: 'TEACHER', emoji: '🧑‍💻' },
+  { id: '1', nombre: 'Alex Rivera', email: 'alex@test.com', rol: 'STUDENT', emoji: '👨🏻‍💻', status: 'ACTIVE' },
+  { id: '2', nombre: 'Administrador principal', email: 'admin@admin.com', rol: 'ADMIN', emoji: '👑', status: 'ACTIVE' },
+  { id: '3', nombre: 'Carlos Gomez', email: 'carlos@test.com', rol: 'STUDENT', emoji: '🧑‍🎓', status: 'ACTIVE' },
+  { id: '4', nombre: 'Sofia Rojas', email: 'sofia@test.com', rol: 'STUDENT', emoji: '👩‍💻', status: 'ACTIVE' },
+  { id: '5', nombre: 'Juan Perez', email: 'juan@test.com', rol: 'TEACHER', emoji: '🧑‍💻', status: 'ACTIVE' },
 ];
 
 export const ESTADO_INICIAL_DOCENTE: TeacherFormData = {

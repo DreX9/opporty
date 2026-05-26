@@ -41,6 +41,19 @@ export const LISTA_CARRERAS = [
     'Comunicación'
 ];
 
+export const LISTA_CICLOS_REGISTRO = [
+    'Ciclo 1',
+    'Ciclo 2',
+    'Ciclo 3',
+    'Ciclo 4',
+    'Ciclo 5',
+    'Ciclo 6',
+    'Ciclo 7',
+    'Ciclo 8',
+    'Ciclo 9',
+    'Ciclo 10'
+];
+
 const C = {
     bg: '#F7F8FC',             // Fondo lila muy claro
     white: '#FFFFFF',          // Fondo de tarjetas e inputs
@@ -181,7 +194,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                 dni,
                 fechaNacimiento,
                 carrera,
-                ciclo,
+                ciclo: ciclo.replace('Ciclo ', ''),
                 phoneNumber,
                 contrasena
             };
@@ -424,26 +437,19 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 />
 
                                 {/* Ciclo */}
-                                <Input
+                                <DropdownSelect
+                                    selectedValue={ciclo}
+                                    onValueChange={setCiclo}
+                                    options={LISTA_CICLOS_REGISTRO}
+                                    placeholder="Seleccionar ciclo..."
+                                    icon={ICONS.Layers}
                                     style={[
                                         styles.inputBox,
                                         focusedInput === 'ciclo' ? styles.inputBoxFocused : {}
                                     ]}
-                                >
-                                    <Icon as={ICONS.Layers} style={styles.inputIcon} />
-                                    <InputField
-                                        placeholder="Ciclo académico (Ej. 5)"
-                                        placeholderTextColor={C.placeholder}
-                                        value={ciclo}
-                                        onChangeText={(v) => setCiclo(v.replace(/[^0-9]/g, ''))}
-                                        onFocus={() => setFocusedInput('ciclo')}
-                                        onBlur={() => setFocusedInput(null)}
-                                        keyboardType="numeric"
-                                        maxLength={2}
-                                        className="text-gray-900 text-sm flex-1"
-                                        style={{ color: '#111827' }}
-                                    />
-                                </Input>
+                                    inputIconStyle={styles.inputIcon}
+                                    textStyle={{ fontSize: 14 }}
+                                />
 
                                 {/* Contraseña */}
                                 <Input
