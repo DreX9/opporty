@@ -13,6 +13,7 @@ import { ICONS } from '@/components/icons';
 import RegisterModal from '../components/RegisterModal';
 import { DatosRegistro } from '../types';
 import { authService } from '../services/authService';
+import { authStateManager } from '../state';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -36,12 +37,17 @@ export default function LoginScreen() {
         }
 
         try {
-            await authService.login(user.trim(), password);
+            const responseData = await authService.login(user.trim(), password);
+            const token = responseData.access_token || responseData.token;
+            if (token) {
+                authStateManager.setSession(token);
+            }
             setUser('');
             setPassword('');
             router.push('/tabs/radar');
-        } catch (error: any) {
-            const msg = error.response?.data?.message || error.message || "El usuario o la contraseña no son correctos.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } }; message?: string };
+            const msg = err.response?.data?.message || err.message || "El usuario o la contraseña no son correctos.";
             Alert.alert(
                 "Acceso Denegado",
                 `No se pudo iniciar sesión: ${msg}`,
@@ -60,8 +66,9 @@ export default function LoginScreen() {
                 `Tu cuenta ha sido creada exitosamente.\n\nTu nombre de usuario es: ${usernameGenerated}\n\nPor favor, úsalo para iniciar sesión.`
             );
             setShowModal(false);
-        } catch (error: any) {
-            const msg = error.response?.data?.message || error.message || "Error al conectar con el servidor.";
+        } catch (error) {
+            const err = error as { response?: { data?: { message?: string } }; message?: string };
+            const msg = err.response?.data?.message || err.message || "Error al conectar con el servidor.";
             Alert.alert("Error al Registrar", `No se pudo crear la cuenta: ${msg}`);
         }
     };

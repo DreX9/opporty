@@ -5,6 +5,12 @@ import { DatosRegistro } from '../types';
 // En emulador de Android local, localhost es accesible en 10.0.2.2. En iOS o Web se usa localhost.
 const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080/api/v1' : 'http://localhost:8080/api/v1';
 
+interface AuthResponse {
+    access_token: string;
+    refresh_token: string;
+    token?: string;
+}
+
 const apiClient = axios.create({
     baseURL: API_URL,
     headers: {
@@ -16,12 +22,12 @@ export const authService = {
     /**
      * Inicia sesión con nombre de usuario y contraseña en el backend
      */
-    async login(username: string, password: string) {
-        const response = await apiClient.post('/auth/authenticate', {
+    async login(username: string, password: string): Promise<AuthResponse> {
+        const response = await apiClient.post<AuthResponse>('/auth/authenticate', {
             username,
             password,
         });
-        return response.data; // { token: string, refreshToken: string }
+        return response.data;
     },
 
     /**
@@ -43,6 +49,7 @@ export const authService = {
             fechaNacimiento: fechaNacimientoFormatted,
             carrera: datos.carrera,
             ciclo: Number(datos.ciclo),
+            phoneNumber: datos.phoneNumber || null,
             password: datos.contrasena,
         };
 
@@ -50,3 +57,4 @@ export const authService = {
         return response.data;
     },
 };
+

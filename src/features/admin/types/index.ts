@@ -1,4 +1,32 @@
-export type Rol = 'Usuario' | 'Admin' | 'Organizador' | 'Moderador';
+export type TeacherStatus = 'ACTIVE' | 'INACTIVE';
+
+export interface BackendRole {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export interface TeacherRegisterResponse {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  titulo?: string;
+  especialidad?: string;
+  telefono?: string;
+  dni: string;
+  fechaNacimiento: string;
+  biography?: string;
+  status: string;
+  hiringDate?: string;
+  user?: {
+    id: number;
+    username: string;
+    email: string;
+    enabled: boolean;
+    role?: BackendRole;
+  };
+}
+
 
 export interface AdminEvent {
   id: string;
@@ -13,18 +41,24 @@ export interface AdminUser {
   id: string;
   nombre: string;
   email: string;
-  rol: Rol;
+  rol: string;
   emoji: string;
 }
 
-export interface FormCrearUsuario {
-  nombre: string;
+export interface TeacherFormData {
+  firstName: string;
+  lastName: string;
+  dni: string;
+  birthDate: string;
+  phoneNumber: string;
+  title: string;
+  specialty: string;
+  biography: string;
+  hiringDate: string;
+  status: TeacherStatus;
   email: string;
   password: string;
-  facultad: string;
-  rol: Rol;
-  departamento: string;
-  cargo: string;
+  roleId: number | null;
 }
 
 export interface FormCrearEvento {
@@ -49,3 +83,4 @@ export interface FormCrearEvento {
   celular: string;
   codigoAutorizacion: string;
 }
+

@@ -1,4 +1,4 @@
-import { AdminEvent, AdminUser, FormCrearUsuario, FormCrearEvento } from '../types';
+import { AdminEvent, AdminUser, TeacherFormData, FormCrearEvento } from '../types';
 
 export const CATEGORIAS = ['Tecnología', 'Música', 'Deporte', 'Arte', 'Educación', 'Social'] as const;
 export type Categoria = (typeof CATEGORIAS)[number];
@@ -14,7 +14,7 @@ export const TIPOS_EVENTO = [
   'Networking'
 ] as const;
 
-export const ROLES = ['Usuario', 'Admin', 'Organizador', 'Moderador'] as const;
+export const TEACHER_STATUS_OPTIONS = ['ACTIVE', 'INACTIVE'] as const;
 
 export const EMOJIS = ['👨🏻‍💻', '👩‍💻', '👑', '🧑‍🎓', '🧑‍💻', '🤖', '🚀', '✨'] as const;
 
@@ -26,21 +26,27 @@ export const INICIAL_EVENTOS: AdminEvent[] = [
 ];
 
 export const INICIAL_USUARIOS: AdminUser[] = [
-  { id: '1', nombre: 'Alex Rivera', email: 'alex@test.com', rol: 'Usuario', emoji: '👨🏻‍💻' },
-  { id: '2', nombre: 'Administrador principal', email: 'admin@admin.com', rol: 'Admin', emoji: '👑' },
-  { id: '3', nombre: 'Carlos Gomez', email: 'carlos@test.com', rol: 'Usuario', emoji: '🧑‍🎓' },
-  { id: '4', nombre: 'Sofia Rojas', email: 'sofia@test.com', rol: 'Usuario', emoji: '👩‍💻' },
-  { id: '5', nombre: 'Juan Perez', email: 'juan@test.com', rol: 'Usuario', emoji: '🧑‍💻' },
+  { id: '1', nombre: 'Alex Rivera', email: 'alex@test.com', rol: 'STUDENT', emoji: '👨🏻‍💻' },
+  { id: '2', nombre: 'Administrador principal', email: 'admin@admin.com', rol: 'ADMIN', emoji: '👑' },
+  { id: '3', nombre: 'Carlos Gomez', email: 'carlos@test.com', rol: 'STUDENT', emoji: '🧑‍🎓' },
+  { id: '4', nombre: 'Sofia Rojas', email: 'sofia@test.com', rol: 'STUDENT', emoji: '👩‍💻' },
+  { id: '5', nombre: 'Juan Perez', email: 'juan@test.com', rol: 'TEACHER', emoji: '🧑‍💻' },
 ];
 
-export const ESTADO_INICIAL_USUARIO: FormCrearUsuario = {
-  nombre: '',
+export const ESTADO_INICIAL_DOCENTE: TeacherFormData = {
+  firstName: '',
+  lastName: '',
+  dni: '',
+  birthDate: '',
+  phoneNumber: '',
+  title: '',
+  specialty: '',
+  biography: '',
+  hiringDate: '',
+  status: 'ACTIVE',
   email: '',
   password: '',
-  facultad: '',
-  rol: 'Usuario',
-  departamento: '',
-  cargo: ''
+  roleId: null,
 };
 
 export const ESTADO_INICIAL_EVENTO: FormCrearEvento = {
@@ -65,3 +71,4 @@ export const ESTADO_INICIAL_EVENTO: FormCrearEvento = {
   celular: '',
   codigoAutorizacion: ''
 };
+

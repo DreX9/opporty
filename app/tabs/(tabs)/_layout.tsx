@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Tabs } from 'expo-router';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Icon } from '@/components/ui/icon';
+import { useAuthState } from '@/src/features/auth/state';
 import { ICONS } from '@/components/icons';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -95,6 +96,14 @@ const sharedHeaderOptions = {
 export default function TabLayout() {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const { role, payload } = useAuthState();
+  const hasAdminAccess = role === 'ADMIN' || role === 'TEACHER' || role === 'MANAGER';
+  const isAdmin = role === 'ADMIN';
+
+  const displayName = payload?.firstName && payload?.lastName
+    ? `${payload.firstName} ${payload.lastName}`
+    : (payload?.sub || 'Usuario');
+
 
   return (
     <>
@@ -120,7 +129,7 @@ export default function TabLayout() {
           options={{
             tabBarLabel: 'Radar',
             ...sharedHeaderOptions,
-            headerTitle: () => <HeaderTitle label="Hola, Usuario" subtitle="Universidad Demo" />,
+            headerTitle: () => <HeaderTitle label={`Hola, ${displayName}`} subtitle={isAdmin ? "Panel Administrador" : "Universidad Demo"} />,
             headerRight: () => <HeaderRightButtons onQrPress={() => setIsQrOpen(true)} />,
             tabBarIcon: ({ color }) => (
               <Icon as={ICONS.radar} style={{ color, width: 22, height: 22 }} />
@@ -146,7 +155,9 @@ export default function TabLayout() {
         <Tabs.Screen
           name="admin"
           options={{
+            href: hasAdminAccess ? undefined : null,
             tabBarLabel: 'Admin',
+
             ...sharedHeaderOptions,
             headerTitle: () => <HeaderTitle label="Administrar" />,
             tabBarIcon: ({ color }) => (

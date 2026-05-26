@@ -15,9 +15,10 @@ interface Stats {
 
 interface StatsGridProps {
   stats: Stats;
+  isAdmin?: boolean;
 }
 
-export default function StatsGrid({ stats }: StatsGridProps) {
+export default function StatsGrid({ stats, isAdmin = false }: StatsGridProps) {
   return (
     <VStack>
       <HStack className="justify-between mb-4">
@@ -64,49 +65,74 @@ export default function StatsGrid({ stats }: StatsGridProps) {
         </Box>
       </HStack>
 
-      <HStack className="justify-between mb-6">
-        <Box
-          className="rounded-2xl p-4 bg-white border border-[#E9EAF4] items-start relative overflow-hidden"
-          style={{
-            width: '48.5%',
-            shadowColor: '#6366F1',
-            shadowOpacity: 0.05,
-            shadowRadius: 10,
-            elevation: 2,
-          }}
-        >
-          <Box className="p-2 rounded-lg bg-fuchsia-50 mb-3">
-            <Icon as={ICONS.Users} className="text-fuchsia-600 w-5 h-5" />
+      {isAdmin ? (
+        <HStack className="justify-between mb-6">
+          <Box
+            className="rounded-2xl p-4 bg-white border border-[#E9EAF4] items-start relative overflow-hidden"
+            style={{
+              width: '48.5%',
+              shadowColor: '#6366F1',
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 2,
+            }}
+          >
+            <Box className="p-2 rounded-lg bg-fuchsia-50 mb-3">
+              <Icon as={ICONS.Users} className="text-fuchsia-600 w-5 h-5" />
+            </Box>
+            <Text className="text-fuchsia-600 text-3xl font-extrabold tracking-tight">
+              {stats.totalUsuarios}
+            </Text>
+            <Text className="text-gray-500 text-xs font-bold mt-1">
+              Usuarios
+            </Text>
           </Box>
-          <Text className="text-fuchsia-600 text-3xl font-extrabold tracking-tight">
-            {stats.totalUsuarios}
-          </Text>
-          <Text className="text-gray-500 text-xs font-bold mt-1">
-            Usuarios
-          </Text>
-        </Box>
 
-        <Box
-          className="rounded-2xl p-4 bg-white border border-[#E9EAF4] items-start relative overflow-hidden"
-          style={{
-            width: '48.5%',
-            shadowColor: '#6366F1',
-            shadowOpacity: 0.05,
-            shadowRadius: 10,
-            elevation: 2,
-          }}
-        >
-          <Box className="p-2 rounded-lg bg-amber-50 mb-3">
-            <Icon as={ICONS.AlertCircle} className="text-amber-600 w-5 h-5" />
+          <Box
+            className="rounded-2xl p-4 bg-white border border-[#E9EAF4] items-start relative overflow-hidden"
+            style={{
+              width: '48.5%',
+              shadowColor: '#6366F1',
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 2,
+            }}
+          >
+            <Box className="p-2 rounded-lg bg-amber-50 mb-3">
+              <Icon as={ICONS.AlertCircle} className="text-amber-600 w-5 h-5" />
+            </Box>
+            <Text className="text-amber-600 text-3xl font-extrabold tracking-tight">
+              {stats.pendientes}
+            </Text>
+            <Text className="text-gray-500 text-xs font-bold mt-1">
+              Pendientes
+            </Text>
           </Box>
-          <Text className="text-amber-600 text-3xl font-extrabold tracking-tight">
-            {stats.pendientes}
-          </Text>
-          <Text className="text-gray-500 text-xs font-bold mt-1">
-            Pendientes
-          </Text>
-        </Box>
-      </HStack>
+        </HStack>
+      ) : (
+        <HStack className="justify-between mb-6">
+          <Box
+            className="rounded-2xl p-4 bg-white border border-[#E9EAF4] items-start relative overflow-hidden"
+            style={{
+              width: '100%',
+              shadowColor: '#6366F1',
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 2,
+            }}
+          >
+            <Box className="p-2 rounded-lg bg-amber-50 mb-3">
+              <Icon as={ICONS.AlertCircle} className="text-amber-600 w-5 h-5" />
+            </Box>
+            <Text className="text-amber-600 text-3xl font-extrabold tracking-tight">
+              {stats.pendientes}
+            </Text>
+            <Text className="text-gray-500 text-xs font-bold mt-1">
+              Pendientes
+            </Text>
+          </Box>
+        </HStack>
+      )}
     </VStack>
   );
 }
