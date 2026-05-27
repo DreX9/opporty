@@ -32,8 +32,8 @@ export default function EventQrPanel({ eventId }: EventQrPanelProps) {
     const [sessionExit, setSessionExit] = useState<QrSessionViewDTO | null>(null);
     const [timeLeftExit, setTimeLeftExit] = useState<number>(0);
 
-    const timerEntryRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const timerExitRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const timerEntryRef = useRef<any>(null);
+    const timerExitRef = useRef<any>(null);
 
     // Manejo de la cuenta regresiva para Entrada
     useEffect(() => {
@@ -320,4 +320,4 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         fontSize: 13,
     },
-});
+}) as any;

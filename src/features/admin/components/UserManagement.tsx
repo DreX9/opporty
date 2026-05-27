@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert, SafeAreaView } from 'react-native';
+import { TouchableOpacity, ScrollView, ActivityIndicator, Modal, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
