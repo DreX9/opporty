@@ -1,9 +1,6 @@
-import { Platform } from 'react-native';
 import axios from 'axios';
 import { DatosRegistro } from '../types';
-
-// En emulador de Android local, localhost es accesible en 10.0.2.2. En iOS o Web se usa localhost.
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080/api/v1' : 'http://localhost:8080/api/v1';
+import { API_URL } from '../../../config/apiConfig';
 
 interface AuthResponse {
     access_token: string;

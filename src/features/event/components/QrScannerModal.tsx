@@ -14,6 +14,7 @@ import { ICONS } from '@/components/icons';
 import { eventStateManager, useEventState } from '../state';
 import { EVENTOS } from '../constants';
 import { useRouter } from 'expo-router';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 
 // ── Anulación de tipos para Reanimated si es necesario ──
 import Animated, {
@@ -37,6 +38,8 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
     const eventState = useEventState();
     const [manualCode, setManualCode] = useState('');
     const [scannedResult, setScannedResult] = useState<string | null>(null);
+    const [permission, requestPermission] = useCameraPermissions();
+    const [showSimulator, setShowSimulator] = useState(false);
 
     // Animación de la línea láser
     const translateY = useSharedValue(0);
@@ -133,6 +136,63 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
         setManualCode('');
     };
 
+    const renderCameraContent = () => {
+        if (!isOpen) return null;
+
+        if (!permission) {
+            return (
+                <View style={styles.cameraPlaceholder}>
+                    <Text style={styles.scanText}>Cargando cámara...</Text>
+                </View>
+            );
+        }
+
+        if (!permission.granted) {
+            return (
+                <View style={styles.permissionContainer}>
+                    <Icon as={ICONS.Camera} style={{ color: '#6366F1', width: 44, height: 44, marginBottom: 8 }} />
+                    <Text style={styles.permissionTitle}>Cámara Requerida</Text>
+                    <Text style={styles.permissionText}>
+                        Necesitamos acceso a la cámara para escanear los códigos QR de los eventos.
+                    </Text>
+                    <TouchableOpacity onPress={requestPermission} style={styles.permissionBtn}>
+                        <Text style={styles.permissionBtnText}>Habilitar Cámara</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        return (
+            <CameraView
+                style={StyleSheet.absoluteFillObject}
+                facing="back"
+                barcodeScannerSettings={{
+                    barcodeTypes: ['qr'],
+                }}
+                onBarcodeScanned={({ data }) => {
+                    if (data) {
+                        processQRData(data);
+                    }
+                }}
+            >
+                <View style={styles.scannerOverlay}>
+                    {/* Esquinas del visor */}
+                    <View style={[styles.corner, styles.topLeft]} />
+                    <View style={[styles.corner, styles.topRight]} />
+                    <View style={[styles.corner, styles.bottomLeft]} />
+                    <View style={[styles.corner, styles.bottomRight]} />
+
+                    {/* Línea láser animada */}
+                    <Animated.View style={[styles.laserLine, laserStyle]} />
+
+                    <Text style={styles.scanText}>
+                        Enfoque el código QR del evento
+                    </Text>
+                </View>
+            </CameraView>
+        );
+    };
+
     // Obtener los eventos a los que el alumno está registrado
     const registradosInfo = EVENTOS.filter(ev => eventState.registrados.has(ev.id));
 
@@ -170,79 +230,80 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
                     ) : (
                         /* Vista del Escáner Activo */
                         <View style={{ flex: 1 }}>
-                            {/* Visor de Cámara Simulado */}
+                            {/* Visor de Cámara Real */}
                             <View style={styles.cameraBox}>
-                                <View style={styles.scannerOverlay}>
-                                    {/* Esquinas del visor */}
-                                    <View style={[styles.corner, styles.topLeft]} />
-                                    <View style={[styles.corner, styles.topRight]} />
-                                    <View style={[styles.corner, styles.bottomLeft]} />
-                                    <View style={[styles.corner, styles.bottomRight]} />
-
-                                    {/* Línea láser animada */}
-                                    <Animated.View style={[styles.laserLine, laserStyle]} />
-
-                                    <Text style={styles.scanText}>
-                                        Enfoque el código QR del evento
-                                    </Text>
-                                </View>
+                                {renderCameraContent()}
                             </View>
 
                             {/* Panel interactivo inferior */}
                             <View style={styles.actionsPanel}>
-                                <Text style={styles.panelTitle}>Simulador de Escaneo Escolar</Text>
-                                <Text style={styles.panelSubtitle}>
-                                    Selecciona una insignia para simular que escaneas el QR del administrador:
-                                </Text>
+                                <TouchableOpacity
+                                    onPress={() => setShowSimulator(!showSimulator)}
+                                    style={styles.toggleSimBtn}
+                                >
+                                    <Icon as={showSimulator ? ICONS.ToggleRight : ICONS.ToggleLeft} style={{ color: '#6366F1', width: 20, height: 20 }} />
+                                    <Text style={styles.toggleSimBtnText}>
+                                        {showSimulator ? 'Ocultar Simulador de Pruebas' : 'Mostrar Simulador de Pruebas'}
+                                    </Text>
+                                </TouchableOpacity>
 
-                                {registradosInfo.length > 0 ? (
-                                    <View style={styles.simulationList}>
-                                        {registradosInfo.map((ev) => {
-                                            const ins = eventState.insignias[ev.id] || { ingreso: false, salida: false };
-                                            return (
-                                                <View key={ev.id} style={styles.simCard}>
-                                                    <Text style={styles.simCardTitle} numberOfLines={1}>
-                                                        {ev.titulo}
-                                                    </Text>
-                                                    <View style={styles.simBtnRow}>
-                                                        <TouchableOpacity
-                                                            onPress={() => handleSimulate(ev.id, 'ingreso')}
-                                                            style={[
-                                                                styles.simBtn,
-                                                                ins.ingreso ? styles.simBtnDisabled : styles.simBtnIngreso
-                                                            ]}
-                                                            disabled={ins.ingreso}
-                                                        >
-                                                            <Icon as={ins.ingreso ? ICONS.CheckCircle : ICONS.Zap} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
-                                                            <Text style={styles.simBtnText}>
-                                                                {ins.ingreso ? 'Ingreso OK' : 'QR Ingreso'}
-                                                            </Text>
-                                                        </TouchableOpacity>
-
-                                                        <TouchableOpacity
-                                                            onPress={() => handleSimulate(ev.id, 'salida')}
-                                                            style={[
-                                                                styles.simBtn,
-                                                                ins.salida ? styles.simBtnDisabled : styles.simBtnSalida
-                                                            ]}
-                                                            disabled={ins.salida}
-                                                        >
-                                                            <Icon as={ins.salida ? ICONS.CheckCircle : ICONS.Trophy} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
-                                                            <Text style={styles.simBtnText}>
-                                                                {ins.salida ? 'Salida OK' : 'QR Salida'}
-                                                            </Text>
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                </View>
-                                            );
-                                        })}
-                                    </View>
-                                ) : (
-                                    <View style={styles.noEventsBox}>
-                                        <Icon as={ICONS.AlertCircle} style={{ color: '#9CA3AF', width: 22, height: 22 }} />
-                                        <Text style={styles.noEventsText}>
-                                            Aún no te has registrado a ningún evento. Regístrate en la pestaña "Eventos" para poder simular la asistencia.
+                                {showSimulator && (
+                                    <View style={{ marginTop: 12 }}>
+                                        <Text style={styles.panelTitle}>Simulador de Escaneo Escolar</Text>
+                                        <Text style={styles.panelSubtitle}>
+                                            Selecciona una insignia para simular que escaneas el QR del administrador:
                                         </Text>
+
+                                        {registradosInfo.length > 0 ? (
+                                            <View style={styles.simulationList}>
+                                                {registradosInfo.map((ev) => {
+                                                    const ins = eventState.insignias[ev.id] || { ingreso: false, salida: false };
+                                                    return (
+                                                        <View key={ev.id} style={styles.simCard}>
+                                                            <Text style={styles.simCardTitle} numberOfLines={1}>
+                                                                {ev.titulo}
+                                                            </Text>
+                                                            <View style={styles.simBtnRow}>
+                                                                <TouchableOpacity
+                                                                    onPress={() => handleSimulate(ev.id, 'ingreso')}
+                                                                    style={[
+                                                                        styles.simBtn,
+                                                                        ins.ingreso ? styles.simBtnDisabled : styles.simBtnIngreso
+                                                                    ]}
+                                                                    disabled={ins.ingreso}
+                                                                >
+                                                                    <Icon as={ins.ingreso ? ICONS.CheckCircle : ICONS.Zap} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
+                                                                    <Text style={styles.simBtnText}>
+                                                                        {ins.ingreso ? 'Ingreso OK' : 'QR Ingreso'}
+                                                                    </Text>
+                                                                </TouchableOpacity>
+
+                                                                <TouchableOpacity
+                                                                    onPress={() => handleSimulate(ev.id, 'salida')}
+                                                                    style={[
+                                                                        styles.simBtn,
+                                                                        ins.salida ? styles.simBtnDisabled : styles.simBtnSalida
+                                                                    ]}
+                                                                    disabled={ins.salida}
+                                                                >
+                                                                    <Icon as={ins.salida ? ICONS.CheckCircle : ICONS.Trophy} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
+                                                                    <Text style={styles.simBtnText}>
+                                                                        {ins.salida ? 'Salida OK' : 'QR Salida'}
+                                                                    </Text>
+                                                                </TouchableOpacity>
+                                                            </View>
+                                                        </View>
+                                                    );
+                                                })}
+                                            </View>
+                                        ) : (
+                                            <View style={styles.noEventsBox}>
+                                                <Icon as={ICONS.AlertCircle} style={{ color: '#9CA3AF', width: 22, height: 22 }} />
+                                                <Text style={styles.noEventsText}>
+                                                    Aún no te has registrado a ningún evento. Regístrate en la pestaña "Eventos" para poder simular la asistencia.
+                                                </Text>
+                                            </View>
+                                        )}
                                     </View>
                                 )}
 
@@ -522,5 +583,64 @@ const styles = StyleSheet.create({
         color: '#3F6212',
         textAlign: 'center',
         lineHeight: 20,
+    },
+    cameraPlaceholder: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#0F172A',
+        width: '100%',
+        height: '100%',
+    },
+    permissionContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#0F172A',
+        padding: 24,
+        width: '100%',
+        height: '100%',
+    },
+    permissionTitle: {
+        color: '#FFFFFF',
+        fontSize: 15,
+        fontWeight: '700',
+        marginBottom: 6,
+        textAlign: 'center',
+    },
+    permissionText: {
+        color: '#94A3B8',
+        fontSize: 12,
+        textAlign: 'center',
+        lineHeight: 16,
+        marginBottom: 16,
+    },
+    permissionBtn: {
+        backgroundColor: '#6366F1',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+    },
+    permissionBtnText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    toggleSimBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#EEF2FF',
+        borderWidth: 1,
+        borderColor: '#E0E7FF',
+        paddingVertical: 10,
+        borderRadius: 12,
+        marginBottom: 6,
+    },
+    toggleSimBtnText: {
+        color: '#4F46E5',
+        fontSize: 12,
+        fontWeight: '700',
     },
 });

@@ -1,12 +1,7 @@
-import { Platform } from 'react-native';
 import axios from 'axios';
 import { authStateManager } from '../../auth/state';
 import { StudentProfile, TeacherProfile, StudentWriteData, TeacherWriteData } from '../types';
-
-const API_URL =
-    Platform.OS === 'android'
-        ? 'http://10.0.2.2:8080/api/v1'
-        : 'http://localhost:8080/api/v1';
+import { API_URL } from '../../../config/apiConfig';
 
 const apiClient = axios.create({
     baseURL: API_URL,
