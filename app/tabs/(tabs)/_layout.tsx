@@ -8,6 +8,7 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { View, TouchableOpacity } from 'react-native';
 import QrScannerModal from '@/src/features/event/components/QrScannerModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ─── Paleta de la app ────────────────────────────────────────────────────────
 const C = {
@@ -94,6 +95,7 @@ const sharedHeaderOptions = {
 };
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const { role, payload } = useAuthState();
@@ -115,8 +117,8 @@ export default function TabLayout() {
             backgroundColor: C.tabBg,
             borderTopColor: C.headerBorder,
             borderTopWidth: 1,
-            height: 60,
-            paddingBottom: 8,
+            height: 60 + (insets.bottom > 0 ? insets.bottom - 4 : 0),
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
           },
           tabBarActiveTintColor: C.tabActive,
           tabBarInactiveTintColor: C.tabInactive,
