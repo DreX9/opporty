@@ -35,7 +35,11 @@ export default function EventScreen() {
     const totalFavoritos = favoritos.size;
 
     // Convert and filter events
-    const eventos = Array.isArray(backendEvents) ? backendEvents.map(mapBackendToEvento) : [];
+    const eventos = Array.isArray(backendEvents)
+        ? backendEvents
+              .filter((ev) => ev.estado === 'PUBLISHED')
+              .map(mapBackendToEvento)
+        : [];
 
     const filtrados = eventos.filter(
         (ev) =>

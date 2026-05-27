@@ -5,11 +5,13 @@ import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
-import { INICIAL_EVENTOS, INICIAL_USUARIOS } from '../constants';
+import { INICIAL_USUARIOS } from '../constants';
 import { AdminEvent, AdminUser } from '../types';
 import { adminService } from '../services/adminService';
+import { useEvents } from '@/src/features/event/hooks/useEvents';
+import { eventService } from '@/src/features/event/services/eventService';
 
 import { useAuthState } from '@/src/features/auth/state';
 import StatsGrid from '../components/StatsGrid';
@@ -19,11 +21,36 @@ import UserManagement from '../components/UserManagement';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { role } = useAuthState();
+
   const [activeTab, setActiveTab] = useState<'dashboard' | 'eventos' | 'usuarios'>('dashboard');
-  const [eventos, setEventos] = useState<AdminEvent[]>(INICIAL_EVENTOS);
+
+  useEffect(() => {
+    if (params.tab && (params.tab === 'dashboard' || params.tab === 'eventos' || params.tab === 'usuarios')) {
+      setActiveTab(params.tab);
+    }
+  }, [params.tab]);
+
+  const { data: backendEvents, refetch: refetchEvents } = useEvents();
   const [usuarios, setUsuarios] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
+
+  const eventos = useMemo(() => {
+    if (!Array.isArray(backendEvents)) return [];
+    return backendEvents.map(be => ({
+      id: String(be.id),
+      titulo: be.titulo,
+      categoria: be.categories && be.categories.length > 0 ? be.categories.map(c => c.nombre).join(', ') : 'Sin categoría',
+      estado: be.estado === 'PUBLISHED' ? 'Aprobado' as const
+            : be.estado === 'PENDING' ? 'Pendiente' as const
+            : be.estado === 'REJECTED' ? 'Rechazado' as const
+            : be.estado,
+      fecha: be.fechaInicio,
+      motivoRechazo: be.motivoRechazo,
+      raw: be,
+    }));
+  }, [backendEvents]);
 
   const loadUsers = async () => {
     try {
@@ -61,18 +88,84 @@ export default function AdminDashboardScreen() {
   }, [eventos, usuarios]);
 
   // Acciones de administración de eventos
-  const handleAprobarEvento = (id: string) => {
-    setEventos(prev =>
-      prev.map(e => e.id === id ? { ...e, estado: 'Aprobado' } : e)
-    );
-    Alert.alert('Éxito', 'El evento ha sido aprobado exitosamente.');
+  const handleAprobarEvento = async (id: string) => {
+    try {
+      const original = backendEvents.find(e => String(e.id) === id);
+      if (!original) return;
+
+      const payload = {
+        titulo: original.titulo,
+        descripcion: original.descripcion || '',
+        fechaInicio: original.fechaInicio,
+        fechaFin: original.fechaFin,
+        horaInicio: original.horaInicio,
+        horaFin: original.horaFin,
+        capacidad: original.capacidad,
+        imagenUrl: original.imagenUrl,
+        modalidad: original.modalidad,
+        lugar: original.lugar,
+        referencia: original.referencia,
+        latitud: original.latitud,
+        longitud: original.longitud,
+        estado: 'PUBLISHED',
+        requiresApproval: original.requiresApproval,
+        allowQrAttendance: original.allowQrAttendance,
+        edadMinima: original.edadMinima,
+        requisitos: original.requisitos,
+        categoryIds: original.categories.map(c => c.id),
+        tagIds: original.tags.map(t => t.id),
+        imageUrls: original.imageUrls || [],
+        motivoRechazo: null,
+      };
+
+      await eventService.updateEvent(Number(id), payload);
+      Alert.alert('✅ Éxito', `El evento "${original.titulo}" ha sido aprobado y ahora es público.`);
+      refetchEvents();
+    } catch (error: unknown) {
+      console.error('Error al aprobar evento:', error);
+      const errMsg = error instanceof Error ? error.message : 'No se pudo aprobar el evento.';
+      Alert.alert('⚠️ Error', errMsg);
+    }
   };
 
-  const handleRechazarEvento = (id: string) => {
-    setEventos(prev =>
-      prev.map(e => e.id === id ? { ...e, estado: 'Pendiente' } : e)
-    );
-    Alert.alert('Información', 'El evento ha sido marcado como pendiente.');
+  const handleRechazarEvento = async (id: string, motivo: string) => {
+    try {
+      const original = backendEvents.find(e => String(e.id) === id);
+      if (!original) return;
+
+      const payload = {
+        titulo: original.titulo,
+        descripcion: original.descripcion || '',
+        fechaInicio: original.fechaInicio,
+        fechaFin: original.fechaFin,
+        horaInicio: original.horaInicio,
+        horaFin: original.horaFin,
+        capacidad: original.capacidad,
+        imagenUrl: original.imagenUrl,
+        modalidad: original.modalidad,
+        lugar: original.lugar,
+        referencia: original.referencia,
+        latitud: original.latitud,
+        longitud: original.longitud,
+        estado: 'REJECTED',
+        requiresApproval: original.requiresApproval,
+        allowQrAttendance: original.allowQrAttendance,
+        edadMinima: original.edadMinima,
+        requisitos: original.requisitos,
+        categoryIds: original.categories.map(c => c.id),
+        tagIds: original.tags.map(t => t.id),
+        imageUrls: original.imageUrls || [],
+        motivoRechazo: motivo.trim() || 'Rechazado por el Administrador',
+      };
+
+      await eventService.updateEvent(Number(id), payload);
+      Alert.alert('❌ Solicitud Rechazada', `El evento "${original.titulo}" ha sido rechazado.`);
+      refetchEvents();
+    } catch (error: unknown) {
+      console.error('Error al rechazar evento:', error);
+      const errMsg = error instanceof Error ? error.message : 'No se pudo rechazar el evento.';
+      Alert.alert('⚠️ Error', errMsg);
+    }
   };
 
   const handleEliminarEvento = (id: string) => {
@@ -84,8 +177,16 @@ export default function AdminDashboardScreen() {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => {
-            setEventos(prev => prev.filter(e => e.id !== id));
+          onPress: async () => {
+            try {
+              await eventService.deleteEvent(Number(id));
+              Alert.alert('✅ Éxito', 'El evento ha sido eliminado permanentemente.');
+              refetchEvents();
+            } catch (error: unknown) {
+              console.error('Error al eliminar evento:', error);
+              const errMsg = error instanceof Error ? error.message : 'No se pudo eliminar el evento.';
+              Alert.alert('⚠️ Error', errMsg);
+            }
           }
         }
       ]
@@ -242,6 +343,7 @@ export default function AdminDashboardScreen() {
             onAprobar={handleAprobarEvento}
             onRechazar={handleRechazarEvento}
             onEliminar={handleEliminarEvento}
+            initialReviewEventId={params.openEventId ? String(params.openEventId) : undefined}
           />
         )}
 

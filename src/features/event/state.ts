@@ -15,6 +15,7 @@ export interface EventGlobalState {
     insignias: Record<string, InsigniaState>;
     qrs: Record<string, QRState>;
     constanciasDescargadas: Set<string>;
+    readNotifications: Set<string>;
 }
 
 // Estado global inicial
@@ -35,6 +36,7 @@ let globalState: EventGlobalState = {
         }
     },
     constanciasDescargadas: new Set<string>(),
+    readNotifications: new Set<string>(),
 };
 
 // Listeners para actualizaciones reactivas
@@ -115,6 +117,17 @@ export const eventStateManager = {
 
     hasDescargadoConstancia(eventId: string): boolean {
         return globalState.constanciasDescargadas.has(eventId);
+    },
+
+    markNotificationAsRead(id: string) {
+        const nextSet = new Set(globalState.readNotifications);
+        nextSet.add(id);
+        globalState.readNotifications = nextSet;
+        notify();
+    },
+
+    isNotificationRead(id: string): boolean {
+        return globalState.readNotifications.has(id);
     }
 };
 
