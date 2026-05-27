@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
     Modal,
-    SafeAreaView,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -10,6 +9,7 @@ import {
     StyleSheet,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';

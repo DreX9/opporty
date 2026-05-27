@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Modal,
     View,
@@ -12,7 +12,8 @@ import {
 import { Icon } from '@/components/ui/icon';
 import { ICONS } from '@/components/icons';
 import { eventStateManager, useEventState } from '../state';
-import { EVENTOS } from '../constants';
+import { useEvents } from '../hooks/useEvents';
+import { mapBackendToEvento } from '../types';
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 
@@ -36,16 +37,20 @@ const { width: SW } = Dimensions.get('window');
 export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrScannerModalProps) {
     const router = useRouter();
     const eventState = useEventState();
+    const { data: backendEvents } = useEvents();
+    const EVENTOS = Array.isArray(backendEvents) ? backendEvents.map(mapBackendToEvento) : [];
     const [manualCode, setManualCode] = useState('');
     const [scannedResult, setScannedResult] = useState<string | null>(null);
     const [permission, requestPermission] = useCameraPermissions();
     const [showSimulator, setShowSimulator] = useState(false);
+    const isProcessingRef = useRef(false);
 
     // Animación de la línea láser
     const translateY = useSharedValue(0);
 
     useEffect(() => {
         if (isOpen) {
+            isProcessingRef.current = false;
             translateY.value = 0;
             translateY.value = withRepeat(
                 withTiming(200, {
@@ -68,6 +73,9 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
 
     // Procesar el payload del QR (JSON o String)
     const processQRData = (dataStr: string) => {
+        if (isProcessingRef.current) return;
+        isProcessingRef.current = true;
+
         try {
             // Intentar parsear como JSON
             const data = JSON.parse(dataStr);
@@ -77,7 +85,13 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
                     Alert.alert(
                         'No Registrado',
                         `Debes registrarte primero al evento "${data.titulo || 'Evento'}" antes de poder registrar tu asistencia.`,
-                        [{ text: 'Entendido' }]
+                        [{ 
+                            text: 'Entendido',
+                            onPress: () => {
+                                // Pequeño delay para dar tiempo a retirar la cámara
+                                setTimeout(() => { isProcessingRef.current = false; }, 1500);
+                            }
+                        }]
                     );
                     return;
                 }
@@ -95,17 +109,30 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
                         router.push('/tabs/event');
                         if (onSelectEvent) {
                             onSelectEvent(data.eventId);
+                            isProcessingRef.current = false;
                         } else {
                             Alert.alert(
                                 '🎉 ¡Felicitaciones!',
-                                `Has desbloqueado la Insignia de ${data.tipo === 'ingreso' ? 'Ingreso' : 'Salida'} para "${ev?.titulo}".`
+                                `Has desbloqueado la Insignia de ${data.tipo === 'ingreso' ? 'Ingreso' : 'Salida'} para "${ev?.titulo}".`,
+                                [{
+                                    text: 'Entendido',
+                                    onPress: () => {
+                                        isProcessingRef.current = false;
+                                    }
+                                }]
                             );
                         }
                     }, 1800);
                 } else {
                     Alert.alert(
                         'Información',
-                        `Ya tenías desbloqueada la Insignia de ${data.tipo.toUpperCase()} para este evento.`
+                        `Ya tenías desbloqueada la Insignia de ${data.tipo.toUpperCase()} para este evento.`,
+                        [{ 
+                            text: 'Entendido',
+                            onPress: () => {
+                                setTimeout(() => { isProcessingRef.current = false; }, 1500);
+                            }
+                        }]
                     );
                 }
             } else {
@@ -115,7 +142,13 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
             // Si no es JSON, ver si es formato texto plano
             Alert.alert(
                 'Código Inválido',
-                'El código QR escaneado no pertenece al sistema de asistencia UniRadar.'
+                'El código QR escaneado no pertenece al sistema de asistencia UniRadar.',
+                [{ 
+                    text: 'Entendido',
+                    onPress: () => {
+                        setTimeout(() => { isProcessingRef.current = false; }, 1500);
+                    }
+                }]
             );
         }
     };
@@ -163,18 +196,19 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
         }
 
         return (
-            <CameraView
-                style={StyleSheet.absoluteFillObject}
-                facing="back"
-                barcodeScannerSettings={{
-                    barcodeTypes: ['qr'],
-                }}
-                onBarcodeScanned={({ data }) => {
-                    if (data) {
-                        processQRData(data);
-                    }
-                }}
-            >
+            <>
+                <CameraView
+                    style={StyleSheet.absoluteFillObject}
+                    facing="back"
+                    barcodeScannerSettings={{
+                        barcodeTypes: ['qr'],
+                    }}
+                    onBarcodeScanned={({ data }) => {
+                        if (data) {
+                            processQRData(data);
+                        }
+                    }}
+                />
                 <View style={styles.scannerOverlay}>
                     {/* Esquinas del visor */}
                     <View style={[styles.corner, styles.topLeft]} />
@@ -189,7 +223,7 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
                         Enfoque el código QR del evento
                     </Text>
                 </View>
-            </CameraView>
+            </>
         );
     };
 
