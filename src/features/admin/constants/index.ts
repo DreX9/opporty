@@ -51,24 +51,27 @@ export const ESTADO_INICIAL_DOCENTE: TeacherFormData = {
 
 export const ESTADO_INICIAL_EVENTO: FormCrearEvento = {
   titulo: '',
-  fecha: '',
-  hora: '',
-  horaFin: '',
-  lugar: '',
-  latitud: 0,
-  longitud: 0,
-  categoria: '',
-  asistentes: '',
   descripcion: '',
-  destacado: false,
-  imagenUri: '',
-  tipo: '',
+  fechaInicio: '',
+  fechaFin: '',
+  horaInicio: '',
+  horaFin: '',
+  capacidad: '',
+  imagenUrl: '',
+  imageUrls: [],
+  modalidad: 'PRESENCIAL',
+  lugar: '',
+  referencia: '',
+  latitud: -12.046374,
+  longitud: -77.042793,
+  estado: 'PUBLISHED',
+  requiresApproval: false,
+  allowQrAttendance: false,
   edadMinima: '',
   requisitos: '',
-  codigoEmpleado: '',
-  cargo: '',
-  correo: '',
-  celular: '',
-  codigoAutorizacion: ''
+  categoryIds: [],
+  tagIds: [],
 };
+
+
 
