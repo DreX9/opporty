@@ -97,7 +97,7 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
                 }
 
                 const unlocked = eventStateManager.unlockInsignia(data.eventId, data.tipo);
-                const ev = EVENTOS.find(e => e.id === data.eventId);
+                const ev = allEvents.find(e => String(e.id) === String(data.eventId));
 
                 if (unlocked) {
                     // Mostrar pantalla de éxito
@@ -154,7 +154,7 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
     };
 
     const handleSimulate = (eventId: string, tipo: 'ingreso' | 'salida') => {
-        const ev = EVENTOS.find(e => e.id === eventId);
+        const ev = allEvents.find(e => String(e.id) === String(eventId));
         const payload = JSON.stringify({
             eventId,
             tipo,
@@ -228,7 +228,7 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
     };
 
     // Obtener los eventos a los que el alumno está registrado
-    const registradosInfo = EVENTOS.filter(ev => eventState.registrados.has(ev.id));
+    const registradosInfo = allEvents.filter(ev => eventState.registrados.has(String(ev.id)));
 
     return (
         <Modal
@@ -299,7 +299,7 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
                                                             </Text>
                                                             <View style={styles.simBtnRow}>
                                                                 <TouchableOpacity
-                                                                    onPress={() => handleSimulate(ev.id, 'ingreso')}
+                                                                    onPress={() => handleSimulate(String(ev.id), 'ingreso')}
                                                                     style={[
                                                                         styles.simBtn,
                                                                         ins.ingreso ? styles.simBtnDisabled : styles.simBtnIngreso
@@ -313,7 +313,7 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
                                                                 </TouchableOpacity>
 
                                                                 <TouchableOpacity
-                                                                    onPress={() => handleSimulate(ev.id, 'salida')}
+                                                                    onPress={() => handleSimulate(String(ev.id), 'salida')}
                                                                     style={[
                                                                         styles.simBtn,
                                                                         ins.salida ? styles.simBtnDisabled : styles.simBtnSalida

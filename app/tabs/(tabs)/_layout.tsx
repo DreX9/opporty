@@ -4,6 +4,8 @@ import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Icon } from '@/components/ui/icon';
 import { useAuthState } from '@/src/features/auth/state';
 import { ICONS } from '@/components/icons';
+import { useEvents } from '@/src/features/event/hooks/useEvents';
+import { useEventState } from '@/src/features/event/state';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
 import { View, TouchableOpacity } from 'react-native';
@@ -102,6 +104,23 @@ export default function TabLayout() {
   const hasAdminAccess = role === 'ADMIN' || role === 'TEACHER' || role === 'MANAGER';
   const isAdmin = role === 'ADMIN';
 
+  const { data: backendEvents } = useEvents();
+  const eventState = useEventState();
+  const solicitudesPendientes = React.useMemo(() => {
+    if (!Array.isArray(backendEvents)) return 0;
+    if (isAdmin) {
+      return backendEvents.filter(e => e.estado === 'PENDING').length;
+    }
+    if (role === 'MANAGER' && payload?.sub) {
+      return backendEvents.filter(e => 
+        e.createdByUsername === payload.sub && 
+        (e.estado === 'PUBLISHED' || e.estado === 'REJECTED') && 
+        !eventState.readNotifications.has(String(e.id))
+      ).length;
+    }
+    return 0;
+  }, [backendEvents, isAdmin, role, payload?.sub, eventState.readNotifications]);
+
   const displayName = payload?.firstName && payload?.lastName
     ? `${payload.firstName} ${payload.lastName}`
     : (payload?.sub || 'Usuario');
@@ -168,7 +187,7 @@ export default function TabLayout() {
           }}
         />
 
-        {/* ── PERFIL ────────────────────────────────────────────────────────── */}
+// ─── PERFIL ──────────────────────────────────────────────────────────
         <Tabs.Screen
           name="profile"
           options={{
@@ -176,7 +195,22 @@ export default function TabLayout() {
             ...sharedHeaderOptions,
             headerTitle: () => <HeaderTitle label="Mi Perfil" />,
             tabBarIcon: ({ color }) => (
-              <Icon as={ICONS.user} style={{ color, width: 22, height: 22 }} />
+              <View style={{ position: 'relative' }}>
+                <Icon as={ICONS.user} style={{ color, width: 22, height: 22 }} />
+                {solicitudesPendientes > 0 && (
+                  <View style={{
+                    position: 'absolute',
+                    top: -2,
+                    right: -2,
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: '#EF4444',
+                    borderWidth: 1,
+                    borderColor: '#FFFFFF',
+                  }} />
+                )}
+              </View>
             ),
           }}
         />
