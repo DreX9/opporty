@@ -22,8 +22,8 @@ import InterestChip from '../components/InterestChip';
 import MenuRow from '../components/MenuRow';
 import EditProfileModal from '../components/EditProfileModal';
 import { eventStateManager, useEventState } from '../../event/state';
-import { EVENTOS } from '../../event/constants';
-import { Evento } from '../../event/types';
+import { Evento, mapBackendToEvento } from '../../event/types';
+import { useEvents } from '../../event/hooks/useEvents';
 
 export default function ProfileScreen() {
     const router = useRouter();
@@ -31,6 +31,9 @@ export default function ProfileScreen() {
     const isAdmin = role === 'ADMIN';
 
     const eventState = useEventState();
+    const { data: backendEvents } = useEvents();
+    const EVENTOS = Array.isArray(backendEvents) ? backendEvents.map(mapBackendToEvento) : [];
+
     const [intereses, setIntereses] = useState<Interes[]>(INTERESES_INICIAL);
     const [selectedConstanciaEvento, setSelectedConstanciaEvento] = useState<Evento | null>(null);
     const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);

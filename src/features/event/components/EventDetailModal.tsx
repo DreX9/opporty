@@ -19,6 +19,8 @@ import { Evento } from '../types';
 import { C } from '../constants';
 import InfoPill from './InfoPill';
 import { eventStateManager, useEventState } from '../state';
+import { useAuthState } from '../../auth/state';
+import EventQrPanel from './EventQrPanel';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -28,6 +30,7 @@ interface EventDetailModalProps {
     onClose: () => void;
     favorito: boolean;
     onToggleFavorito: (id: string) => void;
+    onEventSaved?: () => void;
 }
 
 export default function EventDetailModal({
@@ -36,12 +39,15 @@ export default function EventDetailModal({
     onClose,
     favorito,
     onToggleFavorito,
+    onEventSaved,
 }: EventDetailModalProps) {
     const eventState = useEventState();
+    const { role } = useAuthState();
     const [isCertOpen, setIsCertOpen] = useState(false);
 
     if (!evento) return null;
 
+    const isAdminOrTeacher = role === 'ADMIN' || role === 'TEACHER';
     const isRegistered = eventStateManager.isRegistered(evento.id);
     const insignias = eventStateManager.getInsignias(evento.id);
     const isCertUnlocked = insignias.ingreso && insignias.salida;
@@ -65,7 +71,7 @@ export default function EventDetailModal({
         );
     };
 
-    // Generar tags correspondientes a la categoría del evento
+    // Generar tags correspondientes a la categoría del evento como fallback
     const getTagsForCategoria = (cat: string) => {
         switch (cat) {
             case 'Tecnología':
@@ -83,7 +89,9 @@ export default function EventDetailModal({
         }
     };
 
-    const tags = getTagsForCategoria(evento.categoria);
+    const tags = (evento.tags && evento.tags.length > 0)
+        ? evento.tags.map(t => `#${t}`)
+        : getTagsForCategoria(evento.categoria);
 
     return (
         <Modal
@@ -100,7 +108,15 @@ export default function EventDetailModal({
                 >
                     {/* Contenedor de Banner de Imagen */}
                     <View style={styles.bannerContainer}>
-                        <Image source={{ uri: evento.imagenUri }} style={styles.bannerImage} />
+                        {evento.imageUrls && evento.imageUrls.length > 1 ? (
+                            <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
+                                {evento.imageUrls.map((url) => (
+                                    <Image key={url} source={{ uri: url }} style={{ width: SW, height: SH * 0.32, resizeMode: 'cover' }} />
+                                ))}
+                            </ScrollView>
+                        ) : (
+                            <Image source={{ uri: evento.imagenUri }} style={styles.bannerImage} />
+                        )}
                         
                         {/* Overlay Oscuro superior para legibilidad de botones */}
                         <View style={styles.overlayTop} />
@@ -267,6 +283,13 @@ export default function EventDetailModal({
                                 </VStack>
                             </View>
                         </VStack>
+
+                        {/* Control Asistencia QR (Admin/Docente) */}
+                        {isAdminOrTeacher && (
+                            <VStack style={styles.sectionDivider}>
+                                <EventQrPanel eventId={Number(evento.id)} />
+                            </VStack>
+                        )}
 
                         {/* ── SECCIÓN DINÁMICA DE REGISTRO E INSIGNIAS (SOLO REGISTRADOS) ── */}
                         {isRegistered && (

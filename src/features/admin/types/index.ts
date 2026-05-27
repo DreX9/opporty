@@ -93,24 +93,27 @@ export interface TeacherFormData {
 
 export interface FormCrearEvento {
   titulo: string;
-  fecha: string;
-  hora: string;
-  horaFin: string;
+  descripcion: string;
+  fechaInicio: string;    // ISO "yyyy-MM-dd"
+  fechaFin: string;      // ISO "yyyy-MM-dd"
+  horaInicio: string;     // "HH:mm"
+  horaFin: string;        // "HH:mm"
+  capacidad: string;
+  imagenUrl: string;      // primera imagen (principal)
+  imageUrls: string[];    // hasta 3 imágenes adicionales Cloudinary
+  modalidad: string;      // PRESENCIAL, VIRTUAL, HIBRIDO
   lugar: string;
+  referencia: string;
   latitud: number;
   longitud: number;
-  categoria: string;
-  asistentes: string;
-  descripcion: string;
-  destacado: boolean;
-  imagenUri: string;
-  tipo: string;
+  estado: string;         // 'PUBLISHED' o 'DRAFT'
+  requiresApproval: boolean;
+  allowQrAttendance: boolean;
   edadMinima: string;
   requisitos: string;
-  codigoEmpleado: string;
-  cargo: string;
-  correo: string;
-  celular: string;
-  codigoAutorizacion: string;
+  categoryIds: number[];
+  tagIds: number[];
 }
+
+
 
