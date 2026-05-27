@@ -28,13 +28,17 @@ export interface TeacherRegisterResponse {
 }
 
 
+import { EventoBackend } from '../../event/types/api';
+
 export interface AdminEvent {
   id: string;
   titulo: string;
   categoria: string;
-  estado: 'Aprobado' | 'Pendiente';
+  estado: 'Aprobado' | 'Pendiente' | 'Rechazado' | 'DRAFT' | 'CANCELLED' | 'FINISHED';
   fecha: string;
   color?: string;
+  motivoRechazo?: string | null;
+  raw?: EventoBackend;
 }
 
 export interface AdminUser {

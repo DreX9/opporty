@@ -28,11 +28,12 @@ export interface EventoBackend {
   referencia: string | null;
   latitud: number | null;
   longitud: number | null;
-  estado: 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'FINISHED';
+  estado: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'CANCELLED' | 'FINISHED';
   requiresApproval: boolean;
   allowQrAttendance: boolean;
   edadMinima: number | null;
   requisitos: string | null;
+  motivoRechazo: string | null;
   createdById: number;
   createdByUsername: string;
   createdAt: string;
@@ -65,6 +66,7 @@ export interface EventoWritePayload {
   categoryIds: number[];
   tagIds: number[];
   imageUrls: string[];
+  motivoRechazo?: string | null;
 }
 
 export interface QrSessionWritePayload {

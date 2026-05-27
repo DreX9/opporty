@@ -32,8 +32,8 @@ export default function EventQrPanel({ eventId }: EventQrPanelProps) {
     const [sessionExit, setSessionExit] = useState<QrSessionViewDTO | null>(null);
     const [timeLeftExit, setTimeLeftExit] = useState<number>(0);
 
-    const timerEntryRef = useRef<NodeJS.Timeout | null>(null);
-    const timerExitRef = useRef<NodeJS.Timeout | null>(null);
+    const timerEntryRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const timerExitRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Manejo de la cuenta regresiva para Entrada
     useEffect(() => {
@@ -103,9 +103,23 @@ export default function EventQrPanel({ eventId }: EventQrPanelProps) {
             });
             setSession(response.session);
             setQr(response.qrCodeBase64);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(`Error generando QR de ${type}:`, error);
-            const msg = error.response?.data?.message || error.message || 'No se pudo generar la sesión de QR.';
+            let msg = 'No se pudo generar la sesión de QR.';
+            if (error && typeof error === 'object') {
+                const errObj = error as Record<string, unknown>;
+                if (errObj.response && typeof errObj.response === 'object') {
+                    const respObj = errObj.response as Record<string, unknown>;
+                    if (respObj.data && typeof respObj.data === 'object') {
+                        const dataObj = respObj.data as Record<string, unknown>;
+                        if (typeof dataObj.message === 'string') {
+                            msg = dataObj.message;
+                        }
+                    }
+                } else if (typeof errObj.message === 'string') {
+                    msg = errObj.message;
+                }
+            }
             Alert.alert('⚠️ Error al generar QR', msg);
         } finally {
             setLoader(false);
@@ -241,7 +255,7 @@ const styles = StyleSheet.create({
         padding: 16,
     },
     sectionHeader: {
-        justifyContent: 'between',
+        justifyContent: 'space-between',
         alignItems: 'center',
         flexDirection: 'row',
     },

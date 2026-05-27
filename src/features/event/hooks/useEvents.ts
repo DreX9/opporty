@@ -2,28 +2,62 @@ import { useState, useEffect, useCallback } from 'react';
 import { eventService } from '../services/eventService';
 import { EventoBackend } from '../types/api';
 
-export function useEvents() {
-    const [data, setData] = useState<EventoBackend[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+// Shared state at module level
+let globalEvents: EventoBackend[] = [];
+let globalLoading: boolean = false;
+let globalError: string | null = null;
+let hasFetchedOnce: boolean = false;
 
-    const fetchEvents = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const events = await eventService.fetchAllEvents();
-            setData(events);
-        } catch (err: any) {
-            console.error('Error fetching events:', err);
-            setError(err.response?.data?.message || err.message || 'Error al cargar eventos.');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+const listeners = new Set<() => void>();
+
+function notifyListeners() {
+    listeners.forEach(listener => listener());
+}
+
+export function useEvents() {
+    const [data, setData] = useState<EventoBackend[]>(globalEvents);
+    const [loading, setLoading] = useState<boolean>(globalLoading);
+    const [error, setError] = useState<string | null>(globalError);
 
     useEffect(() => {
-        fetchEvents();
-    }, [fetchEvents]);
+        const handleUpdate = () => {
+            setData(globalEvents);
+            setLoading(globalLoading);
+            setError(globalError);
+        };
+        listeners.add(handleUpdate);
+        
+        // If it hasn't fetched yet, trigger fetch
+        if (!hasFetchedOnce && !globalLoading) {
+            fetchEvents();
+        }
+
+        return () => {
+            listeners.delete(handleUpdate);
+        };
+    }, []);
+
+    const fetchEvents = useCallback(async () => {
+        globalLoading = true;
+        globalError = null;
+        notifyListeners();
+        try {
+            const events = await eventService.fetchAllEvents();
+            globalEvents = events;
+            hasFetchedOnce = true;
+        } catch (err) {
+            console.error('Error fetching events:', err);
+            let msg = 'Error al cargar eventos.';
+            if (err && typeof err === 'object') {
+                const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+                msg = axiosErr.response?.data?.message || axiosErr.message || msg;
+            }
+            globalError = msg;
+        } finally {
+            globalLoading = false;
+            notifyListeners();
+        }
+    }, []);
 
     return {
         data,
@@ -32,3 +66,4 @@ export function useEvents() {
         refetch: fetchEvents,
     };
 }
+

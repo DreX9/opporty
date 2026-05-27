@@ -38,6 +38,56 @@ export default function ProfileScreen() {
     const [selectedConstanciaEvento, setSelectedConstanciaEvento] = useState<Evento | null>(null);
     const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+    const solicitudesPendientes = React.useMemo(() => {
+        if (!Array.isArray(backendEvents)) return 0;
+        if (isAdmin) {
+            return backendEvents.filter(e => e.estado === 'PENDING').length;
+        } else if (role === 'MANAGER' && payload?.sub) {
+            return backendEvents.filter(e => 
+                e.createdByUsername === payload.sub && 
+                (e.estado === 'PUBLISHED' || e.estado === 'REJECTED') &&
+                !eventState.readNotifications.has(String(e.id))
+            ).length;
+        }
+        return 0;
+    }, [backendEvents, isAdmin, role, payload?.sub, eventState.readNotifications]);
+
+    const listaSolicitudes = React.useMemo(() => {
+        if (!Array.isArray(backendEvents)) return [];
+        if (isAdmin) {
+            return backendEvents.filter(e => e.estado === 'PENDING');
+        } else if (role === 'MANAGER' && payload?.sub) {
+            return backendEvents.filter(e => 
+                e.createdByUsername === payload.sub && 
+                (e.estado === 'PUBLISHED' || e.estado === 'REJECTED') &&
+                !eventState.readNotifications.has(String(e.id))
+            );
+        }
+        return [];
+    }, [backendEvents, isAdmin, role, payload?.sub, eventState.readNotifications]);
+
+    const menuWithBadges = MENU_ITEMS.map((item) => {
+        if (item.id === 'notif') {
+            return {
+                ...item,
+                badge: solicitudesPendientes > 0 ? ('dot' as const) : undefined,
+                info: solicitudesPendientes > 0 ? `${solicitudesPendientes} pendiente(s)` : undefined,
+            };
+        }
+        return item;
+    });
+
+    const handleMenuPress = (id: string) => {
+        if (id === 'notif') {
+            setIsNotifOpen(true);
+        } else if (id === 'eventos') {
+            router.push('/tabs/event');
+        } else if (id === 'privacidad') {
+            Alert.alert('Privacidad', 'Esta sección se habilitará próximamente.');
+        }
+    };
 
 
     const totalActivos = intereses.filter((i) => i.activo).length;
@@ -130,7 +180,9 @@ export default function ProfileScreen() {
 
                 {/* Badge de rol */}
                 <View style={styles.roleBadge}>
-                    <Text style={styles.roleBadgeText}>{isAdmin ? 'Administrador' : 'Alumno UTP'}</Text>
+                    <Text style={styles.roleBadgeText}>
+                        {role === 'ADMIN' ? 'Administrador' : role === 'MANAGER' ? 'Manager' : role === 'TEACHER' ? 'Docente' : 'Alumno UTP'}
+                    </Text>
                 </View>
             </View>
 
@@ -251,8 +303,8 @@ export default function ProfileScreen() {
 
             {/* ── Menú de opciones ─────────────────────────────────────────── */}
             <View style={styles.menuContainer}>
-                {MENU_ITEMS.map((item) => (
-                    <MenuRow key={item.id} item={item} />
+                {menuWithBadges.map((item) => (
+                    <MenuRow key={item.id} item={item} onPress={() => handleMenuPress(item.id)} />
                 ))}
 
                 {/* Cerrar sesión (separado para énfasis) */}
@@ -371,6 +423,185 @@ export default function ProfileScreen() {
                     // La reactividad de authStateManager actualiza automáticamente los datos locales
                 }}
             />
+
+            {/* ── MODAL DE NOTIFICACIONES ── */}
+            <Modal
+                visible={isNotifOpen}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setIsNotifOpen(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.certModalContainer, { padding: 20 }]}>
+                        {/* Cabecera */}
+                        <View style={styles.certHeader}>
+                            <Text style={styles.certHeaderTitle}>Notificaciones</Text>
+                            <TouchableOpacity onPress={() => setIsNotifOpen(false)} style={styles.certCloseBtn}>
+                                <Icon as={ICONS.X} style={{ color: '#6B7280', width: 20, height: 20 }} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Listado de Solicitudes/Notificaciones */}
+                        {listaSolicitudes.length > 0 ? (
+                            <ScrollView style={{ width: '100%', maxHeight: 300 }} showsVerticalScrollIndicator={false}>
+                                <View style={{ gap: 12, paddingVertical: 10 }}>
+                                    {listaSolicitudes.map((sol) => (
+                                        <View key={sol.id} style={{
+                                            backgroundColor: '#F8FAFC',
+                                            borderRadius: 12,
+                                            borderWidth: 1,
+                                            borderColor: '#E2E8F0',
+                                            padding: 12,
+                                            gap: 6
+                                        }}>
+                                            {role === 'ADMIN' ? (
+                                                <>
+                                                    <HStack style={{ alignItems: 'center', gap: 6 }}>
+                                                        <Icon as={ICONS.user} style={{ color: '#6366F1', width: 14, height: 14 }} />
+                                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '700' }}>
+                                                            Manager: @{sol.createdByUsername}
+                                                        </Text>
+                                                    </HStack>
+                                                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B' }}>
+                                                        Solicitud para publicar evento
+                                                    </Text>
+                                                    <Text style={{ fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
+                                                        "{sol.titulo}"
+                                                    </Text>
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            setIsNotifOpen(false);
+                                                            router.push({
+                                                                pathname: '/tabs/admin',
+                                                                params: { tab: 'eventos' }
+                                                            });
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: '#EEF2FF',
+                                                            borderColor: '#6366F1',
+                                                            borderWidth: 1,
+                                                            borderRadius: 8,
+                                                            paddingVertical: 6,
+                                                            alignItems: 'center',
+                                                            marginTop: 4
+                                                        }}
+                                                    >
+                                                        <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>
+                                                            Revisar en Solicitudes
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </>
+                                            ) : (
+                                                // Role is MANAGER
+                                                <>
+                                                    <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <HStack style={{ alignItems: 'center', gap: 6 }}>
+                                                            <Icon 
+                                                                as={sol.estado === 'PUBLISHED' ? ICONS.CheckCircle : ICONS.AlertCircle} 
+                                                                style={{ color: sol.estado === 'PUBLISHED' ? '#10B981' : '#EF4444', width: 16, height: 16 }} 
+                                                            />
+                                                            <Text style={{ fontSize: 13, fontWeight: '800', color: sol.estado === 'PUBLISHED' ? '#10B981' : '#EF4444' }}>
+                                                                {sol.estado === 'PUBLISHED' ? 'Evento Aprobado 🎉' : 'Evento Rechazado ❌'}
+                                                            </Text>
+                                                        </HStack>
+                                                        
+                                                        {/* Dismiss Notification */}
+                                                        <TouchableOpacity
+                                                            onPress={() => eventStateManager.markNotificationAsRead(String(sol.id))}
+                                                            style={{
+                                                                padding: 4,
+                                                                borderRadius: 6,
+                                                                backgroundColor: '#F1F5F9'
+                                                            }}
+                                                        >
+                                                            <Icon as={ICONS.CheckCircle} style={{ color: '#475569', width: 14, height: 14 }} />
+                                                        </TouchableOpacity>
+                                                    </HStack>
+                                                    
+                                                    <Text style={{ fontSize: 12, color: '#475569', fontWeight: '600' }}>
+                                                        Tu solicitud para el evento "{sol.titulo}" ha sido {sol.estado === 'PUBLISHED' ? 'aprobada y ya se encuentra publicada.' : 'rechazada por el administrador.'}
+                                                    </Text>
+
+                                                    {sol.estado === 'REJECTED' && sol.motivoRechazo && (
+                                                        <View style={{
+                                                            backgroundColor: '#FEF2F2',
+                                                            borderColor: '#FEE2E2',
+                                                            borderWidth: 1,
+                                                            borderRadius: 8,
+                                                            padding: 8,
+                                                            marginTop: 4
+                                                        }}>
+                                                            <Text style={{ fontSize: 10, fontWeight: '700', color: '#B91C1C', marginBottom: 2 }}>
+                                                                Observación del Administrador:
+                                                            </Text>
+                                                            <Text style={{ fontSize: 11, color: '#7F1D1D' }}>
+                                                                {sol.motivoRechazo}
+                                                            </Text>
+                                                        </View>
+                                                    )}
+
+                                                    <HStack style={{ gap: 8, marginTop: 4 }}>
+                                                        {sol.estado === 'REJECTED' && (
+                                                            <TouchableOpacity
+                                                                onPress={() => {
+                                                                    setIsNotifOpen(false);
+                                                                    router.push({
+                                                                        pathname: '/tabs/admin',
+                                                                        params: { tab: 'eventos', openEventId: String(sol.id) }
+                                                                    });
+                                                                }}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    backgroundColor: '#6366F1',
+                                                                    borderRadius: 8,
+                                                                    paddingVertical: 8,
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    flexDirection: 'row',
+                                                                    gap: 6
+                                                                }}
+                                                            >
+                                                                <Icon as={ICONS.Search} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
+                                                                <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>
+                                                                    Revisar Detalle
+                                                                </Text>
+                                                            </TouchableOpacity>
+                                                        )}
+                                                        <TouchableOpacity
+                                                            onPress={() => eventStateManager.markNotificationAsRead(String(sol.id))}
+                                                            style={{
+                                                                flex: 1,
+                                                                backgroundColor: '#EEF2FF',
+                                                                borderColor: '#6366F1',
+                                                                borderWidth: 1,
+                                                                borderRadius: 8,
+                                                                paddingVertical: 8,
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                        >
+                                                            <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>
+                                                                Entendido
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    </HStack>
+                                                </>
+                                            )}
+                                        </View>
+                                    ))}
+                                </View>
+                            </ScrollView>
+                        ) : (
+                            <View style={{ alignItems: 'center', paddingVertical: 32, gap: 10 }}>
+                                <Icon as={ICONS.CheckCircle} style={{ color: '#10B981', width: 44, height: 44 }} />
+                                <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center' }}>
+                                    No tienes notificaciones pendientes. Todo al día.
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
 
     );

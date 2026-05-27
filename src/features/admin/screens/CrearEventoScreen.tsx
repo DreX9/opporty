@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     ScrollView,
     TouchableOpacity,
@@ -9,7 +9,8 @@ import {
     ActivityIndicator,
     Image,
     Switch,
-    StyleSheet
+    StyleSheet,
+    View
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadImageToCloudinary } from '../services/cloudinaryService';
@@ -22,7 +23,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Input, InputField } from '@/components/ui/input';
 import { ICONS } from '@/components/icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SelectorMapaModal } from '@/components/SelectorMapaModal';
 
 import {
@@ -40,9 +41,13 @@ import { ESTADO_INICIAL_EVENTO } from '../constants';
 import { FormCrearEvento } from '../types';
 import { useCategories } from '../../event/hooks/useCategories';
 import { eventService } from '../../event/services/eventService';
+import { useAuthState } from '../../auth/state';
+import { eventStateManager } from '../../event/state';
 
 export default function CrearEventoScreen() {
     const router = useRouter();
+    const { id } = useLocalSearchParams<{ id?: string }>();
+    const { role } = useAuthState();
     const { categorias, loading: loadingCats } = useCategories();
 
     const [form, setForm] = useState<FormCrearEvento>(ESTADO_INICIAL_EVENTO);
@@ -50,10 +55,70 @@ export default function CrearEventoScreen() {
     const [subiendoImagen, setSubiendoImagen] = useState(false);
     const [publicando, setPublicando] = useState(false);
     const [modalMapaVisible, setModalMapaVisible] = useState(false);
-
-    // DateTime Picker helper states
+    const [cargandoEdicion, setCargandoEdicion] = useState(false);
     const [currentPicker, setCurrentPicker] = useState<'fechaInicio' | 'fechaFin' | 'horaInicio' | 'horaFin' | null>(null);
 
+    useEffect(() => {
+        if (id) {
+            const cargarDetallesEvento = async () => {
+                try {
+                    setCargandoEdicion(true);
+                    const ev = await eventService.fetchEventById(Number(id));
+                    
+                    const formattedHoraInicio = ev.horaInicio ? ev.horaInicio.slice(0, 5) : '';
+                    const formattedHoraFin = ev.horaFin ? ev.horaFin.slice(0, 5) : '';
+                    
+                    setForm({
+                        titulo: ev.titulo || '',
+                        descripcion: ev.descripcion || '',
+                        fechaInicio: ev.fechaInicio || '',
+                        fechaFin: ev.fechaFin || '',
+                        horaInicio: formattedHoraInicio,
+                        horaFin: formattedHoraFin,
+                        capacidad: ev.capacidad ? String(ev.capacidad) : '',
+                        imagenUrl: ev.imagenUrl || '',
+                        imageUrls: ev.imageUrls || [],
+                        modalidad: ev.modalidad || '',
+                        lugar: ev.lugar || '',
+                        referencia: ev.referencia || '',
+                        latitud: ev.latitud || 0,
+                        longitud: ev.longitud || 0,
+                        estado: ev.estado || 'PENDING',
+                        requiresApproval: ev.requiresApproval ?? false,
+                        allowQrAttendance: ev.allowQrAttendance ?? false,
+                        edadMinima: ev.edadMinima ? String(ev.edadMinima) : '',
+                        requisitos: ev.requisitos || '',
+                        categoryIds: ev.categories ? ev.categories.map(c => c.id) : [],
+                        tagIds: ev.tags ? ev.tags.map(t => t.id) : [],
+                    });
+                } catch (err) {
+                    console.error('Error al cargar detalles del evento:', err);
+                    let msg = 'No se pudo cargar la información del evento.';
+                    if (err && typeof err === 'object') {
+                        const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+                        msg = axiosErr.response?.data?.message || axiosErr.message || msg;
+                    }
+                    Alert.alert('Error', msg);
+                } finally {
+                    setCargandoEdicion(false);
+                }
+            };
+            cargarDetallesEvento();
+        }
+    }, [id]);
+
+    if (cargandoEdicion) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F4F4FB' }}>
+                <ActivityIndicator size="large" color="#6366F1" />
+                <Text style={{ marginTop: 12, color: '#475569', fontWeight: '700', fontSize: 13 }}>
+                    Cargando datos del evento...
+                </Text>
+            </View>
+        );
+    }
+
+    // DateTime Picker helper states
     const totalPasos = 4;
 
     const seleccionarImagen = async () => {
@@ -270,7 +335,7 @@ export default function CrearEventoScreen() {
                 referencia: form.referencia.trim() || null,
                 latitud: form.latitud,
                 longitud: form.longitud,
-                estado: 'PUBLISHED',
+                estado: role === 'MANAGER' ? 'PENDING' : 'PUBLISHED',
                 requiresApproval: form.requiresApproval,
                 allowQrAttendance: form.allowQrAttendance,
                 edadMinima: form.edadMinima ? parseInt(form.edadMinima, 10) : null,
@@ -278,16 +343,37 @@ export default function CrearEventoScreen() {
                 categoryIds: form.categoryIds,
                 tagIds: form.tagIds,
                 imageUrls: form.imageUrls,
+                motivoRechazo: null,
             };
 
-            await eventService.createEvent(payload);
-            Alert.alert('✅ ¡Evento creado!', `El evento "${form.titulo}" se publicó correctamente en Echo.`, [
-                { text: 'Excelente', onPress: () => router.replace('/tabs/radar') }
-            ]);
-        } catch (error: any) {
-            console.error('[CrearEventoScreen] Error al crear evento:', error);
-            const msg = error.response?.data?.message || error.message || 'No se pudo conectar con el servidor.';
-            Alert.alert('⚠️ Error al crear evento', msg);
+            if (id) {
+                await eventService.updateEvent(Number(id), payload);
+                const msgExito = role === 'MANAGER'
+                    ? `El evento "${form.titulo}" ha sido corregido y reenviado para revisión.`
+                    : `El evento "${form.titulo}" se actualizó correctamente en Echo.`;
+                
+                eventStateManager.markNotificationAsRead(String(id));
+                
+                Alert.alert('✅ ¡Evento actualizado!', msgExito, [
+                    { text: 'Excelente', onPress: () => router.replace('/tabs/radar') }
+                ]);
+            } else {
+                await eventService.createEvent(payload);
+                const msgExito = role === 'MANAGER'
+                    ? `El evento "${form.titulo}" ha sido creado y enviado para revisión del administrador.`
+                    : `El evento "${form.titulo}" se publicó correctamente en Echo.`;
+                Alert.alert('✅ ¡Evento creado!', msgExito, [
+                    { text: 'Excelente', onPress: () => router.replace('/tabs/radar') }
+                ]);
+            }
+        } catch (err) {
+            console.error('[CrearEventoScreen] Error al guardar evento:', err);
+            let msg = 'No se pudo conectar con el servidor.';
+            if (err && typeof err === 'object') {
+                const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+                msg = axiosErr.response?.data?.message || axiosErr.message || msg;
+            }
+            Alert.alert('⚠️ Error al guardar evento', msg);
         } finally {
             setPublicando(false);
         }
@@ -313,7 +399,7 @@ export default function CrearEventoScreen() {
                             Paso {pasoActual} de {totalPasos}
                         </Text>
                         <Text className="text-indigo-600 text-xs font-extrabold tracking-widest uppercase">
-                            {pasoActual === 1 ? 'Detalles Básicos' : pasoActual === 2 ? 'Programación' : pasoActual === 3 ? 'Ajustes Finales' : 'Verificación'}
+                            {id ? 'Corregir Evento' : (pasoActual === 1 ? 'Detalles Básicos' : pasoActual === 2 ? 'Programación' : pasoActual === 3 ? 'Ajustes Finales' : 'Verificación')}
                         </Text>
                     </HStack>
                     <Box className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -744,8 +830,12 @@ export default function CrearEventoScreen() {
                 ======================================================== */}
                 {pasoActual === 4 && (
                     <VStack space="md" className="flex-1">
-                        <Text className="text-[#111827] text-lg font-bold mb-1">Confirmar Publicación</Text>
-                        <Text className="text-gray-500 text-sm mb-4">Revisa detenidamente los detalles de tu evento antes de publicarlo en el radar estudiantil.</Text>
+                        <Text className="text-[#111827] text-lg font-bold mb-1">
+                            {id ? 'Confirmar Corrección' : 'Confirmar Publicación'}
+                        </Text>
+                        <Text className="text-gray-500 text-sm mb-4">
+                            {id ? 'Revisa detenidamente las correcciones de tu evento antes de volver a enviarlo.' : 'Revisa detenidamente los detalles de tu evento antes de publicarlo en el radar estudiantil.'}
+                        </Text>
 
                         {/* Tarjeta de Resumen */}
                         <VStack className="bg-white p-5 rounded-2xl border border-[#E9EAF4]" space="md">
@@ -855,7 +945,7 @@ export default function CrearEventoScreen() {
                             <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                             <ButtonText className="text-white font-extrabold uppercase tracking-wider">
-                                {pasoActual === totalPasos ? 'Publicar' : 'Siguiente'}
+                                {pasoActual === totalPasos ? (id ? 'Enviar Corrección' : 'Publicar') : 'Siguiente'}
                             </ButtonText>
                         )}
                     </Button>

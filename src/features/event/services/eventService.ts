@@ -64,6 +64,30 @@ export const eventService = {
     },
 
     /**
+     * Actualiza un evento existente.
+     * Requiere rol ADMIN, TEACHER o MANAGER.
+     * Endpoint: PUT /api/v1/events/{id}
+     */
+    async updateEvent(id: number, payload: EventoWritePayload): Promise<EventoBackend> {
+        const response = await apiClient.put<EventoBackend>(`/events/${id}`, payload, {
+            headers: getAuthHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
+     * Elimina un evento por su ID.
+     * Requiere rol ADMIN, TEACHER o MANAGER.
+     * Endpoint: DELETE /api/v1/events/{id}
+     */
+    async deleteEvent(id: number): Promise<string> {
+        const response = await apiClient.delete<string>(`/events/${id}`, {
+            headers: getAuthHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
      * Obtiene todas las categorías de eventos disponibles (con tags anidados).
      * Endpoint: GET /api/v1/event-categories
      */
