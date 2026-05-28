@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     StyleSheet,
     Dimensions,
@@ -8,6 +8,7 @@ import {
     View,
     Alert,
     ScrollView,
+    Animated,
 } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -31,6 +32,7 @@ interface EventDetailModalProps {
     favorito: boolean;
     onToggleFavorito: (id: string) => void;
     onEventSaved?: () => void;
+    highlightAnim?: 'ingreso' | 'salida';
 }
 
 export default function EventDetailModal({
@@ -40,10 +42,27 @@ export default function EventDetailModal({
     favorito,
     onToggleFavorito,
     onEventSaved,
+    highlightAnim,
 }: EventDetailModalProps) {
     const eventState = useEventState();
     const { role } = useAuthState();
     const [isCertOpen, setIsCertOpen] = useState(false);
+
+    // Animaciones
+    const animIngreso = useRef(new Animated.Value(1)).current;
+    const animSalida = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+        if (visible && highlightAnim) {
+            const targetAnim = highlightAnim === 'ingreso' ? animIngreso : animSalida;
+            Animated.sequence([
+                Animated.timing(targetAnim, { toValue: 1.15, duration: 300, useNativeDriver: true }),
+                Animated.timing(targetAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+                Animated.timing(targetAnim, { toValue: 1.15, duration: 300, useNativeDriver: true }),
+                Animated.timing(targetAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+            ]).start();
+        }
+    }, [visible, highlightAnim]);
 
     if (!evento) return null;
 
@@ -301,9 +320,10 @@ export default function EventDetailModal({
 
                                 <HStack style={styles.badgesRow}>
                                     {/* Insignia Ingreso */}
-                                    <View style={[
+                                    <Animated.View style={[
                                         styles.insigniaBox,
-                                        insignias.ingreso ? styles.insigniaUnlocked : styles.insigniaLocked
+                                        insignias.ingreso ? styles.insigniaUnlocked : styles.insigniaLocked,
+                                        { transform: [{ scale: animIngreso }] }
                                     ]}>
                                         <Icon
                                             as={insignias.ingreso ? ICONS.CheckCircle : ICONS.Zap}
@@ -319,12 +339,13 @@ export default function EventDetailModal({
                                         ]}>
                                             {insignias.ingreso ? 'Ingreso Registrado' : 'Ingreso Pendiente'}
                                         </Text>
-                                    </View>
+                                    </Animated.View>
 
                                     {/* Insignia Salida */}
-                                    <View style={[
+                                    <Animated.View style={[
                                         styles.insigniaBox,
-                                        insignias.salida ? styles.insigniaUnlocked : styles.insigniaLocked
+                                        insignias.salida ? styles.insigniaUnlocked : styles.insigniaLocked,
+                                        { transform: [{ scale: animSalida }] }
                                     ]}>
                                         <Icon
                                             as={insignias.salida ? ICONS.CheckCircle : ICONS.Trophy}
@@ -340,7 +361,7 @@ export default function EventDetailModal({
                                         ]}>
                                             {insignias.salida ? 'Salida Registrada' : 'Salida Pendiente'}
                                         </Text>
-                                    </View>
+                                    </Animated.View>
                                 </HStack>
 
                                 {/* Botón de Constancia */}
@@ -380,9 +401,9 @@ export default function EventDetailModal({
                     </VStack>
 
                     {isRegistered ? (
-                        <View style={[styles.actionBtn, styles.actionBtnInscribed]}>
-                            <Icon as={ICONS.CheckCircle} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
-                            <Text style={styles.actionBtnInscribedText}>Inscrito ✓</Text>
+                        <View style={[styles.actionBtn, styles.actionBtnInscribed, isCertUnlocked && { backgroundColor: '#10B981', borderColor: '#059669' }]}>
+                            <Icon as={isCertUnlocked ? ICONS.Trophy : ICONS.CheckCircle} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                            <Text style={styles.actionBtnInscribedText}>{isCertUnlocked ? 'Completado 🏆' : 'Inscrito ✓'}</Text>
                         </View>
                     ) : (
                         <TouchableOpacity

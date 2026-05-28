@@ -67,11 +67,25 @@ export default function ProfileScreen() {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
 
-    // Auto-polling: refrescar la lista de eventos cada 30 segundos
-    // para que las notificaciones PRE_START aparezcan a tiempo
+    const [serverNotifications, setServerNotifications] = useState<any[]>([]);
+
     useEffect(() => {
+        const fetchNotifs = async () => {
+            try {
+                const { notificationService } = require('../services/notificationService');
+                const notifs = await notificationService.getMyNotifications();
+                setServerNotifications(notifs.filter((n: any) => !n.isRead));
+            } catch (e) {
+                console.log('Error fetching notifs', e);
+            }
+        };
+
+        // Fetch inicial
+        fetchNotifs();
+
         const interval = setInterval(() => {
             refetchEvents?.();
+            fetchNotifs();
         }, 30_000);
         return () => clearInterval(interval);
     }, [refetchEvents]);
@@ -240,8 +254,18 @@ export default function ProfileScreen() {
         return list;
     }, [backendEvents, isAdmin, role, payload?.sub, eventState.readNotifications]);
 
-    const solicitudesPendientes = notificationsList.length;
-    const listaSolicitudes = notificationsList;
+    const listaSolicitudes = [
+        ...serverNotifications.map(n => ({
+            id: `server-${n.id}`,
+            type: 'SERVER_ALERT' as const,
+            title: n.title,
+            description: n.message,
+            event: null as any,
+            originalId: n.id
+        })),
+        ...notificationsList
+    ];
+    const solicitudesPendientes = listaSolicitudes.length;
 
     const menuWithBadges = MENU_ITEMS.map((item) => {
         if (item.id === 'notif') {
@@ -629,6 +653,46 @@ export default function ProfileScreen() {
                                             padding: 12,
                                             gap: 6
                                         }}>
+                                            {notif.type === 'SERVER_ALERT' && (
+                                                <>
+                                                    <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                                                        <HStack style={{ alignItems: 'center', gap: 6 }}>
+                                                            <Icon as={ICONS.Bell} style={{ color: '#F59E0B', width: 16, height: 16 }} />
+                                                            <Text style={{ fontSize: 13, fontWeight: '800', color: '#D97706' }}>
+                                                                {notif.title}
+                                                            </Text>
+                                                        </HStack>
+                                                    </HStack>
+                                                    <Text style={{ fontSize: 12, color: '#475569', fontWeight: '600' }}>
+                                                        {notif.description}
+                                                    </Text>
+                                                    <TouchableOpacity
+                                                        onPress={async () => {
+                                                            try {
+                                                                const { notificationService } = require('../services/notificationService');
+                                                                await notificationService.markAsRead(notif.originalId);
+                                                                setServerNotifications(prev => prev.filter((n: any) => n.id !== notif.originalId));
+                                                            } catch (e) {
+                                                                console.error(e);
+                                                            }
+                                                        }}
+                                                        style={{
+                                                            backgroundColor: '#FFFBEB',
+                                                            borderColor: '#FCD34D',
+                                                            borderWidth: 1,
+                                                            borderRadius: 8,
+                                                            paddingVertical: 6,
+                                                            alignItems: 'center',
+                                                            marginTop: 4
+                                                        }}
+                                                    >
+                                                        <Text style={{ color: '#D97706', fontSize: 11, fontWeight: '700' }}>
+                                                            Marcar como Leído
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </>
+                                            )}
+
                                             {notif.type === 'PENDING_APPROVAL' && (
                                                 <>
                                                     <HStack style={{ alignItems: 'center', gap: 6 }}>

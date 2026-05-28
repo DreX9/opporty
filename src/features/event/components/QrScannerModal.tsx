@@ -71,79 +71,94 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
 
     if (!isOpen) return null;
 
-    // Procesar el payload del QR (JSON o String)
-    const processQRData = (dataStr: string) => {
+    // Procesar el payload del QR (JSON o String o Token)
+    const processQRData = async (dataStr: string) => {
         if (isProcessingRef.current) return;
         isProcessingRef.current = true;
 
         try {
-            // Intentar parsear como JSON
-            const data = JSON.parse(dataStr);
-            if (data.eventId && data.tipo) {
-                const isReg = eventStateManager.isRegistered(data.eventId);
-                if (!isReg) {
-                    Alert.alert(
-                        'No Registrado',
-                        `Debes registrarte primero al evento "${data.titulo || 'Evento'}" antes de poder registrar tu asistencia.`,
-                        [{ 
-                            text: 'Entendido',
-                            onPress: () => {
-                                // Pequeño delay para dar tiempo a retirar la cámara
-                                setTimeout(() => { isProcessingRef.current = false; }, 1500);
-                            }
-                        }]
-                    );
-                    return;
-                }
-
-                const unlocked = eventStateManager.unlockInsignia(data.eventId, data.tipo);
-                const ev = EVENTOS.find(e => String(e.id) === String(data.eventId));
-
-                if (unlocked) {
-                    // Mostrar pantalla de éxito
-                    setScannedResult(`¡Insignia de ${data.tipo.toUpperCase()} desbloqueada con éxito! 🏆`);
-                    setTimeout(() => {
-                        setScannedResult(null);
-                        onClose();
-                        // Redireccionar a la pantalla de eventos y notificar éxito
-                        router.push('/tabs/event');
-                        if (onSelectEvent) {
-                            onSelectEvent(data.eventId);
-                            isProcessingRef.current = false;
-                        } else {
-                            Alert.alert(
-                                '🎉 ¡Felicitaciones!',
-                                `Has desbloqueado la Insignia de ${data.tipo === 'ingreso' ? 'Ingreso' : 'Salida'} para "${ev?.titulo}".`,
-                                [{
-                                    text: 'Entendido',
-                                    onPress: () => {
-                                        isProcessingRef.current = false;
-                                    }
-                                }]
-                            );
-                        }
-                    }, 1800);
-                } else {
-                    Alert.alert(
-                        'Información',
-                        `Ya tenías desbloqueada la Insignia de ${data.tipo.toUpperCase()} para este evento.`,
-                        [{ 
-                            text: 'Entendido',
-                            onPress: () => {
-                                setTimeout(() => { isProcessingRef.current = false; }, 1500);
-                            }
-                        }]
-                    );
-                }
-            } else {
-                throw new Error('Formato inválido');
+            // El QR del backend contiene directamente el UUID del token.
+            // Intentamos parsear como JSON por compatibilidad con simulador.
+            let token = dataStr;
+            try {
+                const parsed = JSON.parse(dataStr);
+                if (parsed.token) token = parsed.token;
+            } catch (e) {
+                // No es JSON, asumimos que es el token directo (caso real del backend)
             }
-        } catch (e) {
-            // Si no es JSON, ver si es formato texto plano
+
+            // --- LLAMADA AL BACKEND REAL ---
+            const { eventService } = require('../services/eventService');
+            const registration = await eventService.scanQrCode(token);
+
+            // El backend retorna EventRegistrationsViewDTO con todos los campos actualizados.
+            // El DTO expone `eventId` directamente como Long (no como objeto anidado).
+            const evId = String(registration?.eventId ?? '');
+
+            if (!evId) {
+                // Respuesta inesperada del backend, pero fue exitosa
+                setScannedResult('✅ ¡Asistencia registrada!');
+                setTimeout(() => { setScannedResult(null); onClose(); isProcessingRef.current = false; }, 1800);
+                return;
+            }
+
+            // Determinar qué insignia se acaba de desbloquear:
+            // - Si qrExitScanned == true → se registró la SALIDA
+            // - Si qrEntryScanned == true y qrExitScanned == false → se registró el INGRESO
+            const tipoDesbloqueado: 'ingreso' | 'salida' = registration.qrExitScanned ? 'salida' : 'ingreso';
+
+            // Sincronizar estado local del frontend:
+            // 1) Marcar al usuario como registrado en el evento (puede ser auto-registro)
+            eventStateManager.registerToEvent(evId);
+            // 2) Desbloquear la insignia correspondiente
+            eventStateManager.unlockInsignia(evId, tipoDesbloqueado);
+            // Si también ya tenía la de ingreso y ahora tiene la de salida, marcar las dos
+            if (tipoDesbloqueado === 'salida' && registration.qrEntryScanned) {
+                eventStateManager.unlockInsignia(evId, 'ingreso');
+            }
+
+            // Mostrar pantalla de éxito breve, luego navegar al evento
+            const label = tipoDesbloqueado === 'ingreso' ? 'INGRESO 🏅' : 'SALIDA 🏆';
+            setScannedResult(`¡Insignia de ${label} desbloqueada con éxito!`);
+            setTimeout(() => {
+                setScannedResult(null);
+                onClose();
+                router.push({
+                    pathname: '/tabs/event',
+                    params: { openEventId: evId, highlightAnim: tipoDesbloqueado }
+                });
+                isProcessingRef.current = false;
+            }, 1800);
+
+        } catch (error: any) {
+            console.warn('Escaneo de QR rechazado por el servidor:', error?.response?.data?.message || error.message);
+            const serverMsg: string = error?.response?.data?.message || error?.message || '';
+
+            // Elegir un título y mensaje amigable según el contexto del error
+            let titulo = '❌ Escaneo Rechazado';
+            let mensaje = serverMsg || 'El código QR no es válido o ha expirado.';
+
+            if (serverMsg.toLowerCase().includes('no puedes registrar salida')) {
+                titulo = '⚠️ Ingreso No Registrado';
+                mensaje = 'No puedes registrar tu salida porque aún no has registrado tu ingreso al evento. Escanea primero el QR de Entrada.';
+            } else if (serverMsg.toLowerCase().includes('capacidad') || serverMsg.toLowerCase().includes('aforo')) {
+                titulo = '🚫 Aforo Completo';
+                mensaje = 'El evento ha alcanzado su capacidad máxima. No es posible registrar tu asistencia.';
+            } else if (serverMsg.toLowerCase().includes('cancelada') || serverMsg.toLowerCase().includes('rechazada')) {
+                titulo = '🚫 Inscripción No Válida';
+                mensaje = 'Tu inscripción a este evento fue cancelada o rechazada. Contacta al organizador.';
+            } else if (serverMsg.toLowerCase().includes('ya has escaneado')) {
+                titulo = '✅ Ya Registrado';
+                mensaje = 'Ya registraste esta acción anteriormente. Revisa el panel de insignias en el detalle del evento.';
+            } else if (serverMsg.toLowerCase().includes('expirado') || serverMsg.toLowerCase().includes('inválido')) {
+                titulo = '⏱ QR Expirado';
+                mensaje = 'Este código QR ya no es válido o ha expirado. Solicita uno nuevo al organizador.';
+            }
+
             Alert.alert(
-                'Código Inválido',
-                'El código QR escaneado no pertenece al sistema de asistencia UniRadar.',
-                [{ 
+                titulo,
+                mensaje,
+                [{
                     text: 'Entendido',
                     onPress: () => {
                         setTimeout(() => { isProcessingRef.current = false; }, 1500);
@@ -152,6 +167,7 @@ export default function QrScannerModal({ isOpen, onClose, onSelectEvent }: QrSca
             );
         }
     };
+
 
     const handleSimulate = (eventId: string, tipo: 'ingreso' | 'salida') => {
         const ev = EVENTOS.find(e => String(e.id) === String(eventId));
