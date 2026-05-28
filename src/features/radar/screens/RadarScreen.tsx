@@ -13,6 +13,9 @@ import {
     StyleSheet,
     DimensionValue,
     ActivityIndicator,
+    Alert,
+    Linking,
+    Modal,
 } from 'react-native';
 import Animated, {
     useSharedValue,
@@ -104,6 +107,28 @@ export default function RadarScreen() {
     const [searchQuery, setSearchQuery] = useState('');
     const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
     const [favoritos, setFavoritos] = useState<Set<string>>(new Set());
+    const [eventoParaOpciones, setEventoParaOpciones] = useState<RadarEvento | null>(null);
+
+    // ── Abrir Google Maps con la ruta hacia el evento ──────────────────────────
+    const abrirGoogleMaps = (lat: number, lon: number) => {
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+        Linking.openURL(url).catch((err) => {
+            Alert.alert('Error', 'No se pudo abrir Google Maps en este dispositivo.');
+            console.error('Error opening maps URL:', err);
+        });
+    };
+
+    // ── Opciones del evento al presionar un punto en el radar ─────────────────
+    const handleEventDotPress = (re: RadarEvento) => {
+        const lat = re.backend.latitud;
+        const lon = re.backend.longitud;
+
+        if (lat !== null && lon !== null) {
+            setEventoParaOpciones(re);
+        } else {
+            setEventoSeleccionado(re.mapped);
+        }
+    };
 
     // ── Pinch-to-zoom ─────────────────────────────────────────────────────────
     const ZOOM_MIN = 0.6;
@@ -348,7 +373,7 @@ export default function RadarScreen() {
                     radarEventos.map((re) => (
                         <TouchableOpacity
                             key={re.card.id}
-                            onPress={() => setEventoSeleccionado(re.mapped)}
+                            onPress={() => handleEventDotPress(re)}
                             style={[
                                 styles.eventDot,
                                 {
@@ -428,6 +453,93 @@ export default function RadarScreen() {
                 </VStack>
             )}
 
+            {/* ── Modal de Opciones del Evento (Diseño Premium) ────────────────── */}
+            <Modal
+                visible={eventoParaOpciones !== null}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setEventoParaOpciones(null)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setEventoParaOpciones(null)}
+                >
+                    <View style={styles.optionsSheet}>
+                        {eventoParaOpciones && (
+                            <>
+                                <View style={styles.sheetIndicator} />
+                                
+                                <Text style={[styles.optionsCategory, { color: getCategoryAccentColor(eventoParaOpciones.card.categoria) }]} numberOfLines={1}>
+                                    {eventoParaOpciones.card.categoria.toUpperCase()}
+                                </Text>
+                                
+                                <Text style={styles.optionsTitle} numberOfLines={2}>
+                                    {eventoParaOpciones.card.titulo}
+                                </Text>
+                                
+                                <HStack style={styles.optionsLocationRow}>
+                                    <Icon as={ICONS.MapPin} style={{ color: C.textSecondary, width: 14, height: 14 }} />
+                                    <Text style={styles.optionsLocationText} numberOfLines={1}>
+                                        {eventoParaOpciones.backend.lugar || 'No especificado'}
+                                    </Text>
+                                </HStack>
+
+                                <Text style={styles.optionsDistance}>
+                                    A {eventoParaOpciones.card.distancia} de ti
+                                </Text>
+
+                                <VStack style={styles.optionsButtonsContainer}>
+                                    {/* Botón Guiar al Evento (Destacado) */}
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            const lat = eventoParaOpciones.backend.latitud;
+                                            const lon = eventoParaOpciones.backend.longitud;
+                                            if (lat !== null && lon !== null) {
+                                                abrirGoogleMaps(lat, lon);
+                                            }
+                                            setEventoParaOpciones(null);
+                                        }}
+                                        style={[
+                                            styles.actionButtonSolid,
+                                            { backgroundColor: getCategoryAccentColor(eventoParaOpciones.card.categoria) }
+                                        ]}
+                                    >
+                                        <Icon as={ICONS.MapPin} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                                        <Text style={styles.actionButtonSolidText}>Guiar al evento (Google Maps)</Text>
+                                    </TouchableOpacity>
+
+                                    {/* Botón Ver Detalles */}
+                                    <TouchableOpacity
+                                        onPress={() => {
+                                            setEventoSeleccionado(eventoParaOpciones.mapped);
+                                            setEventoParaOpciones(null);
+                                        }}
+                                        style={[
+                                            styles.actionButtonOutline,
+                                            { borderColor: getCategoryAccentColor(eventoParaOpciones.card.categoria) }
+                                        ]}
+                                    >
+                                        <Icon as={ICONS.FileText} style={{ color: getCategoryAccentColor(eventoParaOpciones.card.categoria), width: 16, height: 16 }} />
+                                        <Text style={[styles.actionButtonOutlineText, { color: getCategoryAccentColor(eventoParaOpciones.card.categoria) }]}>
+                                            Ver detalles del evento
+                                        </Text>
+                                    </TouchableOpacity>
+
+                                    {/* Botón Cancelar */}
+                                    <TouchableOpacity
+                                        onPress={() => setEventoParaOpciones(null)}
+                                        style={styles.cancelButton}
+                                    >
+                                        <Text style={styles.cancelButtonText}>Cerrar</Text>
+                                    </TouchableOpacity>
+                                </VStack>
+                            </>
+                        )}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
             {/* ── Modal de detalle del evento ─────────────────────────────── */}
             <EventDetailModal
                 visible={eventoSeleccionado !== null}
@@ -501,5 +613,113 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 32,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.4)', // Oscuro translúcido para enfoque
+        justifyContent: 'flex-end', // Estilo Bottom Sheet
+    },
+    optionsSheet: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingHorizontal: 24,
+        paddingTop: 12,
+        paddingBottom: 32,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 8,
+    },
+    sheetIndicator: {
+        width: 38,
+        height: 5,
+        borderRadius: 2.5,
+        backgroundColor: '#E2E8F0',
+        marginBottom: 18,
+    },
+    optionsCategory: {
+        fontSize: 10,
+        fontWeight: '800',
+        letterSpacing: 1.2,
+        marginBottom: 6,
+        textAlign: 'center',
+    },
+    optionsTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1E293B',
+        textAlign: 'center',
+        marginBottom: 8,
+        lineHeight: 24,
+    },
+    optionsLocationRow: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginBottom: 4,
+    },
+    optionsLocationText: {
+        fontSize: 13,
+        color: '#475569',
+        fontWeight: '500',
+    },
+    optionsDistance: {
+        fontSize: 12,
+        color: '#64748B',
+        fontWeight: '600',
+        marginBottom: 20,
+    },
+    optionsButtonsContainer: {
+        width: '100%',
+        gap: 12,
+    },
+    actionButtonSolid: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        height: 50,
+        borderRadius: 14,
+        width: '100%',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    actionButtonSolidText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '800',
+    },
+    actionButtonOutline: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        height: 50,
+        borderRadius: 14,
+        borderWidth: 2,
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+    },
+    actionButtonOutlineText: {
+        fontSize: 14,
+        fontWeight: '800',
+    },
+    cancelButton: {
+        height: 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        marginTop: 4,
+    },
+    cancelButtonText: {
+        color: '#64748B',
+        fontSize: 13,
+        fontWeight: '700',
     },
 });
