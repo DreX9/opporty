@@ -325,6 +325,10 @@ export default function ProfileScreen() {
                 text: 'Salir', 
                 style: 'destructive', 
                 onPress: () => {
+                    // 1. Limpiar todo el estado de eventos del usuario actual
+                    //    para evitar fuga de datos al siguiente usuario del mismo dispositivo.
+                    eventStateManager.resetState();
+                    // 2. Limpiar la sesión de autenticación y redirigir al login.
                     authStateManager.clearSession();
                     router.replace('/');
                 } 
