@@ -8,10 +8,11 @@ import { EventCardProps } from '../types';
 import { C } from '../constants';
 import InfoPill from './InfoPill';
 
-export default function EventCard({ evento }: EventCardProps) {
+export default function EventCard({ evento, onPress }: EventCardProps) {
     return (
         <TouchableOpacity
             activeOpacity={0.8}
+            onPress={onPress}
             style={[styles.card, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}
         >
             {/* Indicador activo */}

@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Box } from '@/components/ui/box';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -51,13 +52,15 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <GluestackUIProvider mode="dark">
-      <ThemeProvider value={MyDarkTheme}>
-        <StatusBar style="light" />
-        <Box className="flex-1 dark bg-background-500">
-          <Slot />
-        </Box>
-      </ThemeProvider>
-    </GluestackUIProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GluestackUIProvider mode="dark">
+        <ThemeProvider value={MyDarkTheme}>
+          <StatusBar style="light" />
+          <Box className="flex-1 dark bg-background-500">
+            <Slot />
+          </Box>
+        </ThemeProvider>
+      </GluestackUIProvider>
+    </GestureHandlerRootView>
   );
 }

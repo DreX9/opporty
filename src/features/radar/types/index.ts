@@ -19,6 +19,7 @@ export interface EventoCard {
 
 export interface EventCardProps {
     evento: EventoCard;
+    onPress?: () => void;
 }
 
 export interface InfoPillProps {
