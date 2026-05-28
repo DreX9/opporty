@@ -32,8 +32,60 @@ export default function EventQrPanel({ eventId }: EventQrPanelProps) {
     const [sessionExit, setSessionExit] = useState<QrSessionViewDTO | null>(null);
     const [timeLeftExit, setTimeLeftExit] = useState<number>(0);
 
-    const timerEntryRef = useRef<any>(null);
-    const timerExitRef = useRef<any>(null);
+    const timerEntryRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const timerExitRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const checkActiveSessions = async () => {
+        try {
+            const entryRes = await eventService.fetchActiveQrSession(eventId, 'ENTRY');
+            if (entryRes && entryRes.session && entryRes.session.active) {
+                setSessionEntry(prev => {
+                    if (!prev || prev.id !== entryRes.session.id) {
+                        setQrEntryBase64(entryRes.qrCodeBase64);
+                        return entryRes.session;
+                    }
+                    return prev;
+                });
+            } else {
+                setSessionEntry(prev => {
+                    if (prev) {
+                        setQrEntryBase64(null);
+                        return null;
+                    }
+                    return prev;
+                });
+            }
+
+            const exitRes = await eventService.fetchActiveQrSession(eventId, 'EXIT');
+            if (exitRes && exitRes.session && exitRes.session.active) {
+                setSessionExit(prev => {
+                    if (!prev || prev.id !== exitRes.session.id) {
+                        setQrExitBase64(exitRes.qrCodeBase64);
+                        return exitRes.session;
+                    }
+                    return prev;
+                });
+            } else {
+                setSessionExit(prev => {
+                    if (prev) {
+                        setQrExitBase64(null);
+                        return null;
+                    }
+                    return prev;
+                });
+            }
+        } catch (error: unknown) {
+            console.error('Error al verificar sesiones de QR activas:', error);
+        }
+    };
+
+    useEffect(() => {
+        checkActiveSessions();
+        const pollInterval = setInterval(checkActiveSessions, 10000);
+        return () => {
+            clearInterval(pollInterval);
+        };
+    }, [eventId]);
 
     // Manejo de la cuenta regresiva para Entrada
     useEffect(() => {

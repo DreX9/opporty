@@ -66,7 +66,7 @@ export const ESTADO_INICIAL_EVENTO: FormCrearEvento = {
   longitud: -77.042793,
   estado: 'PUBLISHED',
   requiresApproval: false,
-  allowQrAttendance: false,
+  allowQrAttendance: true,
   edadMinima: '',
   requisitos: '',
   categoryIds: [],

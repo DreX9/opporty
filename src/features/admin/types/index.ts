@@ -34,7 +34,7 @@ export interface AdminEvent {
   id: string;
   titulo: string;
   categoria: string;
-  estado: 'Aprobado' | 'Pendiente' | 'Rechazado' | 'DRAFT' | 'CANCELLED' | 'FINISHED';
+  estado: 'Aprobado' | 'Pendiente' | 'Rechazado' | 'Programado' | 'Suspendido' | 'Cancelado' | 'DRAFT' | 'CANCELLED' | 'FINISHED';
   fecha: string;
   color?: string;
   motivoRechazo?: string | null;

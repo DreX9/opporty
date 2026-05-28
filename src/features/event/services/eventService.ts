@@ -109,4 +109,16 @@ export const eventService = {
         });
         return response.data;
     },
+
+    /**
+     * Obtiene la sesión de asistencia QR activa de un tipo dado para el evento.
+     * Endpoint: GET /api/v1/event-qr-sessions/active/{eventId}?type=ENTRY (o EXIT)
+     */
+    async fetchActiveQrSession(eventId: number, type: 'ENTRY' | 'EXIT'): Promise<QrSessionResponse | null> {
+        const response = await apiClient.get<QrSessionResponse | null>(`/event-qr-sessions/active/${eventId}`, {
+            params: { type },
+            headers: getAuthHeaders(),
+        });
+        return response.data;
+    },
 };

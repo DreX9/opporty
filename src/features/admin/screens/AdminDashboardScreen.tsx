@@ -45,6 +45,9 @@ export default function AdminDashboardScreen() {
       estado: be.estado === 'PUBLISHED' ? 'Aprobado' as const
             : be.estado === 'PENDING' ? 'Pendiente' as const
             : be.estado === 'REJECTED' ? 'Rechazado' as const
+            : be.estado === 'SCHEDULED' ? 'Programado' as const
+            : be.estado === 'SUSPENDED' ? 'Suspendido' as const
+            : be.estado === 'CANCELLED' ? 'Cancelado' as const
             : be.estado,
       fecha: be.fechaInicio,
       motivoRechazo: be.motivoRechazo,
@@ -107,7 +110,7 @@ export default function AdminDashboardScreen() {
         referencia: original.referencia,
         latitud: original.latitud,
         longitud: original.longitud,
-        estado: 'PUBLISHED',
+        estado: 'SCHEDULED',
         requiresApproval: original.requiresApproval,
         allowQrAttendance: original.allowQrAttendance,
         edadMinima: original.edadMinima,
@@ -119,11 +122,131 @@ export default function AdminDashboardScreen() {
       };
 
       await eventService.updateEvent(Number(id), payload);
-      Alert.alert('✅ Éxito', `El evento "${original.titulo}" ha sido aprobado y ahora es público.`);
+      Alert.alert('✅ Éxito', `El evento "${original.titulo}" ha sido aprobado y ahora está programado.`);
       refetchEvents();
     } catch (error: unknown) {
       console.error('Error al aprobar evento:', error);
       const errMsg = error instanceof Error ? error.message : 'No se pudo aprobar el evento.';
+      Alert.alert('⚠️ Error', errMsg);
+    }
+  };
+
+  const handleConfirmarInicio = async (id: string) => {
+    try {
+      const original = backendEvents.find(e => String(e.id) === id);
+      if (!original) return;
+
+      const payload = {
+        titulo: original.titulo,
+        descripcion: original.descripcion || '',
+        fechaInicio: original.fechaInicio,
+        fechaFin: original.fechaFin,
+        horaInicio: original.horaInicio,
+        horaFin: original.horaFin,
+        capacidad: original.capacidad,
+        imagenUrl: original.imagenUrl,
+        modalidad: original.modalidad,
+        lugar: original.lugar,
+        referencia: original.referencia,
+        latitud: original.latitud,
+        longitud: original.longitud,
+        estado: 'PUBLISHED',
+        requiresApproval: original.requiresApproval,
+        allowQrAttendance: original.allowQrAttendance,
+        edadMinima: original.edadMinima,
+        requisitos: original.requisitos,
+        categoryIds: original.categories.map(c => c.id),
+        tagIds: original.tags.map(t => t.id),
+        imageUrls: original.imageUrls || [],
+        motivoRechazo: original.motivoRechazo,
+      };
+
+      await eventService.updateEvent(Number(id), payload);
+      Alert.alert('✅ Éxito', `El evento "${original.titulo}" ha sido iniciado y ahora es público.`);
+      refetchEvents();
+    } catch (error: unknown) {
+      console.error('Error al iniciar evento:', error);
+      const errMsg = error instanceof Error ? error.message : 'No se pudo iniciar el evento.';
+      Alert.alert('⚠️ Error', errMsg);
+    }
+  };
+
+  const handleSuspenderEvento = async (id: string) => {
+    try {
+      const original = backendEvents.find(e => String(e.id) === id);
+      if (!original) return;
+
+      const payload = {
+        titulo: original.titulo,
+        descripcion: original.descripcion || '',
+        fechaInicio: original.fechaInicio,
+        fechaFin: original.fechaFin,
+        horaInicio: original.horaInicio,
+        horaFin: original.horaFin,
+        capacidad: original.capacidad,
+        imagenUrl: original.imagenUrl,
+        modalidad: original.modalidad,
+        lugar: original.lugar,
+        referencia: original.referencia,
+        latitud: original.latitud,
+        longitud: original.longitud,
+        estado: 'SUSPENDED',
+        requiresApproval: original.requiresApproval,
+        allowQrAttendance: original.allowQrAttendance,
+        edadMinima: original.edadMinima,
+        requisitos: original.requisitos,
+        categoryIds: original.categories.map(c => c.id),
+        tagIds: original.tags.map(t => t.id),
+        imageUrls: original.imageUrls || [],
+        motivoRechazo: original.motivoRechazo,
+      };
+
+      await eventService.updateEvent(Number(id), payload);
+      Alert.alert('⏸️ Éxito', `El evento "${original.titulo}" ha sido suspendido.`);
+      refetchEvents();
+    } catch (error: unknown) {
+      console.error('Error al suspender evento:', error);
+      const errMsg = error instanceof Error ? error.message : 'No se pudo suspender el evento.';
+      Alert.alert('⚠️ Error', errMsg);
+    }
+  };
+
+  const handleCancelarEvento = async (id: string) => {
+    try {
+      const original = backendEvents.find(e => String(e.id) === id);
+      if (!original) return;
+
+      const payload = {
+        titulo: original.titulo,
+        descripcion: original.descripcion || '',
+        fechaInicio: original.fechaInicio,
+        fechaFin: original.fechaFin,
+        horaInicio: original.horaInicio,
+        horaFin: original.horaFin,
+        capacidad: original.capacidad,
+        imagenUrl: original.imagenUrl,
+        modalidad: original.modalidad,
+        lugar: original.lugar,
+        referencia: original.referencia,
+        latitud: original.latitud,
+        longitud: original.longitud,
+        estado: 'CANCELLED',
+        requiresApproval: original.requiresApproval,
+        allowQrAttendance: original.allowQrAttendance,
+        edadMinima: original.edadMinima,
+        requisitos: original.requisitos,
+        categoryIds: original.categories.map(c => c.id),
+        tagIds: original.tags.map(t => t.id),
+        imageUrls: original.imageUrls || [],
+        motivoRechazo: original.motivoRechazo,
+      };
+
+      await eventService.updateEvent(Number(id), payload);
+      Alert.alert('⏹️ Éxito', `El evento "${original.titulo}" ha sido cancelado.`);
+      refetchEvents();
+    } catch (error: unknown) {
+      console.error('Error al cancelar evento:', error);
+      const errMsg = error instanceof Error ? error.message : 'No se pudo cancelar el evento.';
       Alert.alert('⚠️ Error', errMsg);
     }
   };
@@ -343,6 +466,9 @@ export default function AdminDashboardScreen() {
             onAprobar={handleAprobarEvento}
             onRechazar={handleRechazarEvento}
             onEliminar={handleEliminarEvento}
+            onConfirmarInicio={handleConfirmarInicio}
+            onSuspender={handleSuspenderEvento}
+            onCancelar={handleCancelarEvento}
             initialReviewEventId={params.openEventId ? String(params.openEventId) : undefined}
           />
         )}

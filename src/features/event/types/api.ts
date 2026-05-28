@@ -28,7 +28,7 @@ export interface EventoBackend {
   referencia: string | null;
   latitud: number | null;
   longitud: number | null;
-  estado: 'DRAFT' | 'PENDING' | 'REJECTED' | 'PUBLISHED' | 'CANCELLED' | 'FINISHED';
+  estado: 'DRAFT' | 'PENDING' | 'REJECTED' | 'SCHEDULED' | 'PUBLISHED' | 'SUSPENDED' | 'CANCELLED' | 'FINISHED';
   requiresApproval: boolean;
   allowQrAttendance: boolean;
   edadMinima: number | null;
