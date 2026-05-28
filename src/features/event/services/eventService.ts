@@ -132,4 +132,15 @@ export const eventService = {
         });
         return response.data;
     },
+
+    /**
+     * Obtiene los registros (asistencia) del usuario autenticado.
+     * Endpoint: GET /api/v1/event-registrations/me
+     */
+    async fetchMyRegistrations(): Promise<any[]> {
+        const response = await apiClient.get<any[]>('/event-registrations/me', {
+            headers: getAuthHeaders(),
+        });
+        return Array.isArray(response.data) ? response.data : [];
+    },
 };

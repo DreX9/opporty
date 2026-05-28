@@ -118,6 +118,40 @@ export const eventStateManager = {
     },
 
     /**
+     * Sincroniza el estado local con los registros provenientes del backend.
+     * Esto carga las insignias de ingreso y salida que el usuario ya desbloqueó.
+     */
+    hydrateWithRegistrations(registrations: any[]) {
+        const nuevosRegistrados = new Set<string>();
+        const nuevasInsignias: Record<string, InsigniaState> = {};
+        const constanciasDes: Set<string> = new Set<string>();
+
+        registrations.forEach(reg => {
+            const evId = String(reg.eventId || reg.event?.id);
+            if (!evId || evId === 'undefined') return;
+
+            nuevosRegistrados.add(evId);
+
+            nuevasInsignias[evId] = {
+                ingreso: Boolean(reg.qrEntryScanned),
+                salida: Boolean(reg.qrExitScanned)
+            };
+
+            if (reg.certificateGenerated) {
+                constanciasDes.add(evId);
+            }
+        });
+
+        globalState = {
+            ...globalState,
+            registrados: nuevosRegistrados,
+            insignias: nuevasInsignias,
+            constanciasDescargadas: constanciasDes
+        };
+        notify();
+    },
+
+    /**
      * Limpia COMPLETAMENTE el estado global del evento.
      * Debe llamarse siempre que el usuario hace logout para
      * evitar fuga de estado entre sesiones de distintos usuarios.

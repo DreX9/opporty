@@ -22,8 +22,8 @@ import InterestChip from '../components/InterestChip';
 import MenuRow from '../components/MenuRow';
 import EditProfileModal from '../components/EditProfileModal';
 import { eventStateManager, useEventState } from '../../event/state';
+import { useEvents, resetEventsCache } from '../../event/hooks/useEvents';
 import { Evento, mapBackendToEvento } from '../../event/types';
-import { useEvents } from '../../event/hooks/useEvents';
 import { eventService } from '../../event/services/eventService';
 import { EventoBackend } from '../../event/types/api';
 
@@ -325,9 +325,10 @@ export default function ProfileScreen() {
                 text: 'Salir', 
                 style: 'destructive', 
                 onPress: () => {
-                    // 1. Limpiar todo el estado de eventos del usuario actual
+                    // 1. Limpiar todo el estado de eventos y forzar recarga
                     //    para evitar fuga de datos al siguiente usuario del mismo dispositivo.
                     eventStateManager.resetState();
+                    resetEventsCache();
                     // 2. Limpiar la sesión de autenticación y redirigir al login.
                     authStateManager.clearSession();
                     router.replace('/');
