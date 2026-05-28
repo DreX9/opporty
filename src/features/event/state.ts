@@ -18,23 +18,10 @@ export interface EventGlobalState {
     readNotifications: Set<string>;
 }
 
-// Estado global inicial
 let globalState: EventGlobalState = {
-    registrados: new Set(['1', '3']), // Inicia registrado a Hackathon Tech y Liga eSports
-    insignias: {
-        '1': { ingreso: false, salida: false },
-        '3': { ingreso: true, salida: false }, // Liga eSports ya tiene ingreso
-    },
-    qrs: {
-        '1': {
-            ingresoQR: JSON.stringify({ eventId: '1', tipo: 'ingreso', titulo: 'Hackathon Tech 2026' }),
-            salidaQR: JSON.stringify({ eventId: '1', tipo: 'salida', titulo: 'Hackathon Tech 2026' }),
-        },
-        '3': {
-            ingresoQR: JSON.stringify({ eventId: '3', tipo: 'ingreso', titulo: 'Liga Universitaria eSports' }),
-            salidaQR: JSON.stringify({ eventId: '3', tipo: 'salida', titulo: 'Liga Universitaria eSports' }),
-        }
-    },
+    registrados: new Set<string>(),
+    insignias: {},
+    qrs: {},
     constanciasDescargadas: new Set<string>(),
     readNotifications: new Set<string>(),
 };
@@ -128,7 +115,57 @@ export const eventStateManager = {
 
     isNotificationRead(id: string): boolean {
         return globalState.readNotifications.has(id);
-    }
+    },
+
+    /**
+     * Sincroniza el estado local con los registros provenientes del backend.
+     * Esto carga las insignias de ingreso y salida que el usuario ya desbloqueó.
+     */
+    hydrateWithRegistrations(registrations: any[]) {
+        const nuevosRegistrados = new Set<string>();
+        const nuevasInsignias: Record<string, InsigniaState> = {};
+        const constanciasDes: Set<string> = new Set<string>();
+
+        registrations.forEach(reg => {
+            const evId = String(reg.eventId || reg.event?.id);
+            if (!evId || evId === 'undefined') return;
+
+            nuevosRegistrados.add(evId);
+
+            nuevasInsignias[evId] = {
+                ingreso: Boolean(reg.qrEntryScanned),
+                salida: Boolean(reg.qrExitScanned)
+            };
+
+            if (reg.certificateGenerated) {
+                constanciasDes.add(evId);
+            }
+        });
+
+        globalState = {
+            ...globalState,
+            registrados: nuevosRegistrados,
+            insignias: nuevasInsignias,
+            constanciasDescargadas: constanciasDes
+        };
+        notify();
+    },
+
+    /**
+     * Limpia COMPLETAMENTE el estado global del evento.
+     * Debe llamarse siempre que el usuario hace logout para
+     * evitar fuga de estado entre sesiones de distintos usuarios.
+     */
+    resetState() {
+        globalState = {
+            registrados: new Set<string>(),
+            insignias: {},
+            qrs: {},
+            constanciasDescargadas: new Set<string>(),
+            readNotifications: new Set<string>(),
+        };
+        notify();
+    },
 };
 
 export function useEventState() {

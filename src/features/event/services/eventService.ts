@@ -121,4 +121,26 @@ export const eventService = {
         });
         return response.data;
     },
+
+    /**
+     * Escanea un código QR para registrar la asistencia.
+     * Endpoint: POST /api/v1/event-qr-sessions/scan
+     */
+    async scanQrCode(token: string): Promise<any> {
+        const response = await apiClient.post<any>('/event-qr-sessions/scan', { token }, {
+            headers: getAuthHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
+     * Obtiene los registros (asistencia) del usuario autenticado.
+     * Endpoint: GET /api/v1/event-registrations/me
+     */
+    async fetchMyRegistrations(): Promise<any[]> {
+        const response = await apiClient.get<any[]>('/event-registrations/me', {
+            headers: getAuthHeaders(),
+        });
+        return Array.isArray(response.data) ? response.data : [];
+    },
 };

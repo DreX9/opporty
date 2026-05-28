@@ -16,7 +16,7 @@ export async function uploadImageToCloudinary(localUri: string): Promise<string>
 
   // Extraer el nombre de archivo de la URI local
   const filename = localUri.split('/').pop() || 'upload.jpg';
-  
+
   // Deducir el tipo mime a partir de la extensión
   const match = /\.(\w+)$/.exec(filename);
   const extension = match ? match[1].toLowerCase() : 'jpg';

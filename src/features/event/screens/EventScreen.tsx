@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     ScrollView,
     TextInput,
@@ -21,6 +21,7 @@ import EventCard from '../components/EventCard';
 import EventDetailModal from '../components/EventDetailModal';
 import { useEvents } from '../hooks/useEvents';
 import { useCategories } from '../hooks/useCategories';
+import { useLocalSearchParams, router } from 'expo-router';
 
 export default function EventScreen() {
     const { data: backendEvents, loading: loadingEvents, error: errorEvents, refetch: refetchEvents } = useEvents();
@@ -31,6 +32,8 @@ export default function EventScreen() {
     const [filtroActivo, setFiltroActivo] = useState<string>('Todos');
     const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
     const [refrescar, setRefrescar] = useState<boolean>(false);
+
+    const params = useLocalSearchParams<{ openEventId?: string; highlightAnim?: string }>();
 
     const totalFavoritos = favoritos.size;
 
@@ -48,6 +51,17 @@ export default function EventScreen() {
                 ev.descripcion.toLowerCase().includes(busqueda.toLowerCase())) &&
             (filtroActivo === 'Todos' || ev.categoria === filtroActivo)
     );
+
+    useEffect(() => {
+        if (params.openEventId && eventos.length > 0) {
+            const ev = eventos.find((e) => String(e.id) === params.openEventId);
+            if (ev) {
+                setEventoSeleccionado(ev);
+                // Limpiar parámetros para no reabrir si cierran el modal
+                router.setParams({ openEventId: undefined });
+            }
+        }
+    }, [params.openEventId, eventos]);
 
     const handleRefresh = async () => {
         setRefrescar(true);
@@ -240,10 +254,16 @@ export default function EventScreen() {
             <EventDetailModal
                 visible={eventoSeleccionado !== null}
                 evento={eventoSeleccionado}
-                onClose={() => setEventoSeleccionado(null)}
+                onClose={() => {
+                    setEventoSeleccionado(null);
+                    if (params.highlightAnim) {
+                        router.setParams({ highlightAnim: undefined });
+                    }
+                }}
                 favorito={eventoSeleccionado ? favoritos.has(eventoSeleccionado.id) : false}
                 onToggleFavorito={toggleFav}
                 onEventSaved={refetchEvents}
+                highlightAnim={params.highlightAnim as any}
             />
         </Box>
     );

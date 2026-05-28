@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { eventService } from '../services/eventService';
 import { EventoBackend } from '../types/api';
 
+import { eventStateManager } from '../state';
+
 // Shared state at module level
 let globalEvents: EventoBackend[] = [];
 let globalLoading: boolean = false;
@@ -12,6 +14,14 @@ const listeners = new Set<() => void>();
 
 function notifyListeners() {
     listeners.forEach(listener => listener());
+}
+
+export function resetEventsCache() {
+    globalEvents = [];
+    globalLoading = false;
+    globalError = null;
+    hasFetchedOnce = false;
+    notifyListeners();
 }
 
 export function useEvents() {
@@ -42,9 +52,20 @@ export function useEvents() {
         globalError = null;
         notifyListeners();
         try {
-            const events = await eventService.fetchAllEvents();
+            // Traemos eventos y registros en paralelo para mayor velocidad
+            const [events, regs] = await Promise.all([
+                eventService.fetchAllEvents(),
+                eventService.fetchMyRegistrations()
+            ]);
+            
             globalEvents = events;
             hasFetchedOnce = true;
+
+            // Hidratamos el estado local con las insignias previas del usuario
+            if (regs && regs.length > 0) {
+                eventStateManager.hydrateWithRegistrations(regs);
+            }
+
         } catch (err) {
             console.error('Error fetching events:', err);
             let msg = 'Error al cargar eventos.';
