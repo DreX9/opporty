@@ -20,6 +20,7 @@ import { ICONS } from '@/components/icons';
 import { AdminEvent } from '../types';
 import { eventStateManager, useEventState } from '../../event/state';
 import { useRouter } from 'expo-router';
+import { useAuthState } from '../../auth/state';
 
 function calcularDuracion(inicio: string | null, fin: string | null): string {
   if (!inicio || !fin) return 'No especificada';
@@ -55,6 +56,9 @@ interface EventManagementProps {
   onRechazar: (id: string, motivo: string) => void;
   onEliminar: (id: string) => void;
   initialReviewEventId?: string;
+  onConfirmarInicio?: (id: string) => void;
+  onSuspender?: (id: string) => void;
+  onCancelar?: (id: string) => void;
 }
 
 export default function EventManagement({
@@ -63,9 +67,13 @@ export default function EventManagement({
   onRechazar,
   onEliminar,
   initialReviewEventId,
+  onConfirmarInicio,
+  onSuspender,
+  onCancelar,
 }: EventManagementProps) {
   const router = useRouter();
   const eventState = useEventState();
+  const { role, payload } = useAuthState();
   const [selectedEvent, setSelectedEvent] = useState<AdminEvent | null>(null);
   const [reviewingEvent, setReviewingEvent] = useState<AdminEvent | null>(null);
   const [subTab, setSubTab] = useState<'aprobados' | 'solicitudes' | 'borradores'>('aprobados');
@@ -158,9 +166,9 @@ export default function EventManagement({
   };
 
   const filteredEventos = eventos.filter((evento) => {
-    if (subTab === 'aprobados') return evento.estado === 'Aprobado';
+    if (subTab === 'aprobados') return evento.estado === 'Aprobado' || evento.estado === 'Programado';
     if (subTab === 'solicitudes') return evento.estado === 'Pendiente';
-    return evento.estado !== 'Aprobado' && evento.estado !== 'Pendiente';
+    return evento.estado !== 'Aprobado' && evento.estado !== 'Programado' && evento.estado !== 'Pendiente';
   });
 
   return (
@@ -180,7 +188,7 @@ export default function EventManagement({
           ]}
         >
           <Text style={subTab === 'aprobados' ? styles.subTabTextActive : styles.subTabTextInactive}>
-            Públicos ({eventos.filter(e => e.estado === 'Aprobado').length})
+            Públicos ({eventos.filter(e => e.estado === 'Aprobado' || e.estado === 'Programado').length})
           </Text>
         </TouchableOpacity>
 
@@ -209,7 +217,7 @@ export default function EventManagement({
           ]}
         >
           <Text style={subTab === 'borradores' ? styles.subTabTextActive : styles.subTabTextInactive}>
-            Otros ({eventos.filter(e => e.estado !== 'Aprobado' && e.estado !== 'Pendiente').length})
+            Otros ({eventos.filter(e => e.estado !== 'Aprobado' && e.estado !== 'Programado' && e.estado !== 'Pendiente').length})
           </Text>
         </TouchableOpacity>
       </HStack>
@@ -248,11 +256,17 @@ export default function EventManagement({
                     backgroundColor: 
                       evento.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.1)' : 
                       evento.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.1)' : 
-                      evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                      evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' : 
+                      evento.estado === 'Programado' ? 'rgba(99, 102, 241, 0.1)' :
+                      evento.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.1)' :
+                      evento.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
                     borderColor: 
                       evento.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.3)' : 
                       evento.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.3)' : 
-                      evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
+                      evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' : 
+                      evento.estado === 'Programado' ? 'rgba(99, 102, 241, 0.3)' :
+                      evento.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.3)' :
+                      evento.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
                   }}
                 >
                   <Text
@@ -261,7 +275,10 @@ export default function EventManagement({
                       color: 
                         evento.estado === 'Aprobado' ? '#22C55E' : 
                         evento.estado === 'Pendiente' ? '#EAB308' : 
-                        evento.estado === 'Rechazado' ? '#EF4444' : '#64748B'
+                        evento.estado === 'Rechazado' ? '#EF4444' : 
+                        evento.estado === 'Programado' ? '#6366F1' :
+                        evento.estado === 'Suspendido' ? '#F97316' :
+                        evento.estado === 'Cancelado' ? '#EF4444' : '#64748B'
                     }}
                   >
                     {evento.estado.toUpperCase()}
@@ -314,7 +331,25 @@ export default function EventManagement({
               )}
 
               <HStack style={{ gap: 8, marginLeft: 'auto' }}>
-                {evento.estado === 'Pendiente' ? (
+                {evento.estado === 'Programado' ? (
+                  (role === 'ADMIN' || (role === 'MANAGER' && payload?.sub && evento.raw?.createdByUsername === payload.sub)) ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => onConfirmarInicio?.(evento.id)}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600"
+                      >
+                        <Text className="text-white text-xs font-bold">Iniciar Evento</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => onSuspender?.(evento.id)}
+                        className="px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200"
+                      >
+                        <Text className="text-amber-700 text-xs font-bold">Suspender Evento</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : null
+                ) : evento.estado === 'Pendiente' ? (
                   <>
                     <TouchableOpacity
                       onPress={() => onAprobar(evento.id)}
@@ -590,11 +625,17 @@ export default function EventManagement({
                         backgroundColor:
                           reviewingEvent.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.1)' :
                           reviewingEvent.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.1)' :
-                          reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                          reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' :
+                          reviewingEvent.estado === 'Programado' ? 'rgba(99, 102, 241, 0.1)' :
+                          reviewingEvent.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.1)' :
+                          reviewingEvent.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
                         borderColor:
                           reviewingEvent.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.3)' :
                           reviewingEvent.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.3)' :
-                          reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
+                          reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' :
+                          reviewingEvent.estado === 'Programado' ? 'rgba(99, 102, 241, 0.3)' :
+                          reviewingEvent.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.3)' :
+                          reviewingEvent.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
                         borderWidth: 1,
                         borderRadius: 20,
                         paddingHorizontal: 10,
@@ -609,10 +650,13 @@ export default function EventManagement({
                           color:
                             reviewingEvent.estado === 'Aprobado' ? '#22C55E' :
                             reviewingEvent.estado === 'Pendiente' ? '#CA8A04' :
-                            reviewingEvent.estado === 'Rechazado' ? '#EF4444' : '#64748B'
+                            reviewingEvent.estado === 'Rechazado' ? '#EF4444' :
+                            reviewingEvent.estado === 'Programado' ? '#6366F1' :
+                            reviewingEvent.estado === 'Suspendido' ? '#F97316' :
+                            reviewingEvent.estado === 'Cancelado' ? '#EF4444' : '#64748B'
                         }}
                       >
-                        • SOLICITUD: {reviewingEvent.estado === 'Aprobado' ? 'APROBADA' : reviewingEvent.estado === 'Pendiente' ? 'PENDIENTE' : reviewingEvent.estado.toUpperCase()}
+                        • ESTADO: {reviewingEvent.estado.toUpperCase()}
                       </Text>
                     </Box>
 
@@ -944,6 +988,79 @@ export default function EventManagement({
                       <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>Aprobar Evento</Text>
                     </TouchableOpacity>
                   </>
+                ) : reviewingEvent.estado === 'Programado' ? (
+                  (role === 'ADMIN' || (role === 'MANAGER' && payload?.sub && reviewingEvent.raw?.createdByUsername === payload.sub)) ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          onConfirmarInicio?.(reviewingEvent.id);
+                          setReviewingEvent(null);
+                        }}
+                        style={{
+                          flex: 1.5,
+                          paddingVertical: 12,
+                          borderRadius: 14,
+                          backgroundColor: '#6366F1',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'row',
+                          gap: 6,
+                          shadowColor: '#6366F1',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 4,
+                          elevation: 2,
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Icon as={ICONS.CheckCircle} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
+                        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>Iniciar Evento</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => {
+                          onSuspender?.(reviewingEvent.id);
+                          setReviewingEvent(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 12,
+                          paddingHorizontal: 12,
+                          borderRadius: 14,
+                          backgroundColor: '#FFFBEB',
+                          borderColor: '#FDE68A',
+                          borderWidth: 1,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        activeOpacity={0.75}
+                      >
+                        <Text style={{ color: '#D97706', fontSize: 13, fontWeight: '700' }}>Suspender Evento</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => setReviewingEvent(null)}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 12,
+                        borderRadius: 14,
+                        backgroundColor: '#6366F1',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        shadowColor: '#6366F1',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.15,
+                        shadowRadius: 4,
+                        elevation: 2,
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
+                        Cerrar Vista
+                      </Text>
+                    </TouchableOpacity>
+                  )
                 ) : (
                   <>
                     <TouchableOpacity

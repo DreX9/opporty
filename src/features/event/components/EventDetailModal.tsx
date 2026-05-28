@@ -47,7 +47,7 @@ export default function EventDetailModal({
 
     if (!evento) return null;
 
-    const isAdminOrTeacher = role === 'ADMIN' || role === 'TEACHER';
+    const isAdminOrTeacher = role === 'ADMIN' || role === 'TEACHER' || role === 'MANAGER';
     const isRegistered = eventStateManager.isRegistered(evento.id);
     const insignias = eventStateManager.getInsignias(evento.id);
     const isCertUnlocked = insignias.ingreso && insignias.salida;

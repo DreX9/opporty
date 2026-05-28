@@ -84,8 +84,8 @@ export default function CrearEventoScreen() {
                         latitud: ev.latitud || 0,
                         longitud: ev.longitud || 0,
                         estado: ev.estado || 'PENDING',
-                        requiresApproval: ev.requiresApproval ?? false,
-                        allowQrAttendance: ev.allowQrAttendance ?? false,
+                        requiresApproval: false,
+                        allowQrAttendance: true,
                         edadMinima: ev.edadMinima ? String(ev.edadMinima) : '',
                         requisitos: ev.requisitos || '',
                         categoryIds: ev.categories ? ev.categories.map(c => c.id) : [],
@@ -350,7 +350,7 @@ export default function CrearEventoScreen() {
                 await eventService.updateEvent(Number(id), payload);
                 const msgExito = role === 'MANAGER'
                     ? `El evento "${form.titulo}" ha sido corregido y reenviado para revisión.`
-                    : `El evento "${form.titulo}" se actualizó correctamente en Echo.`;
+                    : `El evento "${form.titulo}" se actualizó correctamente.`;
                 
                 eventStateManager.markNotificationAsRead(String(id));
                 
@@ -361,8 +361,8 @@ export default function CrearEventoScreen() {
                 await eventService.createEvent(payload);
                 const msgExito = role === 'MANAGER'
                     ? `El evento "${form.titulo}" ha sido creado y enviado para revisión del administrador.`
-                    : `El evento "${form.titulo}" se publicó correctamente en Echo.`;
-                Alert.alert('✅ ¡Evento creado!', msgExito, [
+                    : `El evento "${form.titulo}" se publicó correctamente. Será visible para los estudiantes de inmediato.`;
+                Alert.alert('✅ ¡Evento publicado!', msgExito, [
                     { text: 'Excelente', onPress: () => router.replace('/tabs/radar') }
                 ]);
             }
@@ -792,36 +792,6 @@ export default function CrearEventoScreen() {
                             </Input>
                         </VStack>
 
-                        {/* Toggles: Aprobación y QR */}
-                        <VStack space="md" className="bg-white p-4 rounded-2xl border border-[#E9EAF4] mb-4">
-                            <HStack className="justify-between items-center">
-                                <VStack style={{ flex: 1, marginRight: 16 }}>
-                                    <Text className="text-[#111827] text-sm font-bold">Requiere Aprobación</Text>
-                                    <Text className="text-gray-400 text-[11px]">Los estudiantes necesitan tu aprobación para confirmar su asistencia.</Text>
-                                </VStack>
-                                <Switch
-                                    value={form.requiresApproval}
-                                    onValueChange={actualizarCampo('requiresApproval')}
-                                    trackColor={{ false: '#E9EAF4', true: '#6366F1' }}
-                                    thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
-                                />
-                            </HStack>
-
-                            <Box style={{ height: 1, backgroundColor: '#E9EAF4' }} />
-
-                            <HStack className="justify-between items-center">
-                                <VStack style={{ flex: 1, marginRight: 16 }}>
-                                    <Text className="text-[#111827] text-sm font-bold">Permitir Registro con QR</Text>
-                                    <Text className="text-gray-400 text-[11px]">Genera tokens QR únicos para tomar asistencia de forma rápida y segura.</Text>
-                                </VStack>
-                                <Switch
-                                    value={form.allowQrAttendance}
-                                    onValueChange={actualizarCampo('allowQrAttendance')}
-                                    trackColor={{ false: '#E9EAF4', true: '#6366F1' }}
-                                    thumbColor={Platform.OS === 'ios' ? undefined : '#FFFFFF'}
-                                />
-                            </HStack>
-                        </VStack>
                     </VStack>
                 )}
 
@@ -908,17 +878,7 @@ export default function CrearEventoScreen() {
                                 </VStack>
                             </HStack>
 
-                            {/* Toggles resumen */}
-                            <HStack className="justify-between pt-2 border-t border-[#E9EAF4]">
-                                <HStack className="items-center" style={{ gap: 6 }}>
-                                    <Icon as={form.requiresApproval ? ICONS.CheckCircle : ICONS.X} className={form.requiresApproval ? 'text-green-500 w-4 h-4' : 'text-gray-300 w-4 h-4'} />
-                                    <Text className="text-gray-500 text-[11px]">Aprobación previa</Text>
-                                </HStack>
-                                <HStack className="items-center" style={{ gap: 6 }}>
-                                    <Icon as={form.allowQrAttendance ? ICONS.CheckCircle : ICONS.X} className={form.allowQrAttendance ? 'text-green-500 w-4 h-4' : 'text-gray-300 w-4 h-4'} />
-                                    <Text className="text-gray-500 text-[11px]">Asistencia por QR</Text>
-                                </HStack>
-                            </HStack>
+
                         </VStack>
                     </VStack>
                 )}
