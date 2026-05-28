@@ -19,6 +19,8 @@ export interface Evento {
     IconCategoria: React.ComponentType<{ size: number; color: string }>;
     imageUrls?: string[];
     tags?: string[];
+    latitud?: number | null;
+    longitud?: number | null;
 }
 
 export interface EventCardProps {
@@ -113,6 +115,8 @@ export function mapBackendToEvento(dto: EventoBackend): Evento {
         IconCategoria: getCategoryIcon(firstCategory),
         imageUrls: dto.imageUrls || [],
         tags: dto.tags ? dto.tags.map(t => t.nombre) : [],
+        latitud: dto.latitud,
+        longitud: dto.longitud,
     };
 }
 

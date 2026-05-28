@@ -9,6 +9,7 @@ import {
     Alert,
     ScrollView,
     Animated,
+    Linking,
 } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -260,6 +261,21 @@ export default function EventDetailModal({
                                 <Icon as={ICONS.MapPin} style={{ color: C.textSecondary, width: 16, height: 16, marginTop: 2 }} />
                                 <Text style={styles.locationText}>{evento.lugar}</Text>
                             </HStack>
+                            {evento.latitud !== undefined && evento.latitud !== null && evento.longitud !== undefined && evento.longitud !== null && (
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        const url = `https://www.google.com/maps/dir/?api=1&destination=${evento.latitud},${evento.longitud}`;
+                                        Linking.openURL(url).catch((err) => {
+                                            Alert.alert('Error', 'No se pudo abrir Google Maps en este dispositivo.');
+                                            console.error('Error opening maps URL:', err);
+                                        });
+                                    }}
+                                    style={[styles.routeBtn, { borderColor: evento.accentColor }]}
+                                >
+                                    <Icon as={ICONS.MapPin} style={{ color: evento.accentColor, width: 13, height: 13 }} />
+                                    <Text style={[styles.routeBtnText, { color: evento.accentColor }]}>Cómo llegar</Text>
+                                </TouchableOpacity>
+                            )}
                         </VStack>
 
                         {/* Etiquetas (Tags) */}
@@ -629,6 +645,23 @@ const styles = StyleSheet.create({
         color: '#475569',
         flex: 1,
         lineHeight: 18,
+    },
+    routeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        alignSelf: 'flex-start',
+        marginTop: 6,
+        backgroundColor: 'transparent',
+    },
+    routeBtnText: {
+        fontSize: 12,
+        fontWeight: '700',
     },
     // Tags
     tagsContainer: {
