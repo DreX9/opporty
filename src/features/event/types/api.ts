@@ -22,6 +22,7 @@ export interface EventoBackend {
   horaInicio: string | null;  // "HH:mm:ss" o "HH:mm"
   horaFin: string | null;    // "HH:mm:ss" o "HH:mm"
   capacidad: number | null;
+  inscritosCount: number;     // calculado por el backend (registros activos)
   imagenUrl: string | null;   // imagen principal
   modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'HIBRIDO';
   lugar: string | null;

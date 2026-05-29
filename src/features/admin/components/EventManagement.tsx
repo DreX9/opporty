@@ -31,13 +31,13 @@ function calcularDuracion(inicio: string | null, fin: string | null): string {
     const mIn = parseInt(partsIn[1], 10);
     const hOut = parseInt(partsOut[0], 10);
     const mOut = parseInt(partsOut[1], 10);
-    
+
     let diffMins = (hOut * 60 + mOut) - (hIn * 60 + mIn);
     if (diffMins < 0) diffMins += 24 * 60; // Pasa de medianoche
-    
+
     const hrs = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
-    
+
     if (hrs > 0 && mins > 0) {
       return `${hrs}h ${mins}m`;
     } else if (hrs > 0) {
@@ -253,32 +253,32 @@ export default function EventManagement({
                 <Box
                   className="px-2.5 py-0.5 rounded-full border"
                   style={{
-                    backgroundColor: 
-                      evento.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.1)' : 
-                      evento.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.1)' : 
-                      evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' : 
-                      evento.estado === 'Programado' ? 'rgba(99, 102, 241, 0.1)' :
-                      evento.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.1)' :
-                      evento.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
-                    borderColor: 
-                      evento.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.3)' : 
-                      evento.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.3)' : 
-                      evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' : 
-                      evento.estado === 'Programado' ? 'rgba(99, 102, 241, 0.3)' :
-                      evento.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.3)' :
-                      evento.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
+                    backgroundColor:
+                      evento.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.1)' :
+                        evento.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.1)' :
+                          evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' :
+                            evento.estado === 'Programado' ? 'rgba(99, 102, 241, 0.1)' :
+                              evento.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.1)' :
+                                evento.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                    borderColor:
+                      evento.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.3)' :
+                        evento.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.3)' :
+                          evento.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' :
+                            evento.estado === 'Programado' ? 'rgba(99, 102, 241, 0.3)' :
+                              evento.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.3)' :
+                                evento.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
                   }}
                 >
                   <Text
                     className="text-2xs font-extrabold"
-                    style={{ 
-                      color: 
-                        evento.estado === 'Aprobado' ? '#22C55E' : 
-                        evento.estado === 'Pendiente' ? '#EAB308' : 
-                        evento.estado === 'Rechazado' ? '#EF4444' : 
-                        evento.estado === 'Programado' ? '#6366F1' :
-                        evento.estado === 'Suspendido' ? '#F97316' :
-                        evento.estado === 'Cancelado' ? '#EF4444' : '#64748B'
+                    style={{
+                      color:
+                        evento.estado === 'Aprobado' ? '#22C55E' :
+                          evento.estado === 'Pendiente' ? '#EAB308' :
+                            evento.estado === 'Rechazado' ? '#EF4444' :
+                              evento.estado === 'Programado' ? '#6366F1' :
+                                evento.estado === 'Suspendido' ? '#F97316' :
+                                  evento.estado === 'Cancelado' ? '#EF4444' : '#64748B'
                     }}
                   >
                     {evento.estado.toUpperCase()}
@@ -312,23 +312,7 @@ export default function EventManagement({
             </TouchableOpacity>
 
             <HStack className="justify-between mt-3 border-t border-gray-100 pt-3" style={{ alignItems: 'center' }}>
-              {/* Botón premium de QR para eventos aprobados */}
-              {isAprobado ? (
-                <TouchableOpacity
-                  onPress={() => handleOpenQRModal(evento)}
-                  style={[
-                    styles.qrAdminBtn,
-                    qrsGenerados ? styles.qrAdminBtnActive : styles.qrAdminBtnNormal
-                  ]}
-                >
-                  <Icon as={ICONS.radar} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
-                  <Text style={styles.qrAdminBtnText}>
-                    {qrsGenerados ? 'Ver QRs de Asistencia' : 'Generar QRs'}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <View />
-              )}
+              {/* Botón de QR removido a petición del usuario */}
 
               <HStack style={{ gap: 8, marginLeft: 'auto' }}>
                 {evento.estado === 'Programado' ? (
@@ -357,7 +341,7 @@ export default function EventManagement({
                     >
                       <Text className="text-emerald-700 text-xs font-bold">Aprobar</Text>
                     </TouchableOpacity>
-                    
+
                     <TouchableOpacity
                       onPress={() => handleTriggerRechazo(evento.id)}
                       className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200"
@@ -421,7 +405,7 @@ export default function EventManagement({
                           <Icon as={ICONS.Zap} style={{ color: '#059669', width: 14, height: 14 }} />
                           <Text style={[styles.qrHeaderTagText, { color: '#059669' }]}>INGRESO AL EVENTO</Text>
                         </View>
-                        
+
                         <View style={styles.qrImageContainer}>
                           <Image
                             source={{ uri: urls.ingreso }}
@@ -510,8 +494,8 @@ export default function EventManagement({
                 </TouchableOpacity>
               </View>
 
-              <ScrollView 
-                contentContainerStyle={{ paddingBottom: 24 }} 
+              <ScrollView
+                contentContainerStyle={{ paddingBottom: 24 }}
                 showsVerticalScrollIndicator={false}
               >
                 {/* 1. Galería de Imágenes Responsive con Dots */}
@@ -521,7 +505,7 @@ export default function EventManagement({
 
                   if (imageList.length > 0) {
                     return (
-                      <VStack 
+                      <VStack
                         onLayout={(e) => {
                           const w = e.nativeEvent.layout.width;
                           if (w > 0) setContainerWidth(w);
@@ -550,7 +534,7 @@ export default function EventManagement({
                             </View>
                           ))}
                         </ScrollView>
-                        
+
                         {/* Indicadores de página */}
                         <HStack style={{
                           position: 'absolute',
@@ -617,25 +601,25 @@ export default function EventManagement({
                 })()}
 
                 <VStack style={{ paddingHorizontal: 16, paddingTop: 16, gap: 14 }}>
-                  
+
                   {/* Estado actual de la solicitud & Modalidad */}
                   <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box
                       style={{
                         backgroundColor:
                           reviewingEvent.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.1)' :
-                          reviewingEvent.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.1)' :
-                          reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' :
-                          reviewingEvent.estado === 'Programado' ? 'rgba(99, 102, 241, 0.1)' :
-                          reviewingEvent.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.1)' :
-                          reviewingEvent.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                            reviewingEvent.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.1)' :
+                              reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.1)' :
+                                reviewingEvent.estado === 'Programado' ? 'rgba(99, 102, 241, 0.1)' :
+                                  reviewingEvent.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.1)' :
+                                    reviewingEvent.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(100, 116, 139, 0.1)',
                         borderColor:
                           reviewingEvent.estado === 'Aprobado' ? 'rgba(34, 197, 94, 0.3)' :
-                          reviewingEvent.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.3)' :
-                          reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' :
-                          reviewingEvent.estado === 'Programado' ? 'rgba(99, 102, 241, 0.3)' :
-                          reviewingEvent.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.3)' :
-                          reviewingEvent.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
+                            reviewingEvent.estado === 'Pendiente' ? 'rgba(234, 179, 8, 0.3)' :
+                              reviewingEvent.estado === 'Rechazado' ? 'rgba(239, 68, 68, 0.3)' :
+                                reviewingEvent.estado === 'Programado' ? 'rgba(99, 102, 241, 0.3)' :
+                                  reviewingEvent.estado === 'Suspendido' ? 'rgba(249, 115, 22, 0.3)' :
+                                    reviewingEvent.estado === 'Cancelado' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(100, 116, 139, 0.3)',
                         borderWidth: 1,
                         borderRadius: 20,
                         paddingHorizontal: 10,
@@ -649,11 +633,11 @@ export default function EventManagement({
                           fontWeight: '800',
                           color:
                             reviewingEvent.estado === 'Aprobado' ? '#22C55E' :
-                            reviewingEvent.estado === 'Pendiente' ? '#CA8A04' :
-                            reviewingEvent.estado === 'Rechazado' ? '#EF4444' :
-                            reviewingEvent.estado === 'Programado' ? '#6366F1' :
-                            reviewingEvent.estado === 'Suspendido' ? '#F97316' :
-                            reviewingEvent.estado === 'Cancelado' ? '#EF4444' : '#64748B'
+                              reviewingEvent.estado === 'Pendiente' ? '#CA8A04' :
+                                reviewingEvent.estado === 'Rechazado' ? '#EF4444' :
+                                  reviewingEvent.estado === 'Programado' ? '#6366F1' :
+                                    reviewingEvent.estado === 'Suspendido' ? '#F97316' :
+                                      reviewingEvent.estado === 'Cancelado' ? '#EF4444' : '#64748B'
                         }}
                       >
                         • ESTADO: {reviewingEvent.estado.toUpperCase()}
@@ -665,10 +649,10 @@ export default function EventManagement({
                       {
                         backgroundColor:
                           reviewingEvent.raw.modalidad === 'PRESENCIAL' ? '#ECFDF5' :
-                          reviewingEvent.raw.modalidad === 'VIRTUAL' ? '#EFF6FF' : '#FDF2F8',
+                            reviewingEvent.raw.modalidad === 'VIRTUAL' ? '#EFF6FF' : '#FDF2F8',
                         borderColor:
                           reviewingEvent.raw.modalidad === 'PRESENCIAL' ? '#A7F3D0' :
-                          reviewingEvent.raw.modalidad === 'VIRTUAL' ? '#BFDBFE' : '#FBCFE8',
+                            reviewingEvent.raw.modalidad === 'VIRTUAL' ? '#BFDBFE' : '#FBCFE8',
                         borderWidth: 1,
                         borderRadius: 20,
                         paddingHorizontal: 10,
@@ -680,7 +664,7 @@ export default function EventManagement({
                         fontWeight: '800',
                         color:
                           reviewingEvent.raw.modalidad === 'PRESENCIAL' ? '#059669' :
-                          reviewingEvent.raw.modalidad === 'VIRTUAL' ? '#2563EB' : '#DB2777'
+                            reviewingEvent.raw.modalidad === 'VIRTUAL' ? '#2563EB' : '#DB2777'
                       }}>
                         {reviewingEvent.raw.modalidad}
                       </Text>

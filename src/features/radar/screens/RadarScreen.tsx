@@ -248,7 +248,7 @@ export default function RadarScreen() {
                 id: String(backend.id),
                 titulo: backend.titulo,
                 distancia: formatearDistancia(distanciaKm),
-                asistentes: backend.capacidad ? Math.floor(backend.capacidad * 0.3) : 0,
+                asistentes: backend.inscritosCount ?? 0,
                 fecha: backend.fechaInicio,
                 categoria: firstCategoria,
                 activo: backend.estado === 'PUBLISHED',
