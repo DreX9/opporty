@@ -363,7 +363,10 @@ export default function EventDetailModal({
                         {/* Control Asistencia QR (Admin/Docente) */}
                         {isAdminOrTeacher && (
                             <VStack style={styles.sectionDivider}>
-                                <EventQrPanel eventId={Number(evento.id)} />
+                                <EventQrPanel 
+                                    eventId={Number(evento.id)} 
+                                    eventoTitulo={evento.titulo}
+                                />
                             </VStack>
                         )}
 

@@ -20,6 +20,7 @@ import { QrSessionViewDTO } from '../types/api';
 import { C } from '../constants';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
 
 const { width: SW } = Dimensions.get('window');
 // El QR se mostrará al 85% del ancho de pantalla, con un máximo razonable
@@ -54,6 +55,10 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
 
     const timerEntryRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const timerExitRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Refs para exportar la imagen con texto debajo
+    const qrExportRefEntry = useRef<View>(null);
+    const qrExportRefExit = useRef<View>(null);
 
     const checkActiveSessions = async () => {
         try {
@@ -199,12 +204,9 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
     };
 
     /**
-     * Comparte el QR como imagen PNG usando la hoja nativa de compartir del sistema.
-     * El QR base64 se guarda temporalmente en el filesystem del dispositivo y
-     * se abre el Share Sheet con el archivo, un mensaje descriptivo y el mimetype correcto.
+     * Comparte el QR capturando una vista oculta (con texto y QR) como imagen.
      */
     const compartirQr = async (
-        base64: string,
         tipo: 'ENTRADA' | 'SALIDA',
         setSharingState: (v: boolean) => void
     ) => {
@@ -214,17 +216,18 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
             return;
         }
 
+        const targetRef = tipo === 'ENTRADA' ? qrExportRefEntry : qrExportRefExit;
+
+        if (!targetRef.current) return;
+
         setSharingState(true);
         try {
-            const fileName = `QR_${tipo}_Evento${eventId}_${Date.now()}.png`;
-
-            // Nueva API expo-file-system SDK 54: File + Paths
-            const file = new File(Paths.cache, fileName);
-            
-            // Usamos el string literal 'base64' en lugar del enum para evitar problemas de tipos
-            file.write(base64, { encoding: 'base64' });
-            
-            const fileUri = file.uri;
+            // Captura la vista oculta como un archivo temporal PNG
+            const uri = await captureRef(targetRef, {
+                format: 'png',
+                quality: 1,
+                result: 'tmpfile'
+            });
 
             const labelEvento = eventoTitulo ? `\n📌 Evento: ${eventoTitulo}` : '';
             const dialogTitle =
@@ -232,7 +235,7 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
                     ? `✅ QR de Registro de ENTRADA${labelEvento}`
                     : `🚪 QR de Registro de SALIDA${labelEvento}`;
 
-            await Sharing.shareAsync(fileUri, {
+            await Sharing.shareAsync(uri, {
                 mimeType: 'image/png',
                 dialogTitle,
                 UTI: 'public.png',
@@ -302,7 +305,7 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
 
             {/* Botón Compartir */}
             <TouchableOpacity
-                onPress={() => compartirQr(base64, tipo, setSharingState)}
+                onPress={() => compartirQr(tipo, setSharingState)}
                 disabled={sharingState}
                 style={[styles.shareBtn, { borderColor: accentColor, opacity: sharingState ? 0.6 : 1 }]}
             >
@@ -320,6 +323,31 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
 
     return (
         <VStack space="lg" style={styles.container}>
+            {/* Vistas ocultas para exportación de imágenes */}
+            {qrEntryBase64 && (
+                <View style={styles.offscreenContainer}>
+                    <View ref={qrExportRefEntry} style={styles.exportCard} collapsable={false}>
+                        <Image source={{ uri: `data:image/png;base64,${qrEntryBase64}` }} style={styles.exportQr} />
+                        <View style={styles.exportFooter}>
+                            <Text style={styles.exportTitle}>{eventoTitulo || `Evento #${eventId}`}</Text>
+                            <Text style={[styles.exportType, { color: '#16A34A' }]}>QR DE ENTRADA</Text>
+                        </View>
+                    </View>
+                </View>
+            )}
+
+            {qrExitBase64 && (
+                <View style={styles.offscreenContainer}>
+                    <View ref={qrExportRefExit} style={styles.exportCard} collapsable={false}>
+                        <Image source={{ uri: `data:image/png;base64,${qrExitBase64}` }} style={styles.exportQr} />
+                        <View style={styles.exportFooter}>
+                            <Text style={styles.exportTitle}>{eventoTitulo || `Evento #${eventId}`}</Text>
+                            <Text style={[styles.exportType, { color: '#7C3AED' }]}>QR DE SALIDA</Text>
+                        </View>
+                    </View>
+                </View>
+            )}
+
             <Text style={styles.title}>Control de Asistencia por QR</Text>
             <Text style={styles.subtitle}>
                 Como organizador, puedes generar códigos QR para registrar la entrada y salida de los estudiantes de forma presencial.
@@ -435,7 +463,6 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
                         {expandedQr && (
                             <TouchableOpacity
                                 onPress={() => compartirQr(
-                                    expandedQr.base64,
                                     expandedQr.tipo,
                                     expandedQr.tipo === 'ENTRADA' ? setSharingEntry : setSharingExit
                                 )}
@@ -643,5 +670,40 @@ const styles = StyleSheet.create({
         backgroundColor: '#F9FAFB',
         borderWidth: 2,
         borderColor: '#E5E7EB',
+    },
+    // ── EXPORTACIÓN (Vistas ocultas) ──
+    offscreenContainer: {
+        position: 'absolute',
+        top: -9999,
+        left: -9999,
+        // IMPORTANTE: No usar opacity: 0, causa capturas en blanco en react-native-view-shot
+    },
+    exportCard: {
+        backgroundColor: '#FFFFFF',
+        padding: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 500,
+    },
+    exportQr: {
+        width: 436,
+        height: 436,
+        marginBottom: 24,
+    },
+    exportFooter: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    exportTitle: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: '#111827',
+        textAlign: 'center',
+        lineHeight: 34,
+    },
+    exportType: {
+        fontSize: 22,
+        fontWeight: '900',
+        letterSpacing: 1.5,
     },
 }) as any;
