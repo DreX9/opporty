@@ -36,7 +36,7 @@ function isEventCloseToStart(e: EventoBackend): boolean {
         const year = parseInt(dateParts[0], 10);
         const month = parseInt(dateParts[1], 10) - 1;
         const day = parseInt(dateParts[2], 10);
-        
+
         let hour = 0;
         let minute = 0;
         if (e.horaInicio) {
@@ -195,8 +195,8 @@ export default function ProfileScreen() {
         // 2. Notificaciones de Actualización de Estado (Solo MANAGER y creador del evento)
         if (role === 'MANAGER' && payload?.sub) {
             backendEvents
-                .filter(e => 
-                    e.createdByUsername === payload.sub && 
+                .filter(e =>
+                    e.createdByUsername === payload.sub &&
                     (e.estado === 'PUBLISHED' || e.estado === 'REJECTED') &&
                     !eventState.readNotifications.has(String(e.id))
                 )
@@ -205,7 +205,7 @@ export default function ProfileScreen() {
                         id: `status-${e.id}`,
                         type: 'STATUS_UPDATE',
                         title: e.estado === 'PUBLISHED' ? 'Evento Aprobado 🎉' : 'Evento Rechazado ❌',
-                        description: e.estado === 'PUBLISHED' 
+                        description: e.estado === 'PUBLISHED'
                             ? `Tu evento "${e.titulo}" ha sido aprobado.`
                             : `Tu evento "${e.titulo}" ha sido rechazado.`,
                         event: e
@@ -364,9 +364,9 @@ export default function ProfileScreen() {
     const handleLogout = () => {
         Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
             { text: 'Cancelar', style: 'cancel' },
-            { 
-                text: 'Salir', 
-                style: 'destructive', 
+            {
+                text: 'Salir',
+                style: 'destructive',
                 onPress: () => {
                     // 1. Limpiar todo el estado de eventos y forzar recarga
                     //    para evitar fuga de datos al siguiente usuario del mismo dispositivo.
@@ -375,7 +375,7 @@ export default function ProfileScreen() {
                     // 2. Limpiar la sesión de autenticación y redirigir al login.
                     authStateManager.clearSession();
                     router.replace('/');
-                } 
+                }
             },
         ]);
     };
@@ -412,7 +412,7 @@ export default function ProfileScreen() {
                         ? `${payload.firstName} ${payload.lastName}`
                         : (payload?.sub || 'Usuario')}
                 </Text>
-                
+
                 <HStack style={styles.usernameRow}>
                     <Text style={styles.heroEmail}>@{payload?.sub || 'username'}</Text>
                     <TouchableOpacity
@@ -441,7 +441,7 @@ export default function ProfileScreen() {
                     </View>
                     <View>
                         <Text style={styles.infoLabel}>Universidad</Text>
-                        <Text style={styles.infoValue}>Sistema UniRadar</Text>
+                        <Text style={styles.infoValue}>ECHO</Text>
                     </View>
                 </View>
 
@@ -516,7 +516,7 @@ export default function ProfileScreen() {
                                                     {completado ? '🎓 Constancia Disponible' : '⏳ Asistencia en curso'}
                                                 </Text>
                                             </View>
-                                            
+
                                             {completado ? (
                                                 <TouchableOpacity
                                                     onPress={() => handleOpenDiploma(ev)}
@@ -596,7 +596,7 @@ export default function ProfileScreen() {
                                     <View style={styles.diplomaInnerBorder}>
                                         {/* Encabezado */}
                                         <Icon as={ICONS.GraduationCap} style={styles.diplomaIcon} />
-                                        <Text style={styles.diplomaUniName}>SISTEMA UNIRADAR</Text>
+                                        <Text style={styles.diplomaUniName}>ECHO</Text>
                                         <Text style={styles.diplomaSub}>CONSTANCIA DE PARTICIPACIÓN</Text>
 
                                         <View style={styles.diplomaDivider} />
@@ -616,8 +616,7 @@ export default function ProfileScreen() {
                                         </Text>
 
                                         <Text style={styles.diplomaBodyText}>
-                                            Por haber registrado su asistencia (Ingreso y Salida)
-                                            y participado en el evento académico:
+                                            Por haber participado en el evento académico:
                                         </Text>
 
                                         <Text style={styles.diplomaEventTitle}>"{selectedConstanciaEvento.titulo}"</Text>
@@ -645,12 +644,6 @@ export default function ProfileScreen() {
                                                 <Icon as={ICONS.Star} style={{ color: '#D97706', width: 16, height: 16 }} />
                                                 <Text style={styles.sealText}>SELLO</Text>
                                             </View>
-
-                                            <VStack style={styles.signatureBox}>
-                                                <View style={styles.signLine} />
-                                                <Text style={styles.signName}>Sistema UniRadar</Text>
-                                                <Text style={styles.signRole}>Verificación Digital</Text>
-                                            </VStack>
                                         </HStack>
 
                                         <Text style={styles.diplomaVerificationCode}>
@@ -803,15 +796,15 @@ export default function ProfileScreen() {
                                                 <>
                                                     <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                                                         <HStack style={{ alignItems: 'center', gap: 6 }}>
-                                                            <Icon 
-                                                                as={notif.event.estado === 'PUBLISHED' ? ICONS.CheckCircle : ICONS.AlertCircle} 
-                                                                style={{ color: notif.event.estado === 'PUBLISHED' ? '#10B981' : '#EF4444', width: 16, height: 16 }} 
+                                                            <Icon
+                                                                as={notif.event.estado === 'PUBLISHED' ? ICONS.CheckCircle : ICONS.AlertCircle}
+                                                                style={{ color: notif.event.estado === 'PUBLISHED' ? '#10B981' : '#EF4444', width: 16, height: 16 }}
                                                             />
                                                             <Text style={{ fontSize: 13, fontWeight: '800', color: notif.event.estado === 'PUBLISHED' ? '#10B981' : '#EF4444' }}>
                                                                 {notif.title}
                                                             </Text>
                                                         </HStack>
-                                                        
+
                                                         {/* Dismiss Notification */}
                                                         <TouchableOpacity
                                                             onPress={() => eventStateManager.markNotificationAsRead(String(notif.event.id))}
@@ -824,7 +817,7 @@ export default function ProfileScreen() {
                                                             <Icon as={ICONS.CheckCircle} style={{ color: '#475569', width: 14, height: 14 }} />
                                                         </TouchableOpacity>
                                                     </HStack>
-                                                    
+
                                                     <Text style={{ fontSize: 12, color: '#475569', fontWeight: '600' }}>
                                                         {notif.description}
                                                     </Text>
