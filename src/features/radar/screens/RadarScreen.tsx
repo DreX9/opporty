@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import RadarRing from '@/components/animations/RadarRing';
 import { ICONS } from '@/components/icons';
 import { HStack } from '@/components/ui/hstack';
@@ -16,8 +16,9 @@ import {
     Alert,
     Linking,
     Modal,
+    Animated,
 } from 'react-native';
-import Animated, {
+import Reanimated, {
     useSharedValue,
     useAnimatedStyle,
     withSpring,
@@ -33,6 +34,8 @@ import { mapBackendToEvento, getCategoryAccentColor } from '../../event/types';
 import { EventoBackend } from '../../event/types/api';
 import { Evento } from '../../event/types';
 import EventDetailModal from '../../event/components/EventDetailModal';
+import RecommendedEventCard from '../components/RecommendedEventCard';
+import { useInterests } from '../../profile/state/interestsState';
 
 // ── Coordenadas por defecto (Lima, Perú — UTP) ────────────────────────────────
 const DEFAULT_LOCATION = { latitude: -12.046374, longitude: -77.042793 };
@@ -272,6 +275,30 @@ export default function RadarScreen() {
 
     const isLoading = loading || locationLoading;
 
+    // ── Intereses del usuario y recomendaciones ───────────────────────────────
+    const { matchesInterest } = useInterests();
+
+    const eventosRecomendados = useMemo(() => {
+        if (isLoading) return [];
+        return radarEventos
+            .filter(re => matchesInterest(re.card.categoria))
+            .sort((a, b) => a.distanciaKm - b.distanciaKm)
+            .slice(0, 3);
+    }, [radarEventos, matchesInterest, isLoading]);
+
+    // ── Animación de pulso para puntos recomendados ───────────────────────────
+    const pulseAnim = useRef(new Animated.Value(1)).current;
+    useEffect(() => {
+        const pulse = Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, { toValue: 1.7, duration: 900, useNativeDriver: true }),
+                Animated.timing(pulseAnim, { toValue: 1.0, duration: 900, useNativeDriver: true }),
+            ])
+        );
+        pulse.start();
+        return () => pulse.stop();
+    }, [pulseAnim]);
+
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: C.bg }}
@@ -320,7 +347,7 @@ export default function RadarScreen() {
 
             {/* ── Zona del radar animado — con pinch-to-zoom ───────────────── */}
             <GestureDetector gesture={combinedGesture}>
-                <Animated.View
+                <Reanimated.View
                     style={[
                         styles.radarBox,
                         { backgroundColor: C.radarBg, borderColor: C.cardBorder },
@@ -370,23 +397,52 @@ export default function RadarScreen() {
 
                 {/* Puntos de eventos reales sobre el radar */}
                 {!isLoading &&
-                    radarEventos.map((re) => (
-                        <TouchableOpacity
-                            key={re.card.id}
-                            onPress={() => handleEventDotPress(re)}
-                            style={[
-                                styles.eventDot,
-                                {
-                                    backgroundColor: getCategoryAccentColor(re.card.categoria),
+                    radarEventos.map((re) => {
+                        const esRecomendado = matchesInterest(re.card.categoria);
+                        const accentColor = getCategoryAccentColor(re.card.categoria);
+                        const dotSize = esRecomendado ? 16 : 12;
+                        return (
+                            <View
+                                key={re.card.id}
+                                style={{
+                                    position: 'absolute',
                                     top: `${re.top * 100}%` as DimensionValue,
                                     left: `${re.left * 100}%` as DimensionValue,
-                                    transform: [{ translateX: -6 }, { translateY: -6 }],
-                                },
-                            ]}
-                            accessibilityLabel={`Ver evento ${re.card.titulo}`}
-                            accessibilityRole="button"
-                        />
-                    ))}
+                                    transform: [{ translateX: -(dotSize / 2) }, { translateY: -(dotSize / 2) }],
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: esRecomendado ? 20 : 10,
+                                }}
+                            >
+                                {/* Halo pulsante solo para eventos recomendados */}
+                                {esRecomendado && (
+                                    <Animated.View
+                                        style={{
+                                            position: 'absolute',
+                                            width: dotSize * 2.2,
+                                            height: dotSize * 2.2,
+                                            borderRadius: dotSize * 1.1,
+                                            backgroundColor: `${accentColor}40`,
+                                            transform: [{ scale: pulseAnim }],
+                                        }}
+                                    />
+                                )}
+                                <TouchableOpacity
+                                    onPress={() => handleEventDotPress(re)}
+                                    style={{
+                                        width: dotSize,
+                                        height: dotSize,
+                                        borderRadius: dotSize / 2,
+                                        backgroundColor: accentColor,
+                                        borderWidth: esRecomendado ? 2 : 0,
+                                        borderColor: '#FFFFFF',
+                                    }}
+                                    accessibilityLabel={`Ver evento ${re.card.titulo}`}
+                                    accessibilityRole="button"
+                                />
+                            </View>
+                        );
+                    })}
 
                 {/* Mensaje si no hay eventos con coordenadas */}
                 {!isLoading && radarEventos.length === 0 && (
@@ -399,10 +455,40 @@ export default function RadarScreen() {
                         </Text>
                     </View>
                 )}
-            </Animated.View>
+            </Reanimated.View>
             </GestureDetector>
 
-            {/* ── Eventos Destacados ────────────────────────────────────────── */}
+            {/* ── Sección "Puede interesarte" ───────────────────────────────── */}
+            {!isLoading && eventosRecomendados.length > 0 && (
+                <View style={{ marginTop: 20 }}>
+                    <HStack style={{ alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                        <HStack style={{ alignItems: 'center', gap: 6 }}>
+                            <Icon as={ICONS.Heart} style={{ color: '#EF4444', width: 16, height: 16 }} />
+                            <Text style={{ color: C.textPrimary, fontWeight: '700', fontSize: 15 }}>
+                                Puede interesarte
+                            </Text>
+                        </HStack>
+                        <Text style={{ color: C.textSecondary, fontSize: 12 }}>
+                            {eventosRecomendados.length} recomendado(s)
+                        </Text>
+                    </HStack>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingRight: 16 }}
+                    >
+                        {eventosRecomendados.map((re) => (
+                            <RecommendedEventCard
+                                key={re.card.id}
+                                radarEvento={re}
+                                onPress={() => setEventoSeleccionado(re.mapped)}
+                            />
+                        ))}
+                    </ScrollView>
+                </View>
+            )}
+
+            {/* ── Eventos Detectados ────────────────────────────────────────── */}
             <HStack style={{ alignItems: 'center', justifyContent: 'space-between', marginTop: 24, marginBottom: 12 }}>
                 <Text style={{ color: C.textPrimary, fontWeight: '700', fontSize: 16 }}>
                     Eventos Detectados

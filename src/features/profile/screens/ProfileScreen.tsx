@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     ScrollView,
     View,
@@ -17,17 +17,19 @@ import { useRouter } from 'expo-router';
 import { useAuthState, authStateManager } from '../../auth/state';
 import * as Clipboard from 'expo-clipboard';
 
-import { C, INTERESES_INICIAL, MENU_ITEMS } from '../constants';
+import { C, MENU_ITEMS } from '../constants';
 import { Interes } from '../types';
 import InterestChip from '../components/InterestChip';
 import MenuRow from '../components/MenuRow';
 import EditProfileModal from '../components/EditProfileModal';
 import { eventStateManager, useEventState } from '../../event/state';
 import { useEvents, resetEventsCache } from '../../event/hooks/useEvents';
-import { Evento, mapBackendToEvento } from '../../event/types';
+import { Evento, mapBackendToEvento, getCategoryAccentColor, getCategoryIcon } from '../../event/types';
 import { eventService } from '../../event/services/eventService';
 import { EventoBackend } from '../../event/types/api';
 import { exportConstanciaPDF, ConstanciaData } from '../../event/services/constanciaService';
+import { useCategories } from '../../event/hooks/useCategories';
+import { loadInterests, saveInterests } from '../state/interestsState';
 
 function isEventCloseToStart(e: EventoBackend): boolean {
     if (!e.fechaInicio) return false;
@@ -63,12 +65,62 @@ export default function ProfileScreen() {
     const { data: backendEvents, refetch: refetchEvents } = useEvents();
     const EVENTOS = Array.isArray(backendEvents) ? backendEvents.map(mapBackendToEvento) : [];
 
-    const [intereses, setIntereses] = useState<Interes[]>(INTERESES_INICIAL);
+    const { categorias, loading: categoriasLoading } = useCategories();
+    const [intereses, setIntereses] = useState<Interes[]>([]);
     const [selectedConstanciaEvento, setSelectedConstanciaEvento] = useState<Evento | null>(null);
     const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+    // ── Cargar intereses persistidos al montar ─────────────────────────────────
+    useEffect(() => {
+        if (payload?.sub) {
+            loadInterests(payload.sub).then(() => {
+                // El estado se actualiza via el listener en interestsState
+            });
+        }
+    }, [payload?.sub]);
+
+    // ── Construir chips desde categorías reales del backend ───────────────────
+    useEffect(() => {
+        if (categorias.length === 0) return;
+
+        // Reconstruir la lista de intereses manteniendo las selecciones persistidas
+        loadInterests(payload?.sub || 'guest').then(() => {
+            // Importar el estado global directamente
+            import('../state/interestsState').then(({ useInterests: _ }) => {
+                // Leemos el AsyncStorage directamente para hidratar
+                import('@react-native-async-storage/async-storage').then(({ default: AsyncStorage }) => {
+                    const key = `@uniradar:interests:${payload?.sub || 'guest'}`;
+                    AsyncStorage.getItem(key).then(stored => {
+                        const activeCats: string[] = stored ? JSON.parse(stored) : [];
+                        const emojisDefault: Record<string, string> = {
+                            tecnol: '💻', músic: '🎵', music: '🎵', deport: '⚽',
+                            arte: '🎨', social: '💬', cultur: '🎭',
+                        };
+                        const nuevoIntereses: Interes[] = categorias.map((cat, idx) => {
+                            const normNombre = cat.nombre.toLowerCase();
+                            const emojiKey = Object.keys(emojisDefault).find(k => normNombre.includes(k));
+                            const emoji = emojiKey ? emojisDefault[emojiKey] : '🌟';
+                            const isActive = activeCats.some(ac =>
+                                normNombre.includes(ac.toLowerCase()) || ac.toLowerCase().includes(normNombre)
+                            );
+                            return {
+                                id: cat.id,
+                                nombre: cat.nombre,
+                                emoji,
+                                activo: isActive,
+                                color: getCategoryAccentColor(cat.nombre),
+                                Icon: getCategoryIcon(cat.nombre),
+                            };
+                        });
+                        setIntereses(nuevoIntereses);
+                    });
+                });
+            });
+        });
+    }, [categorias, payload?.sub]);
 
     const [serverNotifications, setServerNotifications] = useState<any[]>([]);
 
@@ -302,9 +354,15 @@ export default function ProfileScreen() {
     };
 
     const toggleInteres = (id: number) => {
-        setIntereses((prev) =>
-            prev.map((i) => (i.id === id ? { ...i, activo: !i.activo } : i))
-        );
+        setIntereses((prev) => {
+            const actualizado = prev.map((i) => (i.id === id ? { ...i, activo: !i.activo } : i));
+            // Persistir los nombres activos
+            const activosNombres = actualizado
+                .filter(i => i.activo)
+                .map(i => i.nombre.toLowerCase());
+            saveInterests(payload?.sub || 'guest', activosNombres);
+            return actualizado;
+        });
     };
 
     const handleDownloadCert = async (evento: Evento) => {
@@ -471,12 +529,25 @@ export default function ProfileScreen() {
                     </Text>
                 </View>
 
-                {/* Grid 2 columnas */}
-                <View style={styles.chipGrid}>
-                    {intereses.map((item) => (
-                        <InterestChip key={item.id} interes={item} onToggle={toggleInteres} />
-                    ))}
-                </View>
+                {/* Grid 2 columnas — con spinner mientras cargan las categorías del backend */}
+                {categoriasLoading ? (
+                    <VStack style={{ alignItems: 'center', paddingVertical: 20, gap: 8 }}>
+                        <ActivityIndicator size="small" color={C.accent} />
+                        <Text style={{ color: C.textSecondary, fontSize: 12 }}>
+                            Cargando categorías...
+                        </Text>
+                    </VStack>
+                ) : intereses.length === 0 ? (
+                    <Text style={{ color: C.textSecondary, fontSize: 12, paddingVertical: 12, textAlign: 'center' }}>
+                        No hay categorías disponibles en el sistema.
+                    </Text>
+                ) : (
+                    <View style={styles.chipGrid}>
+                        {intereses.map((item) => (
+                            <InterestChip key={item.id} interes={item} onToggle={toggleInteres} />
+                        ))}
+                    </View>
+                )}
             </View>
 
             {/* ── Sección Mis Constancias ── */}
