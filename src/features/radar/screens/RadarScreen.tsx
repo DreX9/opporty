@@ -288,16 +288,40 @@ export default function RadarScreen() {
 
     // ── Animación de pulso para puntos recomendados ───────────────────────────
     const pulseAnim = useRef(new Animated.Value(1)).current;
+    const dotPulseAnim = useRef(new Animated.Value(1)).current;
+    const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
+    const dotPulseLoop = useRef<Animated.CompositeAnimation | null>(null);
+
     useEffect(() => {
-        const pulse = Animated.loop(
+        pulseLoop.current = Animated.loop(
             Animated.sequence([
                 Animated.timing(pulseAnim, { toValue: 1.7, duration: 900, useNativeDriver: true }),
                 Animated.timing(pulseAnim, { toValue: 1.0, duration: 900, useNativeDriver: true }),
             ])
         );
-        pulse.start();
-        return () => pulse.stop();
-    }, [pulseAnim]);
+        dotPulseLoop.current = Animated.loop(
+            Animated.sequence([
+                Animated.timing(dotPulseAnim, { toValue: 1.25, duration: 600, useNativeDriver: true }),
+                Animated.timing(dotPulseAnim, { toValue: 1.0, duration: 600, useNativeDriver: true }),
+            ])
+        );
+
+        pulseLoop.current.start();
+        dotPulseLoop.current.start();
+
+        return () => {
+            pulseLoop.current?.stop();
+            dotPulseLoop.current?.stop();
+        };
+    }, [pulseAnim, dotPulseAnim]);
+
+    // Reiniciar las animaciones si cambia la lista de recomendados para evitar congelamiento
+    useEffect(() => {
+        if (eventosRecomendados.length > 0) {
+            pulseLoop.current?.start();
+            dotPulseLoop.current?.start();
+        }
+    }, [eventosRecomendados.length]);
 
     return (
         <ScrollView
@@ -305,6 +329,9 @@ export default function RadarScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 }}
         >
+            {/* Mantener las animaciones de recomendados activas para evitar que se congelen si no hay elementos visibles */}
+            <Animated.View style={{ opacity: 0, width: 0, height: 0, position: 'absolute', transform: [{ scale: pulseAnim }] }} />
+            <Animated.View style={{ opacity: 0, width: 0, height: 0, position: 'absolute', transform: [{ scale: dotPulseAnim }] }} />
             {/* Subtítulo */}
             <Text style={{ color: C.textSecondary, fontSize: 13, marginBottom: 16 }}>
                 {userLocation
@@ -427,19 +454,45 @@ export default function RadarScreen() {
                                         }}
                                     />
                                 )}
-                                <TouchableOpacity
-                                    onPress={() => handleEventDotPress(re)}
-                                    style={{
-                                        width: dotSize,
-                                        height: dotSize,
-                                        borderRadius: dotSize / 2,
-                                        backgroundColor: accentColor,
-                                        borderWidth: esRecomendado ? 2 : 0,
-                                        borderColor: '#FFFFFF',
-                                    }}
-                                    accessibilityLabel={`Ver evento ${re.card.titulo}`}
-                                    accessibilityRole="button"
-                                />
+                                {esRecomendado ? (
+                                    <Animated.View
+                                        style={{
+                                            transform: [{ scale: dotPulseAnim }],
+                                            opacity: dotPulseAnim.interpolate({
+                                                inputRange: [1, 1.25],
+                                                outputRange: [0.8, 1.0],
+                                            }),
+                                        }}
+                                    >
+                                        <TouchableOpacity
+                                            onPress={() => handleEventDotPress(re)}
+                                            style={{
+                                                width: dotSize,
+                                                height: dotSize,
+                                                borderRadius: dotSize / 2,
+                                                backgroundColor: accentColor,
+                                                borderWidth: 2,
+                                                borderColor: '#FFFFFF',
+                                            }}
+                                            accessibilityLabel={`Ver evento ${re.card.titulo}`}
+                                            accessibilityRole="button"
+                                        />
+                                    </Animated.View>
+                                ) : (
+                                    <TouchableOpacity
+                                        onPress={() => handleEventDotPress(re)}
+                                        style={{
+                                            width: dotSize,
+                                            height: dotSize,
+                                            borderRadius: dotSize / 2,
+                                            backgroundColor: accentColor,
+                                            borderWidth: 0,
+                                            borderColor: '#FFFFFF',
+                                        }}
+                                        accessibilityLabel={`Ver evento ${re.card.titulo}`}
+                                        accessibilityRole="button"
+                                    />
+                                )}
                             </View>
                         );
                     })}

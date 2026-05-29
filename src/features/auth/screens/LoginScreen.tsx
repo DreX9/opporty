@@ -44,7 +44,7 @@ export default function LoginScreen() {
             }
             setUser('');
             setPassword('');
-            router.push('/tabs/radar');
+            router.replace('/tabs/radar');
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } }; message?: string };
             const msg = err.response?.data?.message || err.message || "El usuario o la contraseña no son correctos.";

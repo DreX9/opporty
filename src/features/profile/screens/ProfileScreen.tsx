@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import ConfirmModal from '@/components/ConfirmModal';
 import {
     ScrollView,
     View,
@@ -72,6 +73,7 @@ export default function ProfileScreen() {
     const [isExporting, setIsExporting] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
     // ── Cargar intereses persistidos al montar ─────────────────────────────────
     useEffect(() => {
@@ -354,15 +356,14 @@ export default function ProfileScreen() {
     };
 
     const toggleInteres = (id: number) => {
-        setIntereses((prev) => {
-            const actualizado = prev.map((i) => (i.id === id ? { ...i, activo: !i.activo } : i));
-            // Persistir los nombres activos
-            const activosNombres = actualizado
-                .filter(i => i.activo)
-                .map(i => i.nombre.toLowerCase());
-            saveInterests(payload?.sub || 'guest', activosNombres);
-            return actualizado;
-        });
+        const actualizado = intereses.map((i) => (i.id === id ? { ...i, activo: !i.activo } : i));
+        setIntereses(actualizado);
+
+        // Persistir los nombres activos
+        const activosNombres = actualizado
+            .filter(i => i.activo)
+            .map(i => i.nombre.toLowerCase());
+        saveInterests(payload?.sub || 'guest', activosNombres);
     };
 
     const handleDownloadCert = async (evento: Evento) => {
@@ -420,22 +421,7 @@ export default function ProfileScreen() {
     };
 
     const handleLogout = () => {
-        Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas salir?', [
-            { text: 'Cancelar', style: 'cancel' },
-            {
-                text: 'Salir',
-                style: 'destructive',
-                onPress: () => {
-                    // 1. Limpiar todo el estado de eventos y forzar recarga
-                    //    para evitar fuga de datos al siguiente usuario del mismo dispositivo.
-                    eventStateManager.resetState();
-                    resetEventsCache();
-                    // 2. Limpiar la sesión de autenticación y redirigir al login.
-                    authStateManager.clearSession();
-                    router.replace('/');
-                }
-            },
-        ]);
+        setIsLogoutModalOpen(true);
     };
 
     return (
@@ -1086,6 +1072,27 @@ export default function ProfileScreen() {
                     </View>
                 </View>
             </Modal>
+
+            {/* Modal de Cierre de Sesión */}
+            <ConfirmModal
+                isOpen={isLogoutModalOpen}
+                onClose={() => setIsLogoutModalOpen(false)}
+                onConfirm={() => {
+                    // 1. Limpiar todo el estado de eventos y forzar recarga
+                    eventStateManager.resetState();
+                    resetEventsCache();
+                    // 2. Limpiar la sesión de autenticación y redirigir al login.
+                    authStateManager.clearSession();
+                    router.replace('/');
+                }}
+                title="¿Deseas cerrar sesión?"
+                description="Tendrás que volver a iniciar sesión para acceder nuevamente a tu cuenta."
+                confirmLabel="Cerrar sesión"
+                cancelLabel="Cancelar"
+                confirmColor="#EF4444"
+                icon={ICONS.arrrowDownUp}
+                iconColor="#EF4444"
+            />
         </ScrollView>
 
     );

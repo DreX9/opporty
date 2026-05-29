@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface JwtPayload {
   sub: string;
@@ -102,6 +103,9 @@ export const authStateManager = {
       payload,
       role,
     };
+    AsyncStorage.setItem('@uniradar:token', token).catch((err) => {
+      console.error('Error al guardar token en AsyncStorage:', err);
+    });
     notify();
   },
 
@@ -111,6 +115,9 @@ export const authStateManager = {
       payload: null,
       role: null,
     };
+    AsyncStorage.removeItem('@uniradar:token').catch((err) => {
+      console.error('Error al eliminar token de AsyncStorage:', err);
+    });
     notify();
   },
 
@@ -133,6 +140,28 @@ export const authStateManager = {
     return globalAuthState.role === 'ADMIN';
   },
 };
+
+export async function initSessionFromStorage(): Promise<boolean> {
+  try {
+    const token = await AsyncStorage.getItem('@uniradar:token');
+    if (token) {
+      const payload = decodeJwt(token);
+      if (payload && payload.exp) {
+        const now = Date.now() / 1000;
+        if (payload.exp < now) {
+          // Token expirado
+          await AsyncStorage.removeItem('@uniradar:token');
+          return false;
+        }
+      }
+      authStateManager.setSession(token);
+      return true;
+    }
+  } catch (error) {
+    console.error('Error al inicializar sesión desde storage:', error);
+  }
+  return false;
+}
 
 export function useAuthState(): AuthState {
   const [state, setState] = useState<AuthState>(authStateManager.getState());
