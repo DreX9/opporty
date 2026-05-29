@@ -80,298 +80,251 @@ function buildConstanciaHTML(data: ConstanciaData): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Constancia de Participación — ${data.eventoTitulo}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: #f0f4f8;
+      background: #FFFFFF;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      padding: 24px;
+      padding: 40px;
     }
 
-    .diploma {
-      background: #ffffff;
-      width: 700px;
-      padding: 0;
-      border-radius: 4px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.15);
-      overflow: hidden;
+    /* Contenedor principal = Borde Dorado Exterior */
+    .diploma-outer {
+      width: 800px;
+      background: #FFFFFF;
+      border: 3px solid #FDE68A;
+      border-radius: 20px;
+      padding: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.08);
     }
 
-    /* Banda superior decorativa */
-    .header-band {
-      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 50%, #6D28D9 100%);
-      padding: 28px 40px 24px;
+    /* Borde Dorado Interior */
+    .diploma-inner {
+      border: 1.5px solid #FCD34D;
+      border-radius: 12px;
+      padding: 50px 60px 40px;
       text-align: center;
       position: relative;
     }
 
-    .header-band::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #EAB308, #F59E0B, #EAB308);
+    /* Encabezado */
+    .icon-cap {
+      color: #D97706;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
     }
 
-    .header-label {
-      color: rgba(255,255,255,0.75);
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-
-    .header-title {
-      color: #ffffff;
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    .header-subtitle {
-      color: rgba(255,255,255,0.8);
-      font-size: 11px;
-      margin-top: 4px;
-      letter-spacing: 1.5px;
-    }
-
-    /* Cuerpo */
-    .body {
-      padding: 36px 48px;
-      text-align: center;
-      border: 2px solid #E5E7EB;
-      border-top: none;
-      border-bottom: none;
-    }
-
-    .certifies-text {
-      color: #6B7280;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 10px;
-    }
-
-    .participant-name {
+    .uni-name {
       color: #1E1B4B;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #EAB308;
-      display: inline-block;
-      padding-bottom: 6px;
-      margin-bottom: 18px;
-    }
-
-    .participant-username {
-      color: #6B7280;
-      font-size: 12px;
-      margin-bottom: 20px;
-    }
-
-    .body-text {
-      color: #374151;
-      font-size: 13px;
-      line-height: 1.7;
-      max-width: 500px;
-      margin: 0 auto 20px;
-    }
-
-    .event-title {
-      color: #4F46E5;
-      font-size: 16px;
-      font-weight: 700;
-      font-style: italic;
-      margin: 16px auto;
-      padding: 12px 20px;
-      background: #EEF2FF;
-      border-left: 4px solid #4F46E5;
-      border-radius: 4px;
-      text-align: left;
-    }
-
-    /* Tabla de detalles */
-    .details-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin: 20px 0;
-      text-align: left;
-    }
-
-    .detail-cell {
-      background: #F9FAFB;
-      border: 1px solid #E5E7EB;
-      border-radius: 8px;
-      padding: 12px 14px;
-    }
-
-    .detail-label {
-      font-size: 9px;
-      font-weight: 700;
-      color: #9CA3AF;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 2px;
       margin-bottom: 4px;
     }
 
-    .detail-value {
-      font-size: 12px;
-      font-weight: 600;
-      color: #1F2937;
-    }
-
-    /* Footer del diploma */
-    .footer-band {
-      background: #1E1B4B;
-      padding: 20px 40px;
-    }
-
-    .footer-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .footer-left {
-      text-align: left;
-    }
-
-    .footer-right {
-      text-align: right;
-    }
-
-    .footer-label {
-      color: rgba(255,255,255,0.5);
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 3px;
-    }
-
-    .footer-value {
-      color: #ffffff;
+    .diploma-sub {
+      color: #6B7280;
       font-size: 11px;
       font-weight: 600;
-    }
-
-    .verification-code {
-      color: #EAB308;
-      font-size: 10px;
-      font-weight: 700;
       letter-spacing: 1px;
-      margin-top: 10px;
-      text-align: center;
     }
 
-    .organizer-section {
-      margin: 16px 0 8px;
-      padding: 12px 16px;
-      background: #FFFBEB;
-      border: 1px solid #FDE68A;
-      border-radius: 8px;
-      text-align: left;
+    .divider {
+      height: 1px;
+      background-color: #E5E7EB;
+      width: 60px;
+      margin: 24px auto;
     }
 
-    .organizer-label {
-      font-size: 9px;
-      font-weight: 700;
-      color: #92400E;
+    /* Título Oficial */
+    .const-name {
+      color: #D97706;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+
+    .body-text {
+      color: #4B5563;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    /* Participante */
+    .student-name {
+      color: #1E1B4B;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      border-bottom: 3px solid #FCD34D;
+      display: inline-block;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 3px;
     }
 
-    .organizer-value {
+    .student-username {
+      color: #6B7280;
       font-size: 12px;
-      font-weight: 600;
-      color: #78350F;
+      margin-bottom: 24px;
     }
+
+    /* Evento */
+    .event-title {
+      color: #111827;
+      font-size: 20px;
+      font-weight: 800;
+      font-style: italic;
+      margin: 16px 0;
+    }
+
+    .event-details {
+      color: #6B7280;
+      font-size: 12px;
+      line-height: 1.8;
+      margin-bottom: 40px;
+    }
+
+    /* Firmas y Sello */
+    .signatures-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 60px;
+      margin-top: 50px;
+      padding: 0 20px;
+    }
+
+    .signature-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 180px;
+    }
+
+    .sign-line {
+      width: 100%;
+      height: 1px;
+      background-color: #9CA3AF;
+      margin-bottom: 12px;
+    }
+
+    .sign-name {
+      color: #111827;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .sign-role {
+      color: #6B7280;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .seal-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border: 2px solid #F59E0B;
+      border-radius: 50%;
+      background: #FFFBEB;
+    }
+
+    .seal-icon {
+      color: #D97706;
+      width: 20px;
+      height: 20px;
+      margin-bottom: 2px;
+    }
+
+    .seal-text {
+      color: #D97706;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    /* Footer / ID */
+    .verification-code {
+      margin-top: 40px;
+      color: #9CA3AF;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+    }
+
   </style>
 </head>
 <body>
-  <div class="diploma">
-    <!-- Cabecera -->
-    <div class="header-band">
-      <div class="header-label">Sistema UniRadar</div>
-      <div class="header-title">Constancia de Participación</div>
-      <div class="header-subtitle">Documento Oficial de Asistencia Académica</div>
-    </div>
+  <div class="diploma-outer">
+    <div class="diploma-inner">
+      
+      <!-- Icono SVG GraduationCap (Lucide) -->
+      <svg class="icon-cap" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
 
-    <!-- Cuerpo -->
-    <div class="body">
-      <p class="certifies-text">Se certifica que:</p>
+      <div class="uni-name">ECHO</div>
+      <div class="diploma-sub">CONSTANCIA DE PARTICIPACIÓN</div>
 
-      <div class="participant-name">${data.participanteNombre || data.participanteUsername}</div>
-      <div class="participant-username">@${data.participanteUsername}</div>
+      <div class="divider"></div>
 
-      <p class="body-text">
-        Ha completado exitosamente su asistencia al evento académico, registrando
-        tanto su <strong>ingreso</strong> como su <strong>salida</strong> mediante
-        el sistema de verificación QR:
-      </p>
+      <div class="const-name">CONSTANCIA OFICIAL</div>
 
-      <div class="event-title">${data.eventoTitulo}</div>
+      <div class="body-text">Se certifica que:</div>
 
-      <!-- Tabla de detalles del evento -->
-      <div class="details-grid">
-        <div class="detail-cell">
-          <div class="detail-label">📅 Fecha</div>
-          <div class="detail-value">${data.eventoFecha}</div>
+      <div class="student-name">
+        ${data.participanteNombre || data.participanteUsername}
+      </div>
+      <div class="student-username">@${data.participanteUsername}</div>
+
+      <div class="body-text">
+        Por haber participado en el evento académico:
+      </div>
+
+      <div class="event-title">"${data.eventoTitulo}"</div>
+
+      <div class="event-details">
+        ${data.eventoLugar} · ${data.eventoFecha} · ${data.eventoHora}<br/>
+        Organizado por @${data.organizadorUsername}
+      </div>
+
+      <div class="signatures-row">
+        <!-- Firma Organizador -->
+        <div class="signature-box">
+          <div class="sign-line"></div>
+          <div class="sign-name">Firma del Organizador</div>
+          <div class="sign-role">@${data.organizadorUsername}</div>
         </div>
-        <div class="detail-cell">
-          <div class="detail-label">🕐 Hora de inicio</div>
-          <div class="detail-value">${data.eventoHora}</div>
-        </div>
-        <div class="detail-cell">
-          <div class="detail-label">📍 Lugar</div>
-          <div class="detail-value">${data.eventoLugar}</div>
-        </div>
-        <div class="detail-cell">
-          <div class="detail-label">🎓 Categoría</div>
-          <div class="detail-value">${data.eventoCategoria} · ${modalidadLabel}</div>
-        </div>
-        <div class="detail-cell">
-          <div class="detail-label">✅ Check-in registrado</div>
-          <div class="detail-value">${formatDatetime(data.checkInAt)}</div>
-        </div>
-        <div class="detail-cell">
-          <div class="detail-label">🏁 Check-out registrado</div>
-          <div class="detail-value">${formatDatetime(data.checkOutAt)}</div>
+
+        <!-- Sello Central -->
+        <div class="seal-box">
+          <!-- Icono SVG Star (Lucide) -->
+          <svg class="seal-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <div class="seal-text">SELLO</div>
         </div>
       </div>
 
-      <!-- Organizador (solo username, que es el único dato disponible) -->
-      <div class="organizer-section">
-        <div class="organizer-label">Organizado por</div>
-        <div class="organizer-value">@${data.organizadorUsername}</div>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="footer-band">
-      <div class="footer-row">
-        <div class="footer-left">
-          <div class="footer-label">Fecha de emisión</div>
-          <div class="footer-value">${fechaEmision}</div>
-        </div>
-        <div class="footer-right">
-          <div class="footer-label">Generado por</div>
-          <div class="footer-value">UniRadar v1.0</div>
-        </div>
-      </div>
       <div class="verification-code">
-        Código de verificación: ${codigoVerificacion}
+        ID: ${codigoVerificacion}
       </div>
+
     </div>
   </div>
 </body>
