@@ -91,3 +91,29 @@ export interface QrSessionResponse {
   session: QrSessionViewDTO;
   qrCodeBase64: string;
 }
+
+/**
+ * Respuesta de GET /api/v1/event-registrations/me
+ * Mapea el EventRegistrationsViewDTO del backend.
+ * IMPORTANTE: No agregar campos que no existan en EventRegistrationsViewDTO.
+ */
+export interface RegistrationBackend {
+  id: number;
+  userId: number;
+  username: string;
+  userEmail: string;
+  eventId: number;
+  eventTitulo: string;
+  registeredAt: string;       // ISO datetime
+  attendanceStatus: string;   // REGISTERED | CHECKED_IN | COMPLETED | etc.
+  qrEntryScanned: boolean;
+  qrExitScanned: boolean;
+  checkInAt: string | null;   // ISO datetime
+  checkOutAt: string | null;  // ISO datetime
+  attendanceCompleted: boolean;
+  certificateGenerated: boolean;
+  certificateUrl: string | null;
+  roleInEvent: string;        // ATTENDEE | SPEAKER | etc.
+  notes: string | null;
+  createdAt: string;          // ISO datetime
+}
