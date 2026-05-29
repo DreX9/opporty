@@ -135,6 +135,18 @@ export const eventService = {
     },
 
     /**
+     * Registra al usuario autenticado en un evento.
+     * El backend valida capacidad con bloqueo pesimista.
+     * Endpoint: POST /api/v1/event-registrations
+     */
+    async registerToEvent(eventId: number): Promise<RegistrationBackend> {
+        const response = await apiClient.post<RegistrationBackend>('/event-registrations', { eventId }, {
+            headers: getAuthHeaders(),
+        });
+        return response.data;
+    },
+
+    /**
      * Obtiene los registros (asistencia) del usuario autenticado.
      * La sesión está vinculada al Bearer token: cada usuario solo obtiene SUS registros.
      * Endpoint: GET /api/v1/event-registrations/me

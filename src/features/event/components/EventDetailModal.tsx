@@ -26,6 +26,7 @@ import { useAuthState } from '../../auth/state';
 import EventQrPanel from './EventQrPanel';
 import { exportConstanciaPDF, ConstanciaData } from '../services/constanciaService';
 import { EventoBackend } from '../types/api';
+import { eventService } from '../services/eventService';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -54,6 +55,7 @@ export default function EventDetailModal({
     const { role, payload } = useAuthState();
     const [isCertOpen, setIsCertOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
 
     // Animaciones
     const animIngreso = useRef(new Animated.Value(1)).current;
@@ -81,13 +83,41 @@ export default function EventDetailModal({
     // Verificar si el aforo del evento está completo
     const isFull = !!(evento.capacidad && evento.capacidad > 0 && evento.inscritosCount >= evento.capacidad);
 
-    const handleRegister = () => {
-        eventStateManager.registerToEvent(evento.id);
-        Alert.alert(
-            '¡Registro Exitoso! 🎉',
-            `Te has registrado correctamente en "${evento.titulo}". Recuerda asistir el día del evento y escanear tus códigos QR de Ingreso y Salida para obtener tu constancia académica.`,
-            [{ text: '¡Excelente!' }]
-        );
+
+    const handleRegister = async () => {
+        if (isRegistering) return;
+        setIsRegistering(true);
+        try {
+            const reg = await eventService.registerToEvent(Number(evento.id));
+            eventStateManager.registerToEvent(evento.id);
+            Alert.alert(
+                '¡Registro Exitoso! 🎉',
+                `Te has registrado correctamente en "${evento.titulo}". Recuerda asistir el día del evento y escanear tus códigos QR de Ingreso y Salida para obtener tu constancia académica.`,
+                [{ text: '¡Excelente!' }]
+            );
+            onEventSaved?.();
+        } catch (err: any) {
+            const status = err?.response?.status;
+            const serverMsg: string = err?.response?.data?.message || err?.message || '';
+
+            if (status === 409 || serverMsg.toLowerCase().includes('aforo') || serverMsg.toLowerCase().includes('capacidad')) {
+                Alert.alert(
+                    '🚫 Aforo Completo',
+                    'El aforo de este evento ha sido completado. Ya no hay lugares disponibles.',
+                    [{ text: 'Entendido' }]
+                );
+                // Refrescar estado para que el botón refleje "Aforo Completo"
+                onEventSaved?.();
+            } else if (status === 400 && serverMsg.toLowerCase().includes('ya estás registrado')) {
+                // El usuario ya está registrado (p.ej. desde otro dispositivo)
+                eventStateManager.registerToEvent(evento.id);
+                Alert.alert('Ya Inscrito', 'Ya te encuentras registrado en este evento.', [{ text: 'OK' }]);
+            } else {
+                Alert.alert('Error al Registrarse', serverMsg || 'Ocurrió un error inesperado. Intenta de nuevo.', [{ text: 'Cerrar' }]);
+            }
+        } finally {
+            setIsRegistering(false);
+        }
     };
 
     const handleDownloadCert = async () => {
@@ -475,10 +505,14 @@ export default function EventDetailModal({
                     ) : (
                         <TouchableOpacity
                             onPress={handleRegister}
-                            style={[styles.actionBtn, { backgroundColor: evento.accentColor }]}
+                            disabled={isRegistering}
+                            style={[styles.actionBtn, { backgroundColor: isRegistering ? '#9CA3AF' : evento.accentColor }]}
                         >
-                            <Icon as={ICONS.PlusCircle} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
-                            <Text style={styles.actionBtnText}>Inscribirse</Text>
+                            {isRegistering
+                                ? <ActivityIndicator size="small" color="#FFFFFF" />
+                                : <Icon as={ICONS.PlusCircle} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                            }
+                            <Text style={styles.actionBtnText}>{isRegistering ? 'Registrando...' : 'Inscribirse'}</Text>
                         </TouchableOpacity>
                     )}
                 </Box>
