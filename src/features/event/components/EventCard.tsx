@@ -22,6 +22,7 @@ const { width: SW } = Dimensions.get('window');
 export default function EventCard({ evento, favorito, onToggleFavorito, onVerDetalle }: EventCardProps) {
     const eventState = useEventState();
     const isRegistered = eventStateManager.isRegistered(evento.id);
+    const isFull = !!(evento.capacidad && evento.capacidad > 0 && evento.inscritosCount >= evento.capacidad);
 
     return (
         <Box
@@ -46,11 +47,21 @@ export default function EventCard({ evento, favorito, onToggleFavorito, onVerDet
             />
 
             {/* Badge DESTACADO */}
-            {evento.destacado && (
+            {evento.destacado && !isFull && (
                 <Box style={[styles.badge, { backgroundColor: evento.accentColor }]}>
                     <Icon as={ICONS.Star} style={{ color: '#FFFFFF', width: 10, height: 10 }} />
                     <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>
                         DESTACADO
+                    </Text>
+                </Box>
+            )}
+
+            {/* Badge LLENO */}
+            {isFull && (
+                <Box style={[styles.badge, { backgroundColor: '#EF4444' }]}>
+                    <Icon as={ICONS.Users} style={{ color: '#FFFFFF', width: 10, height: 10 }} />
+                    <Text style={{ color: '#FFFFFF', fontSize: 9, fontWeight: '800', letterSpacing: 1 }}>
+                        LLENO
                     </Text>
                 </Box>
             )}
@@ -123,7 +134,7 @@ export default function EventCard({ evento, favorito, onToggleFavorito, onVerDet
                         { borderColor: C.cardBorder },
                     ]}
                 >
-                    <InfoPill icono={ICONS.Users} label={`${evento.asistentes.toLocaleString()} asistentes`} />
+                    <InfoPill icono={ICONS.Users} label={`${evento.inscritosCount}${evento.capacidad ? '/' + evento.capacidad : ''} asistentes`} />
                     <InfoPill icono={ICONS.Star} label={String(evento.rating)} color={C.accentGold} />
 
                     <TouchableOpacity

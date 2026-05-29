@@ -10,6 +10,8 @@ export interface Evento {
     lugar: string;
     categoria: string;
     asistentes: number;
+    capacidad: number | null;      // límite máximo de inscritos
+    inscritosCount: number;         // cantidad actual de inscritos activos
     rating: number;
     precio: string;
     destacado: boolean;
@@ -105,7 +107,9 @@ export function mapBackendToEvento(dto: EventoBackend): Evento {
         hora: formatBackendTime(dto.horaInicio),
         lugar: dto.lugar || 'No especificado',
         categoria: firstCategory,
-        asistentes: dto.capacidad ? Math.floor(dto.capacidad * 0.3) : 0, // Mocked number of attendees
+        asistentes: dto.inscritosCount ?? 0,
+        capacidad: dto.capacidad ?? null,
+        inscritosCount: dto.inscritosCount ?? 0,
         rating: 4.8, // Mocked rating
         precio: 'Gratis',
         destacado: dto.capacidad ? dto.capacidad >= 100 : false,

@@ -78,6 +78,8 @@ export default function EventDetailModal({
     const insignias = eventStateManager.getInsignias(evento.id);
     const isCertUnlocked = insignias.ingreso && insignias.salida;
     const hasDescargado = eventStateManager.hasDescargadoConstancia(evento.id);
+    // Verificar si el aforo del evento está completo
+    const isFull = !!(evento.capacidad && evento.capacidad > 0 && evento.inscritosCount >= evento.capacidad);
 
     const handleRegister = () => {
         eventStateManager.registerToEvent(evento.id);
@@ -280,15 +282,15 @@ export default function EventDetailModal({
                                     </VStack>
                                 </HStack>
 
-                                {/* Caja 4: Asistentes */}
-                                <HStack style={[styles.gridCell, { backgroundColor: '#FFFBEB' }]}>
-                                    <View style={[styles.gridIconCircle, { backgroundColor: '#F59E0B' }]}>
+                                {/* Caja 4: Asistentes / Aforo */}
+                                <HStack style={[styles.gridCell, { backgroundColor: isFull ? '#FEF2F2' : '#FFFBEB' }]}>
+                                    <View style={[styles.gridIconCircle, { backgroundColor: isFull ? '#EF4444' : '#F59E0B' }]}>
                                         <Icon as={ICONS.Users} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
                                     </View>
                                     <VStack style={{ flex: 1 }}>
                                         <Text style={styles.gridCellLabel}>Asistentes</Text>
-                                        <Text style={[styles.gridCellValue, { color: '#78350F' }]} numberOfLines={1}>
-                                            {evento.asistentes.toLocaleString()}/{evento.asistentes + 50}
+                                        <Text style={[styles.gridCellValue, { color: isFull ? '#991B1B' : '#78350F' }]} numberOfLines={1}>
+                                            {evento.inscritosCount}/{evento.capacidad ?? '∞'}
                                         </Text>
                                     </VStack>
                                 </HStack>
@@ -464,6 +466,11 @@ export default function EventDetailModal({
                         <View style={[styles.actionBtn, styles.actionBtnInscribed, isCertUnlocked && { backgroundColor: '#10B981', borderColor: '#059669' }]}>
                             <Icon as={isCertUnlocked ? ICONS.Trophy : ICONS.CheckCircle} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
                             <Text style={styles.actionBtnInscribedText}>{isCertUnlocked ? 'Completado 🏆' : 'Inscrito ✓'}</Text>
+                        </View>
+                    ) : isFull ? (
+                        <View style={[styles.actionBtn, { backgroundColor: '#9CA3AF', borderColor: '#6B7280' }]}>
+                            <Icon as={ICONS.Users} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                            <Text style={styles.actionBtnInscribedText}>Aforo Completo</Text>
                         </View>
                     ) : (
                         <TouchableOpacity
