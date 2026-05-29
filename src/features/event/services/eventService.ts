@@ -6,7 +6,8 @@ import {
     EventoWritePayload,
     CategoriaBackend,
     QrSessionWritePayload,
-    QrSessionResponse
+    QrSessionResponse,
+    RegistrationBackend,
 } from '../types/api';
 
 const apiClient = axios.create({
@@ -135,10 +136,11 @@ export const eventService = {
 
     /**
      * Obtiene los registros (asistencia) del usuario autenticado.
+     * La sesión está vinculada al Bearer token: cada usuario solo obtiene SUS registros.
      * Endpoint: GET /api/v1/event-registrations/me
      */
-    async fetchMyRegistrations(): Promise<any[]> {
-        const response = await apiClient.get<any[]>('/event-registrations/me', {
+    async fetchMyRegistrations(): Promise<RegistrationBackend[]> {
+        const response = await apiClient.get<RegistrationBackend[]>('/event-registrations/me', {
             headers: getAuthHeaders(),
         });
         return Array.isArray(response.data) ? response.data : [];

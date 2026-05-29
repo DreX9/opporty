@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { eventService } from '../services/eventService';
-import { EventoBackend } from '../types/api';
+import { EventoBackend, RegistrationBackend } from '../types/api';
 
 import { eventStateManager } from '../state';
 

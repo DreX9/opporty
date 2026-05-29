@@ -7,6 +7,7 @@ import {
     Modal,
     View,
     Alert,
+    ActivityIndicator,
     ScrollView,
     Animated,
     Linking,
@@ -23,12 +24,15 @@ import InfoPill from './InfoPill';
 import { eventStateManager, useEventState } from '../state';
 import { useAuthState } from '../../auth/state';
 import EventQrPanel from './EventQrPanel';
+import { exportConstanciaPDF, ConstanciaData } from '../services/constanciaService';
+import { EventoBackend } from '../types/api';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
 interface EventDetailModalProps {
     visible: boolean;
     evento: Evento | null;
+    eventoBackend?: EventoBackend | null; // para datos del organizador
     onClose: () => void;
     favorito: boolean;
     onToggleFavorito: (id: string) => void;
@@ -39,6 +43,7 @@ interface EventDetailModalProps {
 export default function EventDetailModal({
     visible,
     evento,
+    eventoBackend,
     onClose,
     favorito,
     onToggleFavorito,
@@ -46,8 +51,9 @@ export default function EventDetailModal({
     highlightAnim,
 }: EventDetailModalProps) {
     const eventState = useEventState();
-    const { role } = useAuthState();
+    const { role, payload } = useAuthState();
     const [isCertOpen, setIsCertOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     // Animaciones
     const animIngreso = useRef(new Animated.Value(1)).current;
@@ -82,13 +88,48 @@ export default function EventDetailModal({
         );
     };
 
-    const handleDownloadCert = () => {
-        eventStateManager.descargarConstancia(evento.id);
-        Alert.alert(
-            '¡Constancia Guardada! 📄',
-            `Se ha generado y descargado con éxito la Constancia de Participación para "${evento.titulo}" en formato PDF.`,
-            [{ text: 'Aceptar', onPress: () => setIsCertOpen(false) }]
-        );
+    const handleDownloadCert = async () => {
+        if (!evento || !payload) return;
+        setIsExporting(true);
+        try {
+            // Extrae datos de la sesión activa del usuario autenticado.
+            // GARANTÍA: registrationMeta solo contiene datos del usuario
+            // cuyo Bearer token fue usado en fetchMyRegistrations.
+            const regMeta = eventStateManager.getRegistrationMeta(evento.id);
+
+            const nombreCompleto = (payload.firstName && payload.lastName)
+                ? `${payload.firstName} ${payload.lastName}`
+                : '';
+
+            const constanciaData: ConstanciaData = {
+                participanteNombre: nombreCompleto,
+                participanteUsername: payload.sub,
+                eventoId: evento.id,
+                eventoTitulo: evento.titulo,
+                eventoFecha: evento.fecha,
+                eventoHora: evento.hora,
+                eventoLugar: evento.lugar,
+                eventoModalidad: eventoBackend?.modalidad ?? 'PRESENCIAL',
+                eventoCategoria: evento.categoria,
+                organizadorUsername: eventoBackend?.createdByUsername ?? 'organizador',
+                registrationId: regMeta?.registrationId ?? 0,
+                checkInAt: regMeta?.checkInAt ?? null,
+                checkOutAt: regMeta?.checkOutAt ?? null,
+            };
+
+            await exportConstanciaPDF(constanciaData);
+            eventStateManager.descargarConstancia(evento.id);
+            setIsCertOpen(false);
+        } catch (err) {
+            console.error('Error exportando constancia:', err);
+            Alert.alert(
+                'Error al exportar',
+                'No se pudo generar el PDF. Por favor intenta nuevamente.',
+                [{ text: 'Aceptar' }]
+            );
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     // Generar tags correspondientes a la categoría del evento como fallback
@@ -455,34 +496,43 @@ export default function EventDetailModal({
                                     <View style={styles.diplomaInnerBorder}>
                                         {/* Encabezado */}
                                         <Icon as={ICONS.GraduationCap} style={styles.diplomaIcon} />
-                                        <Text style={styles.diplomaUniName}>UNIVERSIDAD DEMO</Text>
-                                        <Text style={styles.diplomaSub}>SISTEMA DE ASISTENCIA UNIRADAR</Text>
+                                        <Text style={styles.diplomaUniName}>SISTEMA UNIRADAR</Text>
+                                        <Text style={styles.diplomaSub}>CONSTANCIA DE PARTICIPACIÓN</Text>
 
                                         <View style={styles.diplomaDivider} />
 
                                         <Text style={styles.diplomaConstName}>CONSTANCIA OFICIAL</Text>
                                         <Text style={styles.diplomaBodyText}>
-                                            Se otorga el presente reconocimiento y constancia a:
+                                            Se certifica que:
                                         </Text>
 
-                                        <Text style={styles.diplomaStudent}>ALEX RIVERA</Text>
+                                        <Text style={styles.diplomaStudent}>
+                                            {(payload?.firstName && payload?.lastName)
+                                                ? `${payload.firstName} ${payload.lastName}`.toUpperCase()
+                                                : payload?.sub?.toUpperCase() ?? 'PARTICIPANTE'}
+                                        </Text>
+                                        <Text style={{ fontSize: 10, color: '#6B7280', marginBottom: 8, textAlign: 'center' }}>
+                                            @{payload?.sub}
+                                        </Text>
 
                                         <Text style={styles.diplomaBodyText}>
-                                            Por haber registrado su asistencia (Ingreso y Salida) y participado activamente en el evento académico:
+                                            Por haber registrado su asistencia (Ingreso y Salida)
+                                            y participado en el evento académico:
                                         </Text>
 
                                         <Text style={styles.diplomaEventTitle}>"{evento.titulo}"</Text>
 
                                         <Text style={styles.diplomaCredits}>
-                                            Realizado en {evento.lugar} el {evento.fecha} con valor curricular de 16 horas académicas.
+                                            {evento.lugar} · {evento.fecha} · {evento.hora}{"\n"}
+                                            Organizado por @{eventoBackend?.createdByUsername ?? 'organizador'}
                                         </Text>
 
-                                        {/* Sello y Firmas */}
+                                        {/* Sello decorativo */}
                                         <HStack style={styles.diplomaSignatures}>
                                             <VStack style={styles.signatureBox}>
                                                 <View style={styles.signLine} />
-                                                <Text style={styles.signName}>Dr. Eduardo Valdivia</Text>
-                                                <Text style={styles.signRole}>Rector Universitario</Text>
+                                                <Text style={styles.signName}>Firma del Organizador</Text>
+                                                <Text style={styles.signRole}>@{eventoBackend?.createdByUsername ?? 'organizador'}</Text>
                                             </VStack>
 
                                             <View style={styles.diplomaSeal}>
@@ -492,25 +542,33 @@ export default function EventDetailModal({
 
                                             <VStack style={styles.signatureBox}>
                                                 <View style={styles.signLine} />
-                                                <Text style={styles.signName}>Ing. Karen Mendoza</Text>
-                                                <Text style={styles.signRole}>Decana de Ingeniería</Text>
+                                                <Text style={styles.signName}>Sistema UniRadar</Text>
+                                                <Text style={styles.signRole}>Verificación Digital</Text>
                                             </VStack>
                                         </HStack>
 
                                         <Text style={styles.diplomaVerificationCode}>
-                                            Código de Verificación QR: SEC-EV-{evento.id}-2026-UTP
+                                            ID: {eventStateManager.getRegistrationMeta(evento.id)?.registrationId
+                                                ? `REG-${eventStateManager.getRegistrationMeta(evento.id)!.registrationId}-EV-${evento.id}`
+                                                : `EV-${evento.id}`}
                                         </Text>
                                     </View>
                                 </View>
                             </View>
 
-                            {/* Botón de Guardado */}
+                            {/* Botón de Descarga PDF */}
                             <TouchableOpacity
                                 onPress={handleDownloadCert}
-                                style={styles.certDownloadBtn}
+                                style={[styles.certDownloadBtn, isExporting && { opacity: 0.7 }]}
+                                disabled={isExporting}
                             >
-                                <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
-                                <Text style={styles.certDownloadBtnText}>Descargar en PDF / Guardar Constancia</Text>
+                                {isExporting
+                                    ? <ActivityIndicator size="small" color="#FFFFFF" />
+                                    : <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                                }
+                                <Text style={styles.certDownloadBtnText}>
+                                    {isExporting ? 'Generando PDF...' : 'Descargar en PDF / Guardar Constancia'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </View>

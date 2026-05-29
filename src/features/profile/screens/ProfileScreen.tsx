@@ -6,6 +6,7 @@ import {
     StyleSheet,
     Alert,
     Modal,
+    ActivityIndicator,
 } from 'react-native';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -26,6 +27,7 @@ import { useEvents, resetEventsCache } from '../../event/hooks/useEvents';
 import { Evento, mapBackendToEvento } from '../../event/types';
 import { eventService } from '../../event/services/eventService';
 import { EventoBackend } from '../../event/types/api';
+import { exportConstanciaPDF, ConstanciaData } from '../../event/services/constanciaService';
 
 function isEventCloseToStart(e: EventoBackend): boolean {
     if (!e.fechaInicio) return false;
@@ -64,6 +66,7 @@ export default function ProfileScreen() {
     const [intereses, setIntereses] = useState<Interes[]>(INTERESES_INICIAL);
     const [selectedConstanciaEvento, setSelectedConstanciaEvento] = useState<Evento | null>(null);
     const [isDiplomaOpen, setIsDiplomaOpen] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
 
@@ -304,13 +307,53 @@ export default function ProfileScreen() {
         );
     };
 
-    const handleDownloadCert = (evento: Evento) => {
-        eventStateManager.descargarConstancia(evento.id);
-        Alert.alert(
-            '¡Constancia Guardada! 📄',
-            `Se ha generado y descargado con éxito la Constancia de Participación para "${evento.titulo}" en formato PDF.`,
-            [{ text: 'Aceptar', onPress: () => setIsDiplomaOpen(false) }]
-        );
+    const handleDownloadCert = async (evento: Evento) => {
+        if (!payload) return;
+        setIsExporting(true);
+        try {
+            // Extrae la meta de inscripción del usuario autenticado para este evento.
+            // GARANTÍA DE SESIÓN: registrationMeta solo contiene datos del
+            // usuario cuyo Bearer token fue usado al llamar fetchMyRegistrations.
+            const regMeta = eventStateManager.getRegistrationMeta(evento.id);
+
+            // Busca el EventoBackend para obtener el username del organizador
+            const eventoBackend = Array.isArray(backendEvents)
+                ? backendEvents.find(e => String(e.id) === String(evento.id))
+                : undefined;
+
+            const nombreCompleto = (payload.firstName && payload.lastName)
+                ? `${payload.firstName} ${payload.lastName}`
+                : '';
+
+            const constanciaData: ConstanciaData = {
+                participanteNombre: nombreCompleto,
+                participanteUsername: payload.sub,
+                eventoId: evento.id,
+                eventoTitulo: evento.titulo,
+                eventoFecha: evento.fecha,
+                eventoHora: evento.hora,
+                eventoLugar: evento.lugar,
+                eventoModalidad: eventoBackend?.modalidad ?? 'PRESENCIAL',
+                eventoCategoria: evento.categoria,
+                organizadorUsername: eventoBackend?.createdByUsername ?? 'organizador',
+                registrationId: regMeta?.registrationId ?? 0,
+                checkInAt: regMeta?.checkInAt ?? null,
+                checkOutAt: regMeta?.checkOutAt ?? null,
+            };
+
+            await exportConstanciaPDF(constanciaData);
+            eventStateManager.descargarConstancia(evento.id);
+            setIsDiplomaOpen(false);
+        } catch (err) {
+            console.error('Error exportando constancia:', err);
+            Alert.alert(
+                'Error al exportar',
+                'No se pudo generar el PDF. Por favor intenta nuevamente.',
+                [{ text: 'Aceptar' }]
+            );
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const handleOpenDiploma = (evento: Evento) => {
@@ -553,38 +596,49 @@ export default function ProfileScreen() {
                                     <View style={styles.diplomaInnerBorder}>
                                         {/* Encabezado */}
                                         <Icon as={ICONS.GraduationCap} style={styles.diplomaIcon} />
-                                        <Text style={styles.diplomaUniName}>UNIVERSIDAD DEMO</Text>
-                                        <Text style={styles.diplomaSub}>SISTEMA DE ASISTENCIA UNIRADAR</Text>
+                                        <Text style={styles.diplomaUniName}>SISTEMA UNIRADAR</Text>
+                                        <Text style={styles.diplomaSub}>CONSTANCIA DE PARTICIPACIÓN</Text>
 
                                         <View style={styles.diplomaDivider} />
 
                                         <Text style={styles.diplomaConstName}>CONSTANCIA OFICIAL</Text>
                                         <Text style={styles.diplomaBodyText}>
-                                            Se otorga el presente reconocimiento y constancia a:
+                                            Se certifica que:
                                         </Text>
 
                                         <Text style={styles.diplomaStudent}>
-                                            {payload?.firstName && payload?.lastName
+                                            {(payload?.firstName && payload?.lastName)
                                                 ? `${payload.firstName} ${payload.lastName}`.toUpperCase()
-                                                : 'ALEX RIVERA'}
+                                                : payload?.sub?.toUpperCase() ?? 'PARTICIPANTE'}
+                                        </Text>
+                                        <Text style={{ fontSize: 10, color: '#6B7280', marginBottom: 8, textAlign: 'center' }}>
+                                            @{payload?.sub}
                                         </Text>
 
                                         <Text style={styles.diplomaBodyText}>
-                                            Por haber registrado su asistencia (Ingreso y Salida) y participado activamente en el evento académico:
+                                            Por haber registrado su asistencia (Ingreso y Salida)
+                                            y participado en el evento académico:
                                         </Text>
 
                                         <Text style={styles.diplomaEventTitle}>"{selectedConstanciaEvento.titulo}"</Text>
 
                                         <Text style={styles.diplomaCredits}>
-                                            Realizado en {selectedConstanciaEvento.lugar} el {selectedConstanciaEvento.fecha} con valor curricular de 16 horas académicas.
+                                            {selectedConstanciaEvento.lugar} · {selectedConstanciaEvento.fecha} · {selectedConstanciaEvento.hora}{"\n"}
+                                            Organizado por @{(Array.isArray(backendEvents)
+                                                ? backendEvents.find(e => String(e.id) === String(selectedConstanciaEvento.id))
+                                                : undefined)?.createdByUsername ?? 'organizador'}
                                         </Text>
 
-                                        {/* Sello y Firmas */}
+                                        {/* Sello decorativo */}
                                         <HStack style={styles.diplomaSignatures}>
                                             <VStack style={styles.signatureBox}>
                                                 <View style={styles.signLine} />
-                                                <Text style={styles.signName}>Dr. Eduardo Valdivia</Text>
-                                                <Text style={styles.signRole}>Rector Universitario</Text>
+                                                <Text style={styles.signName}>Firma del Organizador</Text>
+                                                <Text style={styles.signRole}>
+                                                    @{(Array.isArray(backendEvents)
+                                                        ? backendEvents.find(e => String(e.id) === String(selectedConstanciaEvento.id))
+                                                        : undefined)?.createdByUsername ?? 'organizador'}
+                                                </Text>
                                             </VStack>
 
                                             <View style={styles.diplomaSeal}>
@@ -594,25 +648,33 @@ export default function ProfileScreen() {
 
                                             <VStack style={styles.signatureBox}>
                                                 <View style={styles.signLine} />
-                                                <Text style={styles.signName}>Ing. Karen Mendoza</Text>
-                                                <Text style={styles.signRole}>Decana de Ingeniería</Text>
+                                                <Text style={styles.signName}>Sistema UniRadar</Text>
+                                                <Text style={styles.signRole}>Verificación Digital</Text>
                                             </VStack>
                                         </HStack>
 
                                         <Text style={styles.diplomaVerificationCode}>
-                                            Código de Verificación QR: SEC-EV-{selectedConstanciaEvento.id}-2026-UTP
+                                            {eventStateManager.getRegistrationMeta(selectedConstanciaEvento.id)?.registrationId
+                                                ? `REG-${eventStateManager.getRegistrationMeta(selectedConstanciaEvento.id)!.registrationId}-EV-${selectedConstanciaEvento.id}`
+                                                : `EV-${selectedConstanciaEvento.id}`}
                                         </Text>
                                     </View>
                                 </View>
                             </View>
 
-                            {/* Botón de Guardado */}
+                            {/* Botón de Descarga PDF */}
                             <TouchableOpacity
                                 onPress={() => handleDownloadCert(selectedConstanciaEvento)}
-                                style={styles.certDownloadBtn}
+                                style={[styles.certDownloadBtn, isExporting && { opacity: 0.7 }]}
+                                disabled={isExporting}
                             >
-                                <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
-                                <Text style={styles.certDownloadBtnText}>Descargar en PDF / Guardar Constancia</Text>
+                                {isExporting
+                                    ? <ActivityIndicator size="small" color="#FFFFFF" />
+                                    : <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                                }
+                                <Text style={styles.certDownloadBtnText}>
+                                    {isExporting ? 'Generando PDF...' : 'Descargar en PDF / Guardar Constancia'}
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </View>

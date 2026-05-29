@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { RegistrationBackend } from './types/api';
 
 export interface InsigniaState {
     ingreso: boolean;
@@ -10,12 +11,27 @@ export interface QRState {
     salidaQR: string;
 }
 
+/**
+ * Metadata de la inscripción del usuario autenticado para un evento dado.
+ * SOLO se almacena lo que devuelve /event-registrations/me para el usuario de la sesión activa.
+ * Garantía de aislamiento: este estado se resetea en cada logout (resetState).
+ */
+export interface RegistrationMeta {
+    registrationId: number;
+    checkInAt: string | null;
+    checkOutAt: string | null;
+    eventId: string;
+    eventTitulo: string;
+}
+
 export interface EventGlobalState {
     registrados: Set<string>;
     insignias: Record<string, InsigniaState>;
     qrs: Record<string, QRState>;
     constanciasDescargadas: Set<string>;
     readNotifications: Set<string>;
+    /** Metadata de inscripción por eventId — pertenece al usuario de la sesión activa. */
+    registrationMeta: Record<string, RegistrationMeta>;
 }
 
 let globalState: EventGlobalState = {
@@ -24,6 +40,7 @@ let globalState: EventGlobalState = {
     qrs: {},
     constanciasDescargadas: new Set<string>(),
     readNotifications: new Set<string>(),
+    registrationMeta: {},
 };
 
 // Listeners para actualizaciones reactivas
@@ -106,6 +123,14 @@ export const eventStateManager = {
         return globalState.constanciasDescargadas.has(eventId);
     },
 
+    /**
+     * Devuelve la metadata de inscripción del usuario autenticado para un evento.
+     * Retorna undefined si el usuario no tiene inscripción registrada en el estado local.
+     */
+    getRegistrationMeta(eventId: string): RegistrationMeta | undefined {
+        return globalState.registrationMeta[eventId];
+    },
+
     markNotificationAsRead(id: string) {
         const nextSet = new Set(globalState.readNotifications);
         nextSet.add(id);
@@ -119,34 +144,47 @@ export const eventStateManager = {
 
     /**
      * Sincroniza el estado local con los registros provenientes del backend.
-     * Esto carga las insignias de ingreso y salida que el usuario ya desbloqueó.
+     * GARANTÍA DE SESIÓN: Este método solo es llamado con los registros del usuario
+     * autenticado (endpoint /event-registrations/me usa el Bearer token de la sesión).
+     * Nunca mezcla datos de distintos usuarios porque resetState() limpia todo en logout.
      */
-    hydrateWithRegistrations(registrations: any[]) {
+    hydrateWithRegistrations(registrations: RegistrationBackend[]) {
         const nuevosRegistrados = new Set<string>();
         const nuevasInsignias: Record<string, InsigniaState> = {};
         const constanciasDes: Set<string> = new Set<string>();
+        const nuevaMeta: Record<string, RegistrationMeta> = {};
 
         registrations.forEach(reg => {
-            const evId = String(reg.eventId || reg.event?.id);
+            const evId = String(reg.eventId);
             if (!evId || evId === 'undefined') return;
 
             nuevosRegistrados.add(evId);
 
             nuevasInsignias[evId] = {
                 ingreso: Boolean(reg.qrEntryScanned),
-                salida: Boolean(reg.qrExitScanned)
+                salida: Boolean(reg.qrExitScanned),
             };
 
             if (reg.certificateGenerated) {
                 constanciasDes.add(evId);
             }
+
+            // Almacenamos la metadata de la inscripción para el diploma
+            nuevaMeta[evId] = {
+                registrationId: reg.id,
+                checkInAt: reg.checkInAt,
+                checkOutAt: reg.checkOutAt,
+                eventId: evId,
+                eventTitulo: reg.eventTitulo,
+            };
         });
 
         globalState = {
             ...globalState,
             registrados: nuevosRegistrados,
             insignias: nuevasInsignias,
-            constanciasDescargadas: constanciasDes
+            constanciasDescargadas: constanciasDes,
+            registrationMeta: nuevaMeta,
         };
         notify();
     },
@@ -155,6 +193,7 @@ export const eventStateManager = {
      * Limpia COMPLETAMENTE el estado global del evento.
      * Debe llamarse siempre que el usuario hace logout para
      * evitar fuga de estado entre sesiones de distintos usuarios.
+     * Incluye registrationMeta para garantizar el aislamiento de sesión.
      */
     resetState() {
         globalState = {
@@ -163,6 +202,7 @@ export const eventStateManager = {
             qrs: {},
             constanciasDescargadas: new Set<string>(),
             readNotifications: new Set<string>(),
+            registrationMeta: {},
         };
         notify();
     },
