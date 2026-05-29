@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Tabs } from 'expo-router';
+import React, { useState, useEffect } from 'react';
+import { Tabs, usePathname, useRouter } from 'expo-router';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { Icon } from '@/components/ui/icon';
 import { useAuthState } from '@/src/features/auth/state';
@@ -8,9 +8,10 @@ import { useEvents } from '@/src/features/event/hooks/useEvents';
 import { useEventState } from '@/src/features/event/state';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, BackHandler } from 'react-native';
 import QrScannerModal from '@/src/features/event/components/QrScannerModal';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ConfirmModal from '@/components/ConfirmModal';
 
 // ─── Paleta de la app ────────────────────────────────────────────────────────
 const C = {
@@ -103,6 +104,30 @@ export default function TabLayout() {
   const { role, payload } = useAuthState();
   const hasAdminAccess = role === 'ADMIN' || role === 'TEACHER' || role === 'MANAGER';
   const isAdmin = role === 'ADMIN';
+
+  const pathname = usePathname();
+  const router = useRouter();
+  const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      // Si no estamos en la pestaña radar, regresamos a radar
+      if (!pathname.endsWith('radar')) {
+        router.navigate('/tabs/radar');
+        return true;
+      }
+      
+      // Si estamos en radar, mostramos el modal de salida
+      setIsExitModalOpen(true);
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [pathname, router]);
 
   const { data: backendEvents } = useEvents();
   const eventState = useEventState();
@@ -224,6 +249,20 @@ export default function TabLayout() {
           setSelectedEventId(eventId);
           // Puedes despachar eventos o pasar callbacks si es necesario
         }}
+      />
+
+      {/* Modal Confirmación Salida */}
+      <ConfirmModal
+        isOpen={isExitModalOpen}
+        onClose={() => setIsExitModalOpen(false)}
+        onConfirm={() => BackHandler.exitApp()}
+        title="¿Deseas salir de la aplicación?"
+        description="Tu sesión permanecerá guardada y podrás volver a ingresar más tarde."
+        confirmLabel="Salir"
+        cancelLabel="Cancelar"
+        confirmColor="#6366F1"
+        icon={ICONS.AlertCircle}
+        iconColor="#6366F1"
       />
     </>
   );

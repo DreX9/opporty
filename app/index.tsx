@@ -1,38 +1,42 @@
-import React, { useState } from 'react';
-import { Box } from '@/components/ui/box';
-import { ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { Text } from '@/components/ui/text';
-import { Input, InputField } from '@/components/ui/input'
-import { LinearGradient } from 'expo-linear-gradient'
-
-//icon
-
-import { Icon } from '@/components/ui/icon';
-
-import { Button, ButtonText } from '@/components/ui/button';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ICONS } from '@/components/icons';
-
-// Modal
-import {
-  Modal,
-  ModalBackdrop,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter
-} from '@/components/ui/modal';
+import { initSessionFromStorage } from '@/src/features/auth/state';
 import LoginScreen from '@/src/features/auth/screens/LoginScreen';
 
-const MOCK_USERS = [
-  { email: 'admin@admin.com', password: '123' },
-  { email: 'alex@test.com', password: 'password' }
-];
-
 export default function Home() {
-  return (
-    <LoginScreen />
-  )
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    initSessionFromStorage()
+      .then((hasSession) => {
+        if (!active) return;
+        if (hasSession) {
+          router.replace('/tabs/radar');
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Error al inicializar sesión:', err);
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#6366F1" />
+      </View>
+    );
+  }
+
+  return <LoginScreen />;
 }
 
