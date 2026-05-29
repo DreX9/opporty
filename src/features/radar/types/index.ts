@@ -1,4 +1,6 @@
 import React from 'react';
+import { EventoBackend } from '../../event/types/api';
+import { Evento } from '../../event/types';
 
 export interface EventoDot {
     id: string;
@@ -25,4 +27,13 @@ export interface EventCardProps {
 export interface InfoPillProps {
     icon: React.ComponentType;
     label: string;
+}
+
+export interface RadarEvento {
+    backend: EventoBackend;
+    card: EventoCard;
+    mapped: Evento;
+    distanciaKm: number;
+    top: number;
+    left: number;
 }

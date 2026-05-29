@@ -5,6 +5,8 @@ export interface Interes {
     nombre: string;
     emoji: string;
     activo: boolean;
+    color?: string;
+    Icon?: React.ComponentType<{ size: number; color: string }>;
 }
 
 export interface MenuItem {
