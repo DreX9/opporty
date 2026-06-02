@@ -696,8 +696,15 @@ export default function ProfileScreen() {
 
                                                 {notif.eventId && (
                                                     <TouchableOpacity
-                                                        onPress={() => {
+                                                        onPress={async () => {
                                                             setIsNotifOpen(false);
+                                                            try {
+                                                                const { notificationService } = require('../services/notificationService');
+                                                                await notificationService.markAsRead(notif.originalId);
+                                                                setServerNotifications(prev => prev.filter((n: any) => n.id !== notif.originalId));
+                                                            } catch (e) {
+                                                                console.error('Error marking as read:', e);
+                                                            }
                                                             router.push({
                                                                 pathname: '/tabs/admin',
                                                                 params: { tab: 'eventos', openEventId: String(notif.eventId) }

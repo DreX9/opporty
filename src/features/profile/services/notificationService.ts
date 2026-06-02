@@ -65,6 +65,9 @@ export const notificationService = {
       const response = await apiClient.patch<Notification>(`/notifications/${id}/read`, null, {
           headers: getAuthHeaders(),
       });
+      import('react-native').then(({ DeviceEventEmitter }) => {
+          DeviceEventEmitter.emit('notificationMarkedAsRead');
+      });
       return response.data;
     } catch (error: any) {
       console.error(`Error al marcar notificación ${id} como leída:`, error);

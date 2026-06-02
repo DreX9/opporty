@@ -131,20 +131,33 @@ export default function TabLayout() {
 
   const { data: backendEvents } = useEvents();
   const eventState = useEventState();
-  const solicitudesPendientes = React.useMemo(() => {
-    if (!Array.isArray(backendEvents)) return 0;
-    if (isAdmin) {
-      return backendEvents.filter(e => e.estado === 'PENDING').length;
-    }
-    if (role === 'MANAGER' && payload?.sub) {
-      return backendEvents.filter(e => 
-        e.createdByUsername === payload.sub && 
-        (e.estado === 'PUBLISHED' || e.estado === 'REJECTED') && 
-        !eventState.readNotifications.has(String(e.id))
-      ).length;
-    }
-    return 0;
-  }, [backendEvents, isAdmin, role, payload?.sub, eventState.readNotifications]);
+  const [solicitudesPendientes, setSolicitudesPendientes] = useState(0);
+
+  useEffect(() => {
+    if (!payload?.sub) return;
+
+    const fetchUnread = async () => {
+      try {
+        const { notificationService } = require('@/src/features/profile/services/notificationService');
+        const count = await notificationService.getUnreadCount();
+        setSolicitudesPendientes(count);
+      } catch (e) {
+        // Ignorar errores en background
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    
+    // Escuchar cuando una notificación es marcada como leída desde cualquier pantalla
+    const { DeviceEventEmitter } = require('react-native');
+    const subscription = DeviceEventEmitter.addListener('notificationMarkedAsRead', fetchUnread);
+
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+    };
+  }, [payload?.sub]);
 
   const displayName = payload?.firstName && payload?.lastName
     ? `${payload.firstName} ${payload.lastName}`
