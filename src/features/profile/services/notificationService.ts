@@ -31,10 +31,6 @@ export const notificationService = {
    * Obtiene la lista de notificaciones del usuario autenticado
    */
   async getMyNotifications(): Promise<Notification[]> {
-    // TODO: Integrar con el backend cuando el endpoint '/notifications/my-notifications' esté implementado.
-    // Retornamos un arreglo vacío de forma temporal para evitar peticiones inútiles cada 30s y prevenir el error 500 en consola.
-    return [];
-    /*
     try {
       const response = await apiClient.get<Notification[]>('/notifications/my-notifications', {
           headers: getAuthHeaders(),
@@ -44,7 +40,6 @@ export const notificationService = {
       console.error('Error al obtener notificaciones:', error);
       throw error;
     }
-    */
   },
 
   /**
