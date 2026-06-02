@@ -1101,7 +1101,7 @@ export default function EventManagement({
                       <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '700' }}>Eliminar</Text>
                     </TouchableOpacity>
 
-                    {reviewingEvent.estado === 'Rechazado' && (
+                    {reviewingEvent.estado === 'Rechazado' && role === 'ADMIN' && (
                       <TouchableOpacity
                         onPress={() => {
                           const eventId = reviewingEvent.id;
