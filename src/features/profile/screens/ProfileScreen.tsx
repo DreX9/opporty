@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import ConfirmModal from '@/components/ConfirmModal';
 import {
     ScrollView,
@@ -8,7 +8,16 @@ import {
     Alert,
     Modal,
     ActivityIndicator,
+    LayoutAnimation,
+    Platform,
+    UIManager,
+    useWindowDimensions,
 } from 'react-native';
+
+// Habilitar LayoutAnimation en Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { ICONS } from '@/components/icons';
@@ -38,6 +47,21 @@ export default function ProfileScreen() {
     const router = useRouter();
     const { payload, role } = useAuthState();
     const isAdmin = role === 'ADMIN';
+
+    // ── Transición suave al rotar ───────────────────────────────────
+    const { width: W } = useWindowDimensions();
+    const prevW = useRef(W);
+    useEffect(() => {
+        if (prevW.current !== W) {
+            LayoutAnimation.configureNext({
+                duration: 280,
+                create:  { type: 'easeInEaseOut', property: 'opacity' },
+                update:  { type: 'easeInEaseOut' },
+                delete:  { type: 'easeInEaseOut', property: 'opacity' },
+            });
+            prevW.current = W;
+        }
+    }, [W]);
 
     const eventState = useEventState();
     const { data: backendEvents, refetch: refetchEvents } = useEvents();

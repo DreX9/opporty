@@ -17,7 +17,16 @@ import {
     Linking,
     Modal,
     Animated,
+    LayoutAnimation,
+    Platform,
+    UIManager,
+    useWindowDimensions,
 } from 'react-native';
+
+// Habilitar LayoutAnimation en Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import Reanimated, {
     useSharedValue,
     useAnimatedStyle,
@@ -111,6 +120,21 @@ export default function RadarScreen() {
     const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
     const [favoritos, setFavoritos] = useState<Set<string>>(new Set());
     const [eventoParaOpciones, setEventoParaOpciones] = useState<RadarEvento | null>(null);
+
+    // ── Transición suave al rotar ────────────────────────────────────────────
+    const { width: W } = useWindowDimensions();
+    const prevW = useRef(W);
+    useEffect(() => {
+        if (prevW.current !== W) {
+            LayoutAnimation.configureNext({
+                duration: 280,
+                create:  { type: 'easeInEaseOut', property: 'opacity' },
+                update:  { type: 'easeInEaseOut' },
+                delete:  { type: 'easeInEaseOut', property: 'opacity' },
+            });
+            prevW.current = W;
+        }
+    }, [W]);
 
     // ── Abrir Google Maps con la ruta hacia el evento ──────────────────────────
     const abrirGoogleMaps = (lat: number, lon: number) => {

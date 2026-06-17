@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     ScrollView,
     TextInput,
@@ -8,7 +8,15 @@ import {
     RefreshControl,
     useWindowDimensions,
     View,
+    LayoutAnimation,
+    Platform,
+    UIManager,
 } from 'react-native';
+
+// Habilitar LayoutAnimation en Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -100,6 +108,20 @@ export default function EventScreen() {
     const cardWidth = numColumns === 1
         ? W - HPAD * 2
         : (W - HPAD * 2 - GAP * (numColumns - 1)) / numColumns;
+
+    // ── Transición suave al rotar ────────────────────────────────────
+    const prevW = useRef(W);
+    useEffect(() => {
+        if (prevW.current !== W) {
+            LayoutAnimation.configureNext({
+                duration: 280,
+                create:  { type: 'easeInEaseOut', property: 'opacity' },
+                update:  { type: 'easeInEaseOut' },
+                delete:  { type: 'easeInEaseOut', property: 'opacity' },
+            });
+            prevW.current = W;
+        }
+    }, [W]);
 
     return (
         <Box style={{ flex: 1, backgroundColor: C.bg }}>
