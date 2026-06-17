@@ -3,10 +3,11 @@ import {
     ScrollView,
     TextInput,
     TouchableOpacity,
-    Alert,
     StyleSheet,
     ActivityIndicator,
     RefreshControl,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -89,6 +90,16 @@ export default function EventScreen() {
     const listaCategorias = ['Todos', ...categorias.map((c) => c.nombre)];
 
     const cargando = loadingEvents && backendEvents.length === 0;
+
+    // ── Grid adaptativo según ancho de pantalla ────────────────────────────
+    const { width: W } = useWindowDimensions();
+    const numColumns = W >= 900 ? 3 : W >= 600 ? 2 : 1;
+    const isCompact = numColumns > 1;
+    const GAP = 12;
+    const HPAD = 16;
+    const cardWidth = numColumns === 1
+        ? W - HPAD * 2
+        : (W - HPAD * 2 - GAP * (numColumns - 1)) / numColumns;
 
     return (
         <Box style={{ flex: 1, backgroundColor: C.bg }}>
@@ -214,18 +225,26 @@ export default function EventScreen() {
                         </Text>
                     </Box>
 
-                    {/* ── Tarjetas de eventos ───────────────────────────────────── */}
-                    <Box style={{ paddingHorizontal: 16, gap: 16 }}>
+                    {/* ── Tarjetas de eventos en grid adaptativo ────────────────── */}
+                    <Box style={{ paddingHorizontal: HPAD }}>
                         {filtrados.length > 0 ? (
-                            filtrados.map((ev) => (
-                                <EventCard
-                                    key={ev.id}
-                                    evento={ev}
-                                    favorito={favoritos.has(ev.id)}
-                                    onToggleFavorito={toggleFav}
-                                    onVerDetalle={verDetalle}
-                                />
-                            ))
+                            <View style={{
+                                flexDirection: 'row',
+                                flexWrap: 'wrap',
+                                gap: GAP,
+                            }}>
+                                {filtrados.map((ev) => (
+                                    <EventCard
+                                        key={ev.id}
+                                        evento={ev}
+                                        favorito={favoritos.has(ev.id)}
+                                        onToggleFavorito={toggleFav}
+                                        onVerDetalle={verDetalle}
+                                        isCompact={isCompact}
+                                        style={{ width: cardWidth }}
+                                    />
+                                ))}
+                            </View>
                         ) : (
                             <VStack style={{ alignItems: 'center', paddingTop: 64, gap: 12 }}>
                                 <Icon as={ICONS.Search} style={{ color: C.textMuted, width: 48, height: 48 }} />
