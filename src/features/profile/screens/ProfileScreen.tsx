@@ -32,30 +32,7 @@ import { exportConstanciaPDF, ConstanciaData } from '../../event/services/consta
 import { useCategories } from '../../event/hooks/useCategories';
 import { loadInterests, saveInterests } from '../state/interestsState';
 
-function isEventCloseToStart(e: EventoBackend): boolean {
-    if (!e.fechaInicio) return false;
-    try {
-        const dateParts = e.fechaInicio.split('-'); // yyyy-MM-dd
-        const year = parseInt(dateParts[0], 10);
-        const month = parseInt(dateParts[1], 10) - 1;
-        const day = parseInt(dateParts[2], 10);
 
-        let hour = 0;
-        let minute = 0;
-        if (e.horaInicio) {
-            const timeParts = e.horaInicio.split(':');
-            hour = parseInt(timeParts[0], 10);
-            minute = parseInt(timeParts[1], 10);
-        }
-        const startDateTime = new Date(year, month, day, hour, minute, 0, 0).getTime();
-        const now = new Date().getTime();
-        const diffMins = (startDateTime - now) / (1000 * 60);
-        // De 15 min antes a 15 min después del inicio
-        return diffMins <= 15 && diffMins >= -15;
-    } catch (err) {
-        return false;
-    }
-}
 
 export default function ProfileScreen() {
     const router = useRouter();
@@ -221,106 +198,15 @@ export default function ProfileScreen() {
         }
     };
 
-    const notificationsList = React.useMemo(() => {
-        if (!Array.isArray(backendEvents)) return [];
-        const list: {
-            id: string;
-            type: 'PENDING_APPROVAL' | 'STATUS_UPDATE' | 'PRE_START';
-            title: string;
-            description: string;
-            event: EventoBackend;
-        }[] = [];
-
-        // 1. Notificaciones de Aprobación Pendiente (Solo ADMIN)
-        if (isAdmin) {
-            backendEvents
-                .filter(e => e.estado === 'PENDING')
-                .forEach(e => {
-                    list.push({
-                        id: `pending-${e.id}`,
-                        type: 'PENDING_APPROVAL',
-                        title: 'Solicitud de Aprobación',
-                        description: `El manager @${e.createdByUsername} ha solicitado publicar "${e.titulo}".`,
-                        event: e
-                    });
-                });
-        }
-
-        // 2. Notificaciones de Actualización de Estado (Solo MANAGER y creador del evento)
-        if (role === 'MANAGER' && payload?.sub) {
-            backendEvents
-                .filter(e =>
-                    e.createdByUsername === payload.sub &&
-                    (e.estado === 'PUBLISHED' || e.estado === 'REJECTED') &&
-                    !eventState.readNotifications.has(String(e.id))
-                )
-                .forEach(e => {
-                    list.push({
-                        id: `status-${e.id}`,
-                        type: 'STATUS_UPDATE',
-                        title: e.estado === 'PUBLISHED' ? 'Evento Aprobado 🎉' : 'Evento Rechazado ❌',
-                        description: e.estado === 'PUBLISHED'
-                            ? `Tu evento "${e.titulo}" ha sido aprobado.`
-                            : `Tu evento "${e.titulo}" ha sido rechazado.`,
-                        event: e
-                    });
-                });
-        }
-
-        // 3. Notificaciones de Próximo a Iniciar
-        // Destinatarios: ADMIN y MANAGER
-        // Estados: SCHEDULED (creado por Manager, pendiente de inicio manual)
-        //          PUBLISHED (creado por Admin, visible ya; QRs se activan solos a la hora)
-        // Ventana: 15 min antes hasta 15 min después del inicio
-        if (isAdmin || role === 'MANAGER') {
-            backendEvents
-                .filter(e => (e.estado === 'SCHEDULED' || e.estado === 'PUBLISHED') && isEventCloseToStart(e))
-                .forEach(e => {
-                    // Determinar si la hora de inicio ya pasó (evento en marcha)
-                    let alreadyStarted = false;
-                    if (e.fechaInicio && e.horaInicio) {
-                        try {
-                            const dp = e.fechaInicio.split('-');
-                            const tp = e.horaInicio.split(':');
-                            const startMs = new Date(
-                                parseInt(dp[0], 10),
-                                parseInt(dp[1], 10) - 1,
-                                parseInt(dp[2], 10),
-                                parseInt(tp[0], 10),
-                                parseInt(tp[1], 10),
-                                0, 0
-                            ).getTime();
-                            alreadyStarted = Date.now() >= startMs;
-                        } catch { alreadyStarted = false; }
-                    }
-
-                    list.push({
-                        id: `prestart-${e.id}`,
-                        type: 'PRE_START',
-                        title: alreadyStarted
-                            ? '🟢 Evento en curso — QR activos'
-                            : '⚠️ Evento próximo a iniciar',
-                        description: alreadyStarted
-                            ? 'El evento ha iniciado. Los códigos QR de asistencia están activos.'
-                            : 'El evento inicia pronto. Puedes suspenderlo si hay algún inconveniente.',
-                        event: e
-                    });
-                });
-        }
-
-        return list;
-    }, [backendEvents, isAdmin, role, payload?.sub, eventState.readNotifications]);
-
     const listaSolicitudes = [
         ...serverNotifications.map(n => ({
             id: `server-${n.id}`,
             type: 'SERVER_ALERT' as const,
             title: n.title,
             description: n.message,
-            event: null as any,
-            originalId: n.id
-        })),
-        ...notificationsList
+            originalId: n.id,
+            eventId: n.eventId
+        }))
     ];
     const solicitudesPendientes = listaSolicitudes.length;
 
@@ -770,293 +656,77 @@ export default function ProfileScreen() {
                                             padding: 12,
                                             gap: 6
                                         }}>
-                                            {notif.type === 'SERVER_ALERT' && (
-                                                <>
-                                                    <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <HStack style={{ alignItems: 'center', gap: 6 }}>
-                                                            <Icon as={ICONS.Bell} style={{ color: '#F59E0B', width: 16, height: 16 }} />
-                                                            <Text style={{ fontSize: 13, fontWeight: '800', color: '#D97706' }}>
-                                                                {notif.title}
-                                                            </Text>
-                                                        </HStack>
-                                                    </HStack>
-                                                    <Text style={{ fontSize: 12, color: '#475569', fontWeight: '600' }}>
-                                                        {notif.description}
+                                            <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <HStack style={{ alignItems: 'center', gap: 6 }}>
+                                                    <Icon as={ICONS.Bell} style={{ color: '#F59E0B', width: 16, height: 16 }} />
+                                                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#D97706' }}>
+                                                        {notif.title}
                                                     </Text>
+                                                </HStack>
+                                            </HStack>
+                                            <Text style={{ fontSize: 12, color: '#475569', fontWeight: '600' }}>
+                                                {notif.description}
+                                            </Text>
+                                            <HStack style={{ gap: 8, marginTop: 4 }}>
+                                                <TouchableOpacity
+                                                    onPress={async () => {
+                                                        try {
+                                                            const { notificationService } = require('../services/notificationService');
+                                                            await notificationService.markAsRead(notif.originalId);
+                                                            setServerNotifications(prev => prev.filter((n: any) => n.id !== notif.originalId));
+                                                        } catch (e) {
+                                                            console.error(e);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        flex: 1,
+                                                        backgroundColor: '#FFFBEB',
+                                                        borderColor: '#FCD34D',
+                                                        borderWidth: 1,
+                                                        borderRadius: 8,
+                                                        paddingVertical: 8,
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}
+                                                >
+                                                    <Text style={{ color: '#D97706', fontSize: 11, fontWeight: '700' }}>
+                                                        Entendido
+                                                    </Text>
+                                                </TouchableOpacity>
+
+                                                {notif.eventId && (
                                                     <TouchableOpacity
                                                         onPress={async () => {
+                                                            setIsNotifOpen(false);
                                                             try {
                                                                 const { notificationService } = require('../services/notificationService');
                                                                 await notificationService.markAsRead(notif.originalId);
                                                                 setServerNotifications(prev => prev.filter((n: any) => n.id !== notif.originalId));
                                                             } catch (e) {
-                                                                console.error(e);
+                                                                console.error('Error marking as read:', e);
                                                             }
-                                                        }}
-                                                        style={{
-                                                            backgroundColor: '#FFFBEB',
-                                                            borderColor: '#FCD34D',
-                                                            borderWidth: 1,
-                                                            borderRadius: 8,
-                                                            paddingVertical: 6,
-                                                            alignItems: 'center',
-                                                            marginTop: 4
-                                                        }}
-                                                    >
-                                                        <Text style={{ color: '#D97706', fontSize: 11, fontWeight: '700' }}>
-                                                            Marcar como Leído
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                </>
-                                            )}
-
-                                            {notif.type === 'PENDING_APPROVAL' && (
-                                                <>
-                                                    <HStack style={{ alignItems: 'center', gap: 6 }}>
-                                                        <Icon as={ICONS.user} style={{ color: '#6366F1', width: 14, height: 14 }} />
-                                                        <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '700' }}>
-                                                            Manager: @{notif.event.createdByUsername}
-                                                        </Text>
-                                                    </HStack>
-                                                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#1E293B' }}>
-                                                        Solicitud para publicar evento
-                                                    </Text>
-                                                    <Text style={{ fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
-                                                        "{notif.event.titulo}"
-                                                    </Text>
-                                                    <TouchableOpacity
-                                                        onPress={() => {
-                                                            setIsNotifOpen(false);
                                                             router.push({
                                                                 pathname: '/tabs/admin',
-                                                                params: { tab: 'eventos' }
+                                                                params: { tab: 'eventos', openEventId: String(notif.eventId) }
                                                             });
                                                         }}
                                                         style={{
+                                                            flex: 1,
                                                             backgroundColor: '#EEF2FF',
                                                             borderColor: '#6366F1',
                                                             borderWidth: 1,
                                                             borderRadius: 8,
-                                                            paddingVertical: 6,
+                                                            paddingVertical: 8,
                                                             alignItems: 'center',
-                                                            marginTop: 4
+                                                            justifyContent: 'center'
                                                         }}
                                                     >
                                                         <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>
-                                                            Revisar en Solicitudes
+                                                            Revisar Detalle
                                                         </Text>
                                                     </TouchableOpacity>
-                                                </>
-                                            )}
-
-                                            {notif.type === 'STATUS_UPDATE' && (
-                                                <>
-                                                    <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                                                        <HStack style={{ alignItems: 'center', gap: 6 }}>
-                                                            <Icon
-                                                                as={notif.event.estado === 'PUBLISHED' ? ICONS.CheckCircle : ICONS.AlertCircle}
-                                                                style={{ color: notif.event.estado === 'PUBLISHED' ? '#10B981' : '#EF4444', width: 16, height: 16 }}
-                                                            />
-                                                            <Text style={{ fontSize: 13, fontWeight: '800', color: notif.event.estado === 'PUBLISHED' ? '#10B981' : '#EF4444' }}>
-                                                                {notif.title}
-                                                            </Text>
-                                                        </HStack>
-
-                                                        {/* Dismiss Notification */}
-                                                        <TouchableOpacity
-                                                            onPress={() => eventStateManager.markNotificationAsRead(String(notif.event.id))}
-                                                            style={{
-                                                                padding: 4,
-                                                                borderRadius: 6,
-                                                                backgroundColor: '#F1F5F9'
-                                                            }}
-                                                        >
-                                                            <Icon as={ICONS.CheckCircle} style={{ color: '#475569', width: 14, height: 14 }} />
-                                                        </TouchableOpacity>
-                                                    </HStack>
-
-                                                    <Text style={{ fontSize: 12, color: '#475569', fontWeight: '600' }}>
-                                                        {notif.description}
-                                                    </Text>
-
-                                                    {notif.event.estado === 'REJECTED' && notif.event.motivoRechazo && (
-                                                        <View style={{
-                                                            backgroundColor: '#FEF2F2',
-                                                            borderColor: '#FEE2E2',
-                                                            borderWidth: 1,
-                                                            borderRadius: 8,
-                                                            padding: 8,
-                                                            marginTop: 4
-                                                        }}>
-                                                            <Text style={{ fontSize: 10, fontWeight: '700', color: '#B91C1C', marginBottom: 2 }}>
-                                                                Observación del Administrador:
-                                                            </Text>
-                                                            <Text style={{ fontSize: 11, color: '#7F1D1D' }}>
-                                                                {notif.event.motivoRechazo}
-                                                            </Text>
-                                                        </View>
-                                                    )}
-
-                                                    <HStack style={{ gap: 8, marginTop: 4 }}>
-                                                        {notif.event.estado === 'REJECTED' && (
-                                                            <TouchableOpacity
-                                                                onPress={() => {
-                                                                    setIsNotifOpen(false);
-                                                                    router.push({
-                                                                        pathname: '/tabs/admin',
-                                                                        params: { tab: 'eventos', openEventId: String(notif.event.id) }
-                                                                    });
-                                                                }}
-                                                                style={{
-                                                                    flex: 1,
-                                                                    backgroundColor: '#6366F1',
-                                                                    borderRadius: 8,
-                                                                    paddingVertical: 8,
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    flexDirection: 'row',
-                                                                    gap: 6
-                                                                }}
-                                                            >
-                                                                <Icon as={ICONS.Search} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
-                                                                <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>
-                                                                    Revisar Detalle
-                                                                </Text>
-                                                            </TouchableOpacity>
-                                                        )}
-                                                        <TouchableOpacity
-                                                            onPress={() => eventStateManager.markNotificationAsRead(String(notif.event.id))}
-                                                            style={{
-                                                                flex: 1,
-                                                                backgroundColor: '#EEF2FF',
-                                                                borderColor: '#6366F1',
-                                                                borderWidth: 1,
-                                                                borderRadius: 8,
-                                                                paddingVertical: 8,
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center'
-                                                            }}
-                                                        >
-                                                            <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>
-                                                                Entendido
-                                                            </Text>
-                                                        </TouchableOpacity>
-                                                    </HStack>
-                                                </>
-                                            )}
-
-                                            {notif.type === 'PRE_START' && (() => {
-                                                // Calcular si ya pas\u00f3 la hora de inicio
-                                                let eventAlreadyStarted = false;
-                                                if (notif.event.fechaInicio && notif.event.horaInicio) {
-                                                    try {
-                                                        const dp = notif.event.fechaInicio.split('-');
-                                                        const tp = notif.event.horaInicio.split(':');
-                                                        const startMs = new Date(
-                                                            parseInt(dp[0], 10),
-                                                            parseInt(dp[1], 10) - 1,
-                                                            parseInt(dp[2], 10),
-                                                            parseInt(tp[0], 10),
-                                                            parseInt(tp[1], 10),
-                                                            0, 0
-                                                        ).getTime();
-                                                        eventAlreadyStarted = Date.now() >= startMs;
-                                                    } catch { eventAlreadyStarted = false; }
-                                                }
-                                                const iconColor = eventAlreadyStarted ? '#10B981' : '#F59E0B';
-                                                const textColor = eventAlreadyStarted ? '#059669' : '#D97706';
-                                                const IconComponent = eventAlreadyStarted ? ICONS.CheckCircle : ICONS.AlertCircle;
-
-                                                return (
-                                                    <>
-                                                        <HStack style={{ alignItems: 'center', gap: 6 }}>
-                                                            <Icon
-                                                                as={IconComponent}
-                                                                style={{ color: iconColor, width: 16, height: 16 }}
-                                                            />
-                                                            <Text style={{ fontSize: 13, fontWeight: '800', color: textColor }}>
-                                                                {notif.title}
-                                                            </Text>
-                                                        </HStack>
-                                                        <Text style={{ fontSize: 12, color: '#1E293B', fontWeight: '700' }}>
-                                                            "{notif.event.titulo}"
-                                                        </Text>
-                                                        <Text style={{ fontSize: 11, color: '#64748B' }}>
-                                                            Inicia: {notif.event.fechaInicio} a las {notif.event.horaInicio?.slice(0, 5) || '--:--'}
-                                                        </Text>
-                                                        <Text style={{ fontSize: 11, color: '#475569', fontStyle: 'italic', marginTop: 2 }}>
-                                                            {notif.description}
-                                                        </Text>
-
-                                                        <TouchableOpacity
-                                                            onPress={() => {
-                                                                setIsNotifOpen(false);
-                                                                router.push({
-                                                                    pathname: '/tabs/admin',
-                                                                    params: { tab: 'eventos', openEventId: String(notif.event.id) }
-                                                                });
-                                                            }}
-                                                            style={{
-                                                                backgroundColor: '#EEF2FF',
-                                                                borderColor: '#6366F1',
-                                                                borderWidth: 1,
-                                                                borderRadius: 8,
-                                                                paddingVertical: 8,
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                marginTop: 6
-                                                            }}
-                                                        >
-                                                            <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>
-                                                                Revisar Detalle Completo
-                                                            </Text>
-                                                        </TouchableOpacity>
-
-                                                        {/* Botones de acci\u00f3n solo si el evento a\u00fan no ha iniciado */}
-                                                        {!eventAlreadyStarted && (
-                                                            <HStack style={{ gap: 6, marginTop: 6 }}>
-                                                                {/* "Iniciar ahora" solo aplica a eventos SCHEDULED (Manager crea) */}
-                                                                {notif.event.estado === 'SCHEDULED' && (
-                                                                    <TouchableOpacity
-                                                                        onPress={() => handleConfirmarInicioNotification(notif.event)}
-                                                                        style={{
-                                                                            flex: 1,
-                                                                            backgroundColor: '#6366F1',
-                                                                            borderRadius: 8,
-                                                                            paddingVertical: 8,
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center'
-                                                                        }}
-                                                                    >
-                                                                        <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>
-                                                                            Iniciar Ahora
-                                                                        </Text>
-                                                                    </TouchableOpacity>
-                                                                )}
-                                                                {/* "Suspender" aplica a cualquier estado antes del inicio */}
-                                                                <TouchableOpacity
-                                                                    onPress={() => handleSuspenderNotification(notif.event)}
-                                                                    style={{
-                                                                        flex: notif.event.estado === 'SCHEDULED' ? 1 : undefined,
-                                                                        backgroundColor: '#FFFBEB',
-                                                                        borderColor: '#FCD34D',
-                                                                        borderWidth: 1,
-                                                                        borderRadius: 8,
-                                                                        paddingVertical: 8,
-                                                                        paddingHorizontal: notif.event.estado === 'SCHEDULED' ? 0 : 16,
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center'
-                                                                    }}
-                                                                >
-                                                                    <Text style={{ color: '#D97706', fontSize: 11, fontWeight: '700' }}>
-                                                                        Suspender Evento
-                                                                    </Text>
-                                                                </TouchableOpacity>
-                                                            </HStack>
-                                                        )}
-                                                    </>
-                                                );
-                                            })()}
+                                                )}
+                                            </HStack>
                                         </View>
                                     ))}
                                 </View>

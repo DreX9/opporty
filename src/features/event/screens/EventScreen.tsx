@@ -92,105 +92,7 @@ export default function EventScreen() {
 
     return (
         <Box style={{ flex: 1, backgroundColor: C.bg }}>
-            {/* ── Buscador + favoritos ───────────────────────────────────── */}
-            <Box style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
-                <Text style={{ color: C.textSecondary, fontSize: 13, marginBottom: 10 }}>
-                    Descubre lo que pasa cerca de ti
-                </Text>
-
-                <HStack style={{ gap: 10, alignItems: 'center', marginBottom: 12 }}>
-                    {/* Input búsqueda */}
-                    <HStack
-                        style={[
-                            styles.searchBar,
-                            { backgroundColor: C.cardBg, borderColor: C.cardBorder, flex: 1 },
-                        ]}
-                    >
-                        <Icon as={ICONS.Search} style={{ color: C.textMuted, width: 15, height: 15, marginRight: 6 }} />
-                        <TextInput
-                            placeholder="Buscar eventos o lugares..."
-                            placeholderTextColor={C.textMuted}
-                            value={busqueda}
-                            onChangeText={setBusqueda}
-                            style={{ flex: 1, fontSize: 13, color: C.textPrimary, height: 40 }}
-                            accessibilityLabel="Buscar eventos"
-                        />
-                        {busqueda.length > 0 && (
-                            <TouchableOpacity onPress={() => setBusqueda('')}>
-                                <Text style={{ color: C.accent, fontSize: 11, fontWeight: '600' }}>Limpiar</Text>
-                            </TouchableOpacity>
-                        )}
-                    </HStack>
-
-                    {/* Badge favoritos */}
-                    <HStack
-                        style={[
-                            styles.favBadge,
-                            { backgroundColor: totalFavoritos > 0 ? '#FDF2F8' : C.cardBg, borderColor: C.cardBorder },
-                        ]}
-                    >
-                        <Icon
-                            as={ICONS.Heart}
-                            style={{
-                                color: totalFavoritos > 0 ? C.favActive : C.textMuted,
-                                width: 15,
-                                height: 15,
-                            }}
-                        />
-                        <Text style={{ color: totalFavoritos > 0 ? C.favActive : C.textMuted, fontSize: 12, fontWeight: '700' }}>
-                            {totalFavoritos}
-                        </Text>
-                    </HStack>
-                </HStack>
-
-                {/* Chips de categoría */}
-                {!loadingCategories && listaCategorias.length > 1 && (
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
-                        style={{ marginBottom: 10 }}
-                    >
-                        {listaCategorias.map((cat) => {
-                            const activo = filtroActivo === cat;
-                            return (
-                                <TouchableOpacity
-                                    key={cat}
-                                    onPress={() => cambiarFiltro(cat)}
-                                    style={[
-                                        styles.chip,
-                                        {
-                                            backgroundColor: activo ? C.accent : C.cardBg,
-                                            borderColor: activo ? C.accent : C.cardBorder,
-                                        },
-                                    ]}
-                                    accessibilityLabel={`Filtrar ${cat}`}
-                                    accessibilityRole="button"
-                                >
-                                    <Text
-                                        style={{
-                                            color: activo ? '#FFFFFF' : C.textSecondary,
-                                            fontSize: 13,
-                                            fontWeight: activo ? '700' : '500',
-                                        }}
-                                    >
-                                        {cat}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                )}
-
-                {/* Contador */}
-                {!cargando && (
-                    <Text style={{ color: C.textMuted, fontSize: 12, marginBottom: 4 }}>
-                        {filtrados.length} evento{filtrados.length !== 1 ? 's' : ''} encontrado{filtrados.length !== 1 ? 's' : ''}
-                    </Text>
-                )}
-            </Box>
-
-            {/* ── Lista de eventos o carga ─────────────────────────────────── */}
+            {/* ── Lista de eventos (buscador + chips + tarjetas, todo scrollable) ── */}
             {cargando ? (
                 <VStack style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
                     <ActivityIndicator size="large" color={C.accent} />
@@ -211,43 +113,142 @@ export default function EventScreen() {
             ) : (
                 <ScrollView
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 16, gap: 16, paddingBottom: 32 }}
+                    contentContainerStyle={{ paddingBottom: 32 }}
                     refreshControl={
                         <RefreshControl refreshing={refrescar} onRefresh={handleRefresh} colors={[C.accent]} />
                     }
                 >
-                    {filtrados.length > 0 ? (
-                        filtrados.map((ev) => (
-                            <EventCard
-                                key={ev.id}
-                                evento={ev}
-                                favorito={favoritos.has(ev.id)}
-                                onToggleFavorito={toggleFav}
-                                onVerDetalle={verDetalle}
-                            />
-                        ))
-                    ) : (
-                        <VStack style={{ alignItems: 'center', paddingTop: 64, gap: 12 }}>
-                            <Icon as={ICONS.Search} style={{ color: C.textMuted, width: 48, height: 48 }} />
-                            <Text style={{ color: C.textPrimary, fontSize: 18, fontWeight: '700' }}>
-                                Sin resultados
-                            </Text>
-                            <Text style={{ color: C.textSecondary, fontSize: 13, textAlign: 'center', paddingHorizontal: 32 }}>
-                                No hay eventos que coincidan con la búsqueda.
-                            </Text>
-                            <TouchableOpacity
-                                style={[styles.resetBtn, { backgroundColor: C.accent }]}
-                                onPress={() => { setBusqueda(''); setFiltroActivo('Todos'); }}
-                                accessibilityLabel="Ver todos los eventos"
-                                accessibilityRole="button"
+                    {/* ── Buscador + favoritos (dentro del scroll, visible en landscape) ── */}
+                    <Box style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
+                        <Text style={{ color: C.textSecondary, fontSize: 13, marginBottom: 10 }}>
+                            Descubre lo que pasa cerca de ti
+                        </Text>
+
+                        <HStack style={{ gap: 10, alignItems: 'center', marginBottom: 12 }}>
+                            {/* Input búsqueda */}
+                            <HStack
+                                style={[
+                                    styles.searchBar,
+                                    { backgroundColor: C.cardBg, borderColor: C.cardBorder, flex: 1 },
+                                ]}
                             >
-                                <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
-                                    Ver todos los eventos
+                                <Icon as={ICONS.Search} style={{ color: C.textMuted, width: 15, height: 15, marginRight: 6 }} />
+                                <TextInput
+                                    placeholder="Buscar eventos o lugares..."
+                                    placeholderTextColor={C.textMuted}
+                                    value={busqueda}
+                                    onChangeText={setBusqueda}
+                                    style={{ flex: 1, fontSize: 13, color: C.textPrimary, height: 40 }}
+                                    accessibilityLabel="Buscar eventos"
+                                />
+                                {busqueda.length > 0 && (
+                                    <TouchableOpacity onPress={() => setBusqueda('')}>
+                                        <Text style={{ color: C.accent, fontSize: 11, fontWeight: '600' }}>Limpiar</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </HStack>
+
+                            {/* Badge favoritos */}
+                            <HStack
+                                style={[
+                                    styles.favBadge,
+                                    { backgroundColor: totalFavoritos > 0 ? '#FDF2F8' : C.cardBg, borderColor: C.cardBorder },
+                                ]}
+                            >
+                                <Icon
+                                    as={ICONS.Heart}
+                                    style={{
+                                        color: totalFavoritos > 0 ? C.favActive : C.textMuted,
+                                        width: 15,
+                                        height: 15,
+                                    }}
+                                />
+                                <Text style={{ color: totalFavoritos > 0 ? C.favActive : C.textMuted, fontSize: 12, fontWeight: '700' }}>
+                                    {totalFavoritos}
                                 </Text>
-                            </TouchableOpacity>
-                        </VStack>
-                    )}
-                    <Box style={{ height: 16 }} />
+                            </HStack>
+                        </HStack>
+
+                        {/* Chips de categoría */}
+                        {!loadingCategories && listaCategorias.length > 1 && (
+                            <ScrollView
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ gap: 8, paddingBottom: 4 }}
+                                style={{ marginBottom: 10 }}
+                            >
+                                {listaCategorias.map((cat) => {
+                                    const activo = filtroActivo === cat;
+                                    return (
+                                        <TouchableOpacity
+                                            key={cat}
+                                            onPress={() => cambiarFiltro(cat)}
+                                            style={[
+                                                styles.chip,
+                                                {
+                                                    backgroundColor: activo ? C.accent : C.cardBg,
+                                                    borderColor: activo ? C.accent : C.cardBorder,
+                                                },
+                                            ]}
+                                            accessibilityLabel={`Filtrar ${cat}`}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text
+                                                style={{
+                                                    color: activo ? '#FFFFFF' : C.textSecondary,
+                                                    fontSize: 13,
+                                                    fontWeight: activo ? '700' : '500',
+                                                }}
+                                            >
+                                                {cat}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        )}
+
+                        {/* Contador */}
+                        <Text style={{ color: C.textMuted, fontSize: 12, marginBottom: 4 }}>
+                            {filtrados.length} evento{filtrados.length !== 1 ? 's' : ''} encontrado{filtrados.length !== 1 ? 's' : ''}
+                        </Text>
+                    </Box>
+
+                    {/* ── Tarjetas de eventos ───────────────────────────────────── */}
+                    <Box style={{ paddingHorizontal: 16, gap: 16 }}>
+                        {filtrados.length > 0 ? (
+                            filtrados.map((ev) => (
+                                <EventCard
+                                    key={ev.id}
+                                    evento={ev}
+                                    favorito={favoritos.has(ev.id)}
+                                    onToggleFavorito={toggleFav}
+                                    onVerDetalle={verDetalle}
+                                />
+                            ))
+                        ) : (
+                            <VStack style={{ alignItems: 'center', paddingTop: 64, gap: 12 }}>
+                                <Icon as={ICONS.Search} style={{ color: C.textMuted, width: 48, height: 48 }} />
+                                <Text style={{ color: C.textPrimary, fontSize: 18, fontWeight: '700' }}>
+                                    Sin resultados
+                                </Text>
+                                <Text style={{ color: C.textSecondary, fontSize: 13, textAlign: 'center', paddingHorizontal: 32 }}>
+                                    No hay eventos que coincidan con la búsqueda.
+                                </Text>
+                                <TouchableOpacity
+                                    style={[styles.resetBtn, { backgroundColor: C.accent }]}
+                                    onPress={() => { setBusqueda(''); setFiltroActivo('Todos'); }}
+                                    accessibilityLabel="Ver todos los eventos"
+                                    accessibilityRole="button"
+                                >
+                                    <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
+                                        Ver todos los eventos
+                                    </Text>
+                                </TouchableOpacity>
+                            </VStack>
+                        )}
+                        <Box style={{ height: 16 }} />
+                    </Box>
                 </ScrollView>
             )}
 

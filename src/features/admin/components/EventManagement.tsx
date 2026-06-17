@@ -334,21 +334,25 @@ export default function EventManagement({
                     </>
                   ) : null
                 ) : evento.estado === 'Pendiente' ? (
-                  <>
-                    <TouchableOpacity
-                      onPress={() => onAprobar(evento.id)}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200"
-                    >
-                      <Text className="text-emerald-700 text-xs font-bold">Aprobar</Text>
-                    </TouchableOpacity>
+                  role === 'ADMIN' ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => onAprobar(evento.id)}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200"
+                      >
+                        <Text className="text-emerald-700 text-xs font-bold">Aprobar</Text>
+                      </TouchableOpacity>
 
-                    <TouchableOpacity
-                      onPress={() => handleTriggerRechazo(evento.id)}
-                      className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200"
-                    >
-                      <Text className="text-rose-700 text-xs font-bold">Rechazar</Text>
-                    </TouchableOpacity>
-                  </>
+                      <TouchableOpacity
+                        onPress={() => handleTriggerRechazo(evento.id)}
+                        className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200"
+                      >
+                        <Text className="text-rose-700 text-xs font-bold">Rechazar</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <Text className="text-amber-600 text-xs font-bold mr-2">En Revisión</Text>
+                  )
                 ) : (
                   <TouchableOpacity
                     onPress={() => onEliminar(evento.id)}
@@ -918,49 +922,72 @@ export default function EventManagement({
                 elevation: 5,
               }}>
                 {reviewingEvent.estado === 'Pendiente' ? (
-                  <>
-                    <TouchableOpacity
-                      onPress={() => {
-                        const eventId = reviewingEvent.id;
-                        setReviewingEvent(null);
-                        // Breve retraso para evitar solapamiento de Modales en iOS/Android
-                        setTimeout(() => {
-                          handleTriggerRechazo(eventId);
-                        }, 300);
-                      }}
-                      style={{
-                        flex: 1,
-                        paddingVertical: 12,
-                        borderRadius: 14,
-                        backgroundColor: '#FEF2F2',
-                        borderColor: '#FCA5A5',
-                        borderWidth: 1,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'row',
-                        gap: 6,
-                      }}
-                      activeOpacity={0.75}
-                    >
-                      <Icon as={ICONS.X} style={{ color: '#EF4444', width: 14, height: 14 }} />
-                      <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '700' }}>Rechazar</Text>
-                    </TouchableOpacity>
+                  role === 'ADMIN' ? (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const eventId = reviewingEvent.id;
+                          setReviewingEvent(null);
+                          // Breve retraso para evitar solapamiento de Modales en iOS/Android
+                          setTimeout(() => {
+                            handleTriggerRechazo(eventId);
+                          }, 300);
+                        }}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 12,
+                          borderRadius: 14,
+                          backgroundColor: '#FEF2F2',
+                          borderColor: '#FCA5A5',
+                          borderWidth: 1,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'row',
+                          gap: 6,
+                        }}
+                        activeOpacity={0.75}
+                      >
+                        <Icon as={ICONS.X} style={{ color: '#EF4444', width: 14, height: 14 }} />
+                        <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '700' }}>Rechazar</Text>
+                      </TouchableOpacity>
 
+                      <TouchableOpacity
+                        onPress={() => {
+                          onAprobar(reviewingEvent.id);
+                          setReviewingEvent(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          paddingVertical: 12,
+                          borderRadius: 14,
+                          backgroundColor: '#10B981',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'row',
+                          gap: 6,
+                          shadowColor: '#10B981',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 4,
+                          elevation: 2,
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Icon as={ICONS.CheckCircle} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
+                        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>Aprobar Evento</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
                     <TouchableOpacity
-                      onPress={() => {
-                        onAprobar(reviewingEvent.id);
-                        setReviewingEvent(null);
-                      }}
+                      onPress={() => setReviewingEvent(null)}
                       style={{
                         flex: 1,
                         paddingVertical: 12,
                         borderRadius: 14,
-                        backgroundColor: '#10B981',
+                        backgroundColor: '#6366F1',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        flexDirection: 'row',
-                        gap: 6,
-                        shadowColor: '#10B981',
+                        shadowColor: '#6366F1',
                         shadowOffset: { width: 0, height: 2 },
                         shadowOpacity: 0.15,
                         shadowRadius: 4,
@@ -968,10 +995,11 @@ export default function EventManagement({
                       }}
                       activeOpacity={0.8}
                     >
-                      <Icon as={ICONS.CheckCircle} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
-                      <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>Aprobar Evento</Text>
+                      <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
+                        Cerrar Vista
+                      </Text>
                     </TouchableOpacity>
-                  </>
+                  )
                 ) : reviewingEvent.estado === 'Programado' ? (
                   (role === 'ADMIN' || (role === 'MANAGER' && payload?.sub && reviewingEvent.raw?.createdByUsername === payload.sub)) ? (
                     <>
@@ -1073,7 +1101,7 @@ export default function EventManagement({
                       <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '700' }}>Eliminar</Text>
                     </TouchableOpacity>
 
-                    {reviewingEvent.estado === 'Rechazado' && (
+                    {reviewingEvent.estado === 'Rechazado' && role === 'ADMIN' && (
                       <TouchableOpacity
                         onPress={() => {
                           const eventId = reviewingEvent.id;
