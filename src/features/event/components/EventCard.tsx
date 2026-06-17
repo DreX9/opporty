@@ -1,10 +1,10 @@
 import React from 'react';
 import {
     StyleSheet,
-    Dimensions,
     Image,
     TouchableOpacity,
     View,
+    useWindowDimensions,
 } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -17,18 +17,36 @@ import { C } from '../constants';
 import InfoPill from './InfoPill';
 import { eventStateManager, useEventState } from '../state';
 
-const { width: SW } = Dimensions.get('window');
+interface EventCardExtendedProps extends EventCardProps {
+    /** Cuando está en grid de varias columnas, reduce padding e imagen */
+    isCompact?: boolean;
+    /** Ancho externo inyectado por el grid */
+    style?: any;
+}
 
-export default function EventCard({ evento, favorito, onToggleFavorito, onVerDetalle }: EventCardProps) {
+export default function EventCard({ evento, favorito, onToggleFavorito, onVerDetalle, isCompact = false, style: externalStyle }: EventCardExtendedProps) {
     const eventState = useEventState();
     const isRegistered = eventStateManager.isRegistered(evento.id);
     const isFull = !!(evento.capacidad && evento.capacidad > 0 && evento.inscritosCount >= evento.capacidad);
+    const { width: W } = useWindowDimensions();
+
+    // Altura de imagen: en compacto es relativa al ancho de la card (que viene via externalStyle.width o fallback)
+    const cardW = externalStyle?.width ?? W;
+    const imageHeight = isCompact ? cardW * 0.45 : cardW * 0.45;
+    const padding = isCompact ? 8 : 12;
+    const titleSize = isCompact ? 13 : 16;
+    const descLines = isCompact ? 1 : 2;
 
     return (
-        <Box
+        <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => onVerDetalle && onVerDetalle(evento)}
+            accessibilityLabel={`Ver detalle ${evento.titulo}`}
+            accessibilityRole="button"
             style={[
                 styles.card,
                 { backgroundColor: C.cardBg, borderColor: C.cardBorder },
+                externalStyle,
             ]}
         >
             {/* Línea de acento izquierda */}
@@ -39,10 +57,10 @@ export default function EventCard({ evento, favorito, onToggleFavorito, onVerDet
                 ]}
             />
 
-            {/* Imagen */}
+            {/* Imagen — toda la imagen es parte del botón de ver más */}
             <Image
                 source={{ uri: evento.imagenUri }}
-                style={styles.cardImage}
+                style={[styles.cardImage, { height: imageHeight }]}
                 resizeMode="cover"
             />
 
@@ -67,14 +85,14 @@ export default function EventCard({ evento, favorito, onToggleFavorito, onVerDet
             )}
 
             {/* Contenido */}
-            <VStack style={{ padding: 12, gap: 8 }}>
+            <VStack style={{ padding, gap: isCompact ? 4 : 8 }}>
 
-                {/* Título + corazón / Estado Registro */}
+                {/* Título + corazón */}
                 <HStack style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <VStack style={{ flex: 1, marginRight: 8 }}>
-                        <HStack style={{ alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <VStack style={{ flex: 1, marginRight: 6 }}>
+                        <HStack style={{ alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
                             <Text
-                                style={[styles.cardTitle, { color: C.textPrimary }]}
+                                style={[styles.cardTitle, { color: C.textPrimary, fontSize: titleSize }]}
                                 numberOfLines={2}
                             >
                                 {evento.titulo}
@@ -87,8 +105,9 @@ export default function EventCard({ evento, favorito, onToggleFavorito, onVerDet
                             )}
                         </HStack>
                     </VStack>
+                    {/* Favorito: se detiene la propagación para no abrir el detalle */}
                     <TouchableOpacity
-                        onPress={() => onToggleFavorito(evento.id)}
+                        onPress={(e) => { e.stopPropagation?.(); onToggleFavorito(evento.id); }}
                         style={{ padding: 4 }}
                         accessibilityLabel={`Favorito ${evento.titulo}`}
                         accessibilityRole="button"
@@ -112,45 +131,43 @@ export default function EventCard({ evento, favorito, onToggleFavorito, onVerDet
                     </Text>
                 </HStack>
 
-                {/* Descripción */}
-                <Text style={{ color: C.textSecondary, fontSize: 12, lineHeight: 17 }} numberOfLines={2}>
-                    {evento.descripcion}
-                </Text>
+                {/* Descripción — se oculta en modo muy compacto */}
+                {!isCompact && (
+                    <Text style={{ color: C.textSecondary, fontSize: 12, lineHeight: 17 }} numberOfLines={descLines}>
+                        {evento.descripcion}
+                    </Text>
+                )}
 
                 {/* Fecha / Hora / Precio */}
-                <HStack style={{ flexWrap: 'wrap', gap: 10 }}>
+                <HStack style={{ flexWrap: 'wrap', gap: isCompact ? 4 : 10 }}>
                     <InfoPill icono={ICONS.CalendarDays} label={evento.fecha} />
-                    <InfoPill icono={ICONS.Clock} label={evento.hora} />
+                    {!isCompact && <InfoPill icono={ICONS.Clock} label={evento.hora} />}
                     <InfoPill icono={ICONS.Tag} label={evento.precio} color={evento.accentColor} />
                 </HStack>
 
                 {/* Lugar */}
                 <InfoPill icono={ICONS.MapPin} label={evento.lugar} />
 
-                {/* Pie: asistentes + rating + botón */}
+                {/* Pie: asistentes + rating */}
                 <HStack
                     style={[
                         styles.cardFooter,
                         { borderColor: C.cardBorder },
                     ]}
                 >
-                    <InfoPill icono={ICONS.Users} label={`${evento.inscritosCount}${evento.capacidad ? '/' + evento.capacidad : ''} asistentes`} />
+                    <InfoPill icono={ICONS.Users} label={`${evento.inscritosCount}${evento.capacidad ? '/' + evento.capacidad : ''}`} />
                     <InfoPill icono={ICONS.Star} label={String(evento.rating)} color={C.accentGold} />
 
-                    <TouchableOpacity
-                        onPress={() => onVerDetalle && onVerDetalle(evento)}
-                        style={[styles.verMasBtn, { borderColor: evento.accentColor }]}
-                        accessibilityLabel={`Ver detalle ${evento.titulo}`}
-                        accessibilityRole="button"
-                    >
+                    {/* Indicador visual "Ver más" pequeño */}
+                    <HStack style={[styles.verMasBtn, { borderColor: evento.accentColor }]}>
                         <Text style={{ color: evento.accentColor, fontSize: 11, fontWeight: '700' }}>
                             Ver más
                         </Text>
                         <Icon as={ICONS.ChevronRight} style={{ color: evento.accentColor, width: 12, height: 12 }} />
-                    </TouchableOpacity>
+                    </HStack>
                 </HStack>
             </VStack>
-        </Box>
+        </TouchableOpacity>
     );
 }
 
@@ -165,7 +182,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.07,
         shadowRadius: 6,
         position: 'relative',
-        width: SW - 32,
+        // Sin width fijo: el padre (grid) controla el ancho
     },
     accentBar: {
         position: 'absolute',
@@ -177,7 +194,7 @@ const styles = StyleSheet.create({
     },
     cardImage: {
         width: '100%',
-        height: SW * 0.40,
+        // height: dinámica vía prop isCompact + useWindowDimensions
     },
     badge: {
         position: 'absolute',
