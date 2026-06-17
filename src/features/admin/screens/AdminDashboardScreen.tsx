@@ -1,5 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { ScrollView, TouchableOpacity, Alert, StatusBar, ActivityIndicator } from 'react-native';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { ScrollView, TouchableOpacity, Alert, StatusBar, ActivityIndicator, LayoutAnimation, Platform, UIManager, useWindowDimensions } from 'react-native';
+
+// Habilitar LayoutAnimation en Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { HStack } from '@/components/ui/hstack';
@@ -25,6 +30,21 @@ export default function AdminDashboardScreen() {
   const { role } = useAuthState();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'eventos' | 'usuarios'>('dashboard');
+
+  // ── Transición suave al rotar ──────────────────────────────────
+  const { width: W } = useWindowDimensions();
+  const prevW = useRef(W);
+  useEffect(() => {
+      if (prevW.current !== W) {
+          LayoutAnimation.configureNext({
+              duration: 280,
+              create:  { type: 'easeInEaseOut', property: 'opacity' },
+              update:  { type: 'easeInEaseOut' },
+              delete:  { type: 'easeInEaseOut', property: 'opacity' },
+          });
+          prevW.current = W;
+      }
+  }, [W]);
 
   useEffect(() => {
     if (params.tab && (params.tab === 'dashboard' || params.tab === 'eventos' || params.tab === 'usuarios')) {
