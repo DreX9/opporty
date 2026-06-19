@@ -269,11 +269,16 @@ export default function ProfileScreen() {
         const actualizado = intereses.map((i) => (i.id === id ? { ...i, activo: !i.activo } : i));
         setIntereses(actualizado);
 
-        // Persistir los nombres activos
+        // Persistir los nombres y IDs activos
         const activosNombres = actualizado
             .filter(i => i.activo)
             .map(i => i.nombre.toLowerCase());
-        saveInterests(payload?.sub || 'guest', activosNombres);
+
+        const activosIds = actualizado
+            .filter(i => i.activo)
+            .map(i => i.id);
+
+        saveInterests(payload?.sub || 'guest', activosNombres, activosIds);
     };
 
     const handleDownloadCert = async (evento: Evento) => {
