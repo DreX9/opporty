@@ -25,6 +25,11 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { ESTADO_INICIAL_DOCENTE, TEACHER_STATUS_OPTIONS } from '../constants';
 import { TeacherFormData, TeacherStatus, BackendRole, TeacherRegisterResponse } from '../types';
 import { adminService } from '../services/adminService';
+import {
+    validateEmail, validatePassword, validateDni,
+    validatePhone, validateMinLength, validateRequired, validateCapacity,
+    getValidationBorderStyle, PasswordStrengthIndicator,
+} from '@/src/utils/formValidation';
 
 
 export const LISTA_ESPECIALIDADES = [
@@ -343,7 +348,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.user} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Nombres *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateMinLength(form.firstName, 2))}>
                                 <InputField
                                     placeholder="Ej: Juan Carlos"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -359,7 +364,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.user} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Apellidos *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateMinLength(form.lastName, 2))}>
                                 <InputField
                                     placeholder="Ej: Pérez Rodríguez"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -375,7 +380,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.FileText} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">DNI * (8 dígitos)</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateDni(form.dni))}>
                                 <InputField
                                     placeholder="12345678"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -418,7 +423,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.Phone} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Teléfono (opcional, 9 dígitos)</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validatePhone(form.phoneNumber, true))}>
                                 <InputField
                                     placeholder="987654321"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -574,7 +579,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.Mail} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Correo Electrónico *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateEmail(form.email))}>
                                 <InputField
                                     placeholder="docente@universidad.edu"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -592,7 +597,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.lock} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Contraseña * (mín. 6 caracteres)</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validatePassword(form.password))}>
                                 <InputField
                                     placeholder="Contraseña segura"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -602,6 +607,9 @@ export default function CrearUsuarioScreen() {
                                     onChangeText={actualizarCampo('password')}
                                 />
                             </Input>
+
+                            {/* Indicador de fortaleza de contraseña */}
+                            <PasswordStrengthIndicator password={form.password} />
                         </VStack>
 
                         {/* Selector de Rol (dinámico desde el backend) */}

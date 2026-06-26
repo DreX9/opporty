@@ -23,6 +23,11 @@ import * as Clipboard from 'expo-clipboard';
 
 import { RegisterModalProps, DatosRegistro } from '../types';
 import DropdownSelect from '@/components/DropdownSelect';
+import {
+    validateEmail, validatePassword, validatePasswordMatch,
+    validateDni, validatePhone, validateMinLength, validateRequired,
+    getValidationBorderStyle, PasswordStrengthIndicator,
+} from '@/src/utils/formValidation';
 
 export const LISTA_CARRERAS = [
     'Ingeniería de Sistemas',
@@ -276,7 +281,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                         <Input
                                             style={[
                                                 styles.inputBox,
-                                                focusedInput === 'nombres' ? styles.inputBoxFocused : {}
+                                                getValidationBorderStyle(validateMinLength(nombres, 2), focusedInput === 'nombres')
                                             ]}
                                         >
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
@@ -296,7 +301,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                         <Input
                                             style={[
                                                 styles.inputBox,
-                                                focusedInput === 'apellidos' ? styles.inputBoxFocused : {}
+                                                getValidationBorderStyle(validateMinLength(apellidos, 2), focusedInput === 'apellidos')
                                             ]}
                                         >
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
@@ -318,7 +323,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'email' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validateEmail(email), focusedInput === 'email')
                                     ]}
                                 >
                                     <Icon as={ICONS.Mail} style={styles.inputIcon} />
@@ -340,7 +345,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'dni' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validateDni(dni), focusedInput === 'dni')
                                     ]}
                                 >
                                     <Icon as={ICONS.FileText} style={styles.inputIcon} />
@@ -364,7 +369,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                     onPress={() => setShowDatePicker(true)}
                                     style={[
                                         styles.pickerBox,
-                                        focusedInput === 'fechaNacimiento' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validateRequired(fechaNacimiento))
                                     ]}
                                 >
                                     <HStack style={{ alignItems: 'center', gap: 10, flex: 1 }}>
@@ -402,7 +407,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'phoneNumber' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validatePhone(phoneNumber, true), focusedInput === 'phoneNumber')
                                     ]}
                                 >
                                     <Icon as={ICONS.Phone} style={styles.inputIcon} />
@@ -455,7 +460,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'contrasena' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validatePassword(contrasena), focusedInput === 'contrasena')
                                     ]}
                                 >
                                     <Icon as={ICONS.lock} style={styles.inputIcon} />
@@ -475,11 +480,14 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                     </TouchableOpacity>
                                 </Input>
 
+                                {/* Indicador de fortaleza de contraseña */}
+                                <PasswordStrengthIndicator password={contrasena} />
+
                                 {/* Confirmar Contraseña */}
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'confirmarContrasena' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validatePasswordMatch(contrasena, confirmarContrasena), focusedInput === 'confirmarContrasena')
                                     ]}
                                 >
                                     <Icon as={ICONS.lock} style={styles.inputIcon} />

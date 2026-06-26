@@ -27,6 +27,11 @@ import { StudentProfile, TeacherProfile, StudentWriteData, TeacherWriteData } fr
 import DropdownSelect from '@/components/DropdownSelect';
 import { LISTA_CARRERAS, LISTA_CICLOS_REGISTRO } from '../../auth/components/RegisterModal';
 import { LISTA_ESPECIALIDADES } from '../../admin/screens/CrearUsuarioScreen';
+import {
+    validatePassword, validatePasswordMatch,
+    validateDni, validatePhone, validateMinLength, validateRequired,
+    getValidationBorderStyle, PasswordStrengthIndicator,
+} from '@/src/utils/formValidation';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -345,7 +350,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                 <HStack style={{ gap: 12 }}>
                                     <VStack style={{ flex: 1, gap: 4 }}>
                                         <Text style={styles.inputLabel}>Nombre</Text>
-                                        <Input style={[styles.inputBox, focusedInput === 'nombres' ? styles.inputBoxFocused : {}]}>
+                                        <Input style={[styles.inputBox, getValidationBorderStyle(validateMinLength(nombres, 2), focusedInput === 'nombres')]}>
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
                                             <InputField
                                                 placeholder="Nombres"
@@ -360,7 +365,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                     </VStack>
                                     <VStack style={{ flex: 1, gap: 4 }}>
                                         <Text style={styles.inputLabel}>Apellido</Text>
-                                        <Input style={[styles.inputBox, focusedInput === 'apellidos' ? styles.inputBoxFocused : {}]}>
+                                        <Input style={[styles.inputBox, getValidationBorderStyle(validateMinLength(apellidos, 2), focusedInput === 'apellidos')]}>
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
                                             <InputField
                                                 placeholder="Apellidos"
@@ -377,7 +382,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
 
                                 <VStack style={{ gap: 4 }}>
                                     <Text style={styles.inputLabel}>DNI</Text>
-                                    <Input style={[styles.inputBox, focusedInput === 'dni' ? styles.inputBoxFocused : {}]}>
+                                    <Input style={[styles.inputBox, getValidationBorderStyle(validateDni(dni), focusedInput === 'dni')]}>
                                         <Icon as={ICONS.FileText} style={styles.inputIcon} />
                                         <InputField
                                             placeholder="DNI (8 dígitos)"
@@ -398,7 +403,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                     <TouchableOpacity
                                         activeOpacity={0.9}
                                         onPress={() => setShowBirthPicker(true)}
-                                        style={[styles.pickerBox, focusedInput === 'fechaNacimiento' ? styles.inputBoxFocused : {}]}
+                                        style={[styles.pickerBox, getValidationBorderStyle(validateRequired(fechaNacimiento))]}
                                     >
                                         <HStack style={{ alignItems: 'center', gap: 10, flex: 1 }}>
                                             <Icon as={ICONS.CalendarDays} style={styles.inputIcon} />
@@ -411,7 +416,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
 
                                 <VStack style={{ gap: 4 }}>
                                     <Text style={styles.inputLabel}>Teléfono (Opcional)</Text>
-                                    <Input style={[styles.inputBox, focusedInput === 'phoneNumber' ? styles.inputBoxFocused : {}]}>
+                                    <Input style={[styles.inputBox, getValidationBorderStyle(validatePhone(phoneNumber, true), focusedInput === 'phoneNumber')]}>
                                         <Icon as={ICONS.Phone} style={styles.inputIcon} />
                                         <InputField
                                             placeholder="Teléfono (9 dígitos)"
@@ -563,10 +568,10 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
 
                                 <VStack style={{ gap: 4 }}>
                                     <Text style={styles.inputLabel}>Nueva contraseña</Text>
-                                    <Input style={[styles.inputBox, focusedInput === 'contrasena' ? styles.inputBoxFocused : {}]}>
+                                    <Input style={[styles.inputBox, getValidationBorderStyle(contrasena.length > 0 ? validatePassword(contrasena) : 'neutral', focusedInput === 'contrasena')]}>
                                         <Icon as={ICONS.lock} style={styles.inputIcon} />
                                         <InputField
-                                            placeholder="Nueva contraseña (mín. 6 caracteres)"
+                                            placeholder="Nueva contraseña (mín. 8 caracteres)"
                                             placeholderTextColor={C.placeholder}
                                             secureTextEntry={!showPassword}
                                             value={contrasena}
@@ -579,11 +584,14 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                                             <Icon as={showPassword ? ICONS.eye : ICONS.eyeOff} style={{ color: C.textSecondary, width: 18, height: 18 }} />
                                         </TouchableOpacity>
                                     </Input>
+
+                                    {/* Indicador de fortaleza de contraseña */}
+                                    <PasswordStrengthIndicator password={contrasena} />
                                 </VStack>
 
                                 <VStack style={{ gap: 4 }}>
                                     <Text style={styles.inputLabel}>Confirmar nueva contraseña</Text>
-                                    <Input style={[styles.inputBox, focusedInput === 'confirmarContrasena' ? styles.inputBoxFocused : {}]}>
+                                    <Input style={[styles.inputBox, getValidationBorderStyle(contrasena.length > 0 ? validatePasswordMatch(contrasena, confirmarContrasena) : 'neutral', focusedInput === 'confirmarContrasena')]}>
                                         <Icon as={ICONS.lock} style={styles.inputIcon} />
                                         <InputField
                                             placeholder="Confirmar nueva contraseña"

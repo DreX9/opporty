@@ -43,6 +43,11 @@ import { useCategories } from '../../event/hooks/useCategories';
 import { eventService } from '../../event/services/eventService';
 import { useAuthState } from '../../auth/state';
 import { eventStateManager } from '../../event/state';
+import {
+    validateRequired, validateMinLength, validateCapacity,
+    validateDateNotPast, validateDateOrder,
+    getValidationBorderStyle,
+} from '@/src/utils/formValidation';
 
 export default function CrearEventoScreen() {
     const router = useRouter();
@@ -420,7 +425,7 @@ export default function CrearEventoScreen() {
                                 <Icon as={ICONS.Type} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Título del evento *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateRequired(form.titulo))}>
                                 <InputField
                                     placeholder="Ej: Hackathon UTP 2026"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -436,7 +441,7 @@ export default function CrearEventoScreen() {
                                 <Icon as={ICONS.AlignLeft} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Descripción del evento *</Text>
                             </HStack>
-                            <Input className="h-28 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 py-2">
+                            <Input className="h-28 rounded-xl bg-white py-2" style={getValidationBorderStyle(validateMinLength(form.descripcion, 10))}>
                                 <InputField
                                     placeholder="Escribe detalles del evento (mínimo 10 caracteres)..."
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -597,8 +602,8 @@ export default function CrearEventoScreen() {
                         <HStack className="justify-between mb-2">
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('fechaInicio')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(validateDateNotPast(form.fechaInicio))]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.CalendarDays} className="text-indigo-600 w-3.5 h-3.5" />
@@ -611,8 +616,11 @@ export default function CrearEventoScreen() {
 
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('fechaFin')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(
+                                    form.fechaFin.length === 0 ? 'neutral' :
+                                    (validateDateNotPast(form.fechaFin) === 'valid' && validateDateOrder(form.fechaInicio, form.fechaFin) === 'valid' ? 'valid' : 'invalid')
+                                )]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.CalendarDays} className="text-indigo-600 w-3.5 h-3.5" />
@@ -628,8 +636,8 @@ export default function CrearEventoScreen() {
                         <HStack className="justify-between mb-4">
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('horaInicio')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(validateRequired(form.horaInicio))]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.Clock} className="text-indigo-600 w-3.5 h-3.5" />
@@ -642,8 +650,8 @@ export default function CrearEventoScreen() {
 
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('horaFin')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(validateRequired(form.horaFin))]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.Clock} className="text-indigo-600 w-3.5 h-3.5" />
@@ -693,7 +701,7 @@ export default function CrearEventoScreen() {
 
                             <TouchableOpacity onPress={() => setModalMapaVisible(true)} activeOpacity={0.7}>
                                 <View pointerEvents="none">
-                                    <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                                    <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateRequired(form.lugar))}>
                                         <InputField
                                             placeholder="Presiona para seleccionar en el mapa..."
                                             className="text-[#111827] placeholder:text-gray-400"
@@ -751,7 +759,7 @@ export default function CrearEventoScreen() {
                                     <Icon as={ICONS.Users} className="text-indigo-600 w-4 h-4" />
                                     <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Aforo (Capacidad) *</Text>
                                 </HStack>
-                                <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                                <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateCapacity(form.capacidad))}>
                                     <InputField
                                         placeholder="Ej: 150"
                                         className="text-[#111827] placeholder:text-gray-400"
@@ -767,7 +775,7 @@ export default function CrearEventoScreen() {
                                     <Icon as={ICONS.GraduationCap} className="text-indigo-600 w-4 h-4" />
                                     <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Edad Mínima *</Text>
                                 </HStack>
-                                <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                                <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateCapacity(form.edadMinima))}>
                                     <InputField
                                         placeholder="Ej: 16"
                                         className="text-[#111827] placeholder:text-gray-400"
@@ -785,7 +793,7 @@ export default function CrearEventoScreen() {
                                 <Icon as={ICONS.FileText} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Requisitos para participar *</Text>
                             </HStack>
-                            <Input className="h-24 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 py-2">
+                            <Input className="h-24 rounded-xl bg-white py-2" style={getValidationBorderStyle(validateMinLength(form.requisitos, 10))}>
                                 <InputField
                                     placeholder="Ej: Llevar laptop, carné de estudiante..."
                                     className="text-[#111827] placeholder:text-gray-400"
