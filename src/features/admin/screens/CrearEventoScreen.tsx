@@ -691,14 +691,18 @@ export default function CrearEventoScreen() {
                                 </TouchableOpacity>
                             </HStack>
 
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
-                                <InputField
-                                    placeholder="Ej: Auditorio Central, Campus San Isidro"
-                                    className="text-[#111827] placeholder:text-gray-400"
-                                    value={form.lugar}
-                                    onChangeText={actualizarCampo('lugar')}
-                                />
-                            </Input>
+                            <TouchableOpacity onPress={() => setModalMapaVisible(true)} activeOpacity={0.7}>
+                                <View pointerEvents="none">
+                                    <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                                        <InputField
+                                            placeholder="Presiona para seleccionar en el mapa..."
+                                            className="text-[#111827] placeholder:text-gray-400"
+                                            value={form.lugar}
+                                            editable={false}
+                                        />
+                                    </Input>
+                                </View>
+                            </TouchableOpacity>
                         </VStack>
 
                         {/* Campo Referencia */}
@@ -720,6 +724,7 @@ export default function CrearEventoScreen() {
                         <SelectorMapaModal
                             visible={modalMapaVisible}
                             onClose={() => setModalMapaVisible(false)}
+                            initialCoords={form.latitud && form.longitud ? { latitude: form.latitud, longitude: form.longitud } : null}
                             onUbicacionSeleccionada={(datos) => {
                                 setForm(prev => ({
                                     ...prev,

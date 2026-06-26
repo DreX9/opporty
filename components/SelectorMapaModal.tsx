@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
 import MapView, { Marker, MapPressEvent } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -19,9 +19,11 @@ interface SelectorMapaProps {
     visible: boolean;
     onClose: () => void;
     onUbicacionSeleccionada: (datos: { direccion: string; coords: { lat: number; lng: number } }) => void;
+    initialCoords?: { latitude: number; longitude: number } | null;
 }
 
-export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada }: SelectorMapaProps) {
+export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada, initialCoords }: SelectorMapaProps) {
+    const mapRef = useRef<MapView | null>(null);
     const [marcador, setMarcador] = useState<{ latitude: number; longitude: number } | null>(null);
     const [direccionTexto, setDireccionTexto] = useState('');
     const [cargandoDireccion, setCargandoDireccion] = useState(false);
@@ -52,6 +54,78 @@ export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada }:
         }
     };
 
+    useEffect(() => {
+        if (!visible) return;
+
+        const inicializarUbicacion = async () => {
+            const isLimaDefault = initialCoords && 
+                                  Math.abs(initialCoords.latitude - LIMA_COORDS.latitude) < 0.0001 && 
+                                  Math.abs(initialCoords.longitude - LIMA_COORDS.longitude) < 0.0001;
+
+            // Caso 1: Coordenadas iniciales provistas por selección previa o edición (y no son las por defecto)
+            if (initialCoords && 
+                initialCoords.latitude !== 0 && 
+                initialCoords.longitude !== 0 && 
+                !isLimaDefault) {
+                
+                const targetCoords = {
+                    latitude: initialCoords.latitude,
+                    longitude: initialCoords.longitude,
+                };
+                setMarcador(targetCoords);
+                obtenerDireccionTexto(targetCoords.latitude, targetCoords.longitude);
+                
+                setTimeout(() => {
+                    mapRef.current?.animateToRegion({
+                        ...targetCoords,
+                        latitudeDelta: 0.015,
+                        longitudeDelta: 0.015,
+                    }, 1000);
+                }, 200);
+                return;
+            }
+
+            // Caso 2: Evento nuevo (o coordenadas por defecto) - Obtener la ubicación actual del usuario
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === 'granted') {
+                    const location = await Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+                    });
+                    const currentCoords = {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                    };
+                    setMarcador(currentCoords);
+                    obtenerDireccionTexto(currentCoords.latitude, currentCoords.longitude);
+                    
+                    setTimeout(() => {
+                        mapRef.current?.animateToRegion({
+                            ...currentCoords,
+                            latitudeDelta: 0.015,
+                            longitudeDelta: 0.015,
+                        }, 1000);
+                    }, 200);
+                } else {
+                    usarDefaultLocation();
+                }
+            } catch (error) {
+                console.error('Error obteniendo ubicación actual:', error);
+                usarDefaultLocation();
+            }
+        };
+
+        const usarDefaultLocation = () => {
+            setMarcador(null);
+            setDireccionTexto('');
+            setTimeout(() => {
+                mapRef.current?.animateToRegion(LIMA_COORDS, 1000);
+            }, 200);
+        };
+
+        inicializarUbicacion();
+    }, [visible, initialCoords]);
+
     const manejarPresionMapa = (e: MapPressEvent) => {
         const coords = e.nativeEvent.coordinate;
         setMarcador(coords);
@@ -72,6 +146,7 @@ export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada }:
         <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
             <View style={styles.container}>
                 <MapView
+                    ref={mapRef}
                     style={styles.map}
                     initialRegion={LIMA_COORDS}
                     onPress={manejarPresionMapa}
