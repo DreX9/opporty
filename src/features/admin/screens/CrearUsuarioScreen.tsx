@@ -87,7 +87,7 @@ export default function CrearUsuarioScreen() {
     // Pickers de fecha
     const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
     const [showHiringDatePicker, setShowHiringDatePicker] = useState(false);
-    const [birthDateValue, setBirthDateValue] = useState(new Date());
+    const [birthDateValue, setBirthDateValue] = useState(new Date(2008, 0, 1));
     const [hiringDateValue, setHiringDateValue] = useState(new Date());
 
     // Cargar roles dinámicamente desde el backend
@@ -140,37 +140,41 @@ export default function CrearUsuarioScreen() {
     };
 
     // ── Validaciones por paso ───────────────────────────────────────────────
-    const validarPaso1 = (): string | null => {
-        if (form.firstName.trim().length < 2) return 'El nombre debe tener al menos 2 caracteres.';
-        if (form.lastName.trim().length < 2) return 'Los apellidos deben tener al menos 2 caracteres.';
-        if (!/^\d{8}$/.test(form.dni)) return 'El DNI debe tener exactamente 8 dígitos.';
-        if (!form.birthDate) return 'La fecha de nacimiento es obligatoria.';
+    const validarPaso1 = (): string[] => {
+        const errors: string[] = [];
+        if (form.firstName.trim().length < 2) errors.push('- Nombres (mín. 2 letras)');
+        if (form.lastName.trim().length < 2) errors.push('- Apellidos (mín. 2 letras)');
+        if (!/^\d{8}$/.test(form.dni)) errors.push('- DNI (debe tener exactamente 8 dígitos)');
+        if (!form.birthDate) errors.push('- Fecha de nacimiento (requerida)');
         if (form.phoneNumber && !/^\d{9}$/.test(form.phoneNumber))
-            return 'El teléfono debe tener exactamente 9 dígitos.';
-        return null;
+            errors.push('- Teléfono (debe tener exactamente 9 dígitos)');
+        return errors;
     };
 
-    const validarPaso2 = (): string | null => {
-        if (!form.status) return 'El estado del docente es obligatorio.';
-        return null;
+    const validarPaso2 = (): string[] => {
+        const errors: string[] = [];
+        if (!form.status) errors.push('- Estado del docente (requerido)');
+        return errors;
     };
 
-    const validarPaso3 = (): string | null => {
+    const validarPaso3 = (): string[] => {
+        const errors: string[] = [];
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-            return 'Por favor ingresa un correo electrónico válido.';
-        if (form.password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
-        if (form.roleId === null) return 'Debes seleccionar un rol para el docente.';
-        return null;
+            errors.push('- Correo electrónico (formato inválido)');
+        if (validatePassword(form.password) !== 'valid')
+            errors.push('- Contraseña (debe cumplir los 4 criterios de seguridad)');
+        if (form.roleId === null) errors.push('- Rol del docente (seleccione uno)');
+        return errors;
     };
 
     const pasoSiguiente = () => {
-        let error: string | null = null;
-        if (pasoActual === 1) error = validarPaso1();
-        else if (pasoActual === 2) error = validarPaso2();
-        else if (pasoActual === 3) error = validarPaso3();
+        let errors: string[] = [];
+        if (pasoActual === 1) errors = validarPaso1();
+        else if (pasoActual === 2) errors = validarPaso2();
+        else if (pasoActual === 3) errors = validarPaso3();
 
-        if (error) {
-            Alert.alert('⚠️ Campo inválido', error);
+        if (errors.length > 0) {
+            Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${errors.join('\n')}`);
             return;
         }
 
@@ -400,9 +404,12 @@ export default function CrearUsuarioScreen() {
                             </HStack>
                             <TouchableOpacity
                                 onPress={() => setShowBirthDatePicker(true)}
-                                className="h-12 rounded-xl bg-white border border-[#E9EAF4] px-4 justify-center"
+                                style={[
+                                    { height: 48, borderRadius: 12, backgroundColor: '#FFFFFF', paddingHorizontal: 16, justifyContent: 'center' },
+                                    getValidationBorderStyle(validateRequired(form.birthDate))
+                                ]}
                             >
-                                <Text className={form.birthDate ? 'text-[#111827]' : 'text-gray-400'}>
+                                <Text style={{ color: form.birthDate ? '#111827' : '#9CA3AF', fontSize: 14 }}>
                                     {form.birthDate || 'Seleccionar fecha'}
                                 </Text>
                             </TouchableOpacity>

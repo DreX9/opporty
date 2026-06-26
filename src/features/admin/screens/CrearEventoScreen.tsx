@@ -45,7 +45,7 @@ import { useAuthState } from '../../auth/state';
 import { eventStateManager } from '../../event/state';
 import {
     validateRequired, validateMinLength, validateCapacity,
-    validateDateNotPast, validateDateOrder,
+    validateDateNotPast, validateDateOrder, validateTimeNotPast, validateEndTime,
     getValidationBorderStyle,
 } from '@/src/utils/formValidation';
 
@@ -288,22 +288,61 @@ export default function CrearEventoScreen() {
         }
 
         if (pasoActual === 1) {
-            if (errores.titulo || errores.descripcion || errores.categorias || errores.modalidad || errores.imagenes) {
-                Alert.alert('⚠️ Campos requeridos', 'Completa el Título, Descripción detallada (mín. 10 caracteres), selecciona al menos una Categoría, la Modalidad y sube al menos una Imagen.');
+            const listErrors: string[] = [];
+            if (form.titulo.trim().length === 0) listErrors.push('- Título (requerido)');
+            if (form.descripcion.trim().length < 10) listErrors.push('- Descripción detallada (mín. 10 caracteres)');
+            if (form.categoryIds.length === 0) listErrors.push('- Categorías (selecciona al menos una)');
+            if (form.modalidad === '') listErrors.push('- Modalidad (requerida)');
+            if (form.imageUrls.length === 0) listErrors.push('- Imágenes (sube al menos una)');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
         } else if (pasoActual === 2) {
-            if (errores.fechaInicio || errores.fechaFin || errores.horaInicio || errores.horaFin || errores.lugar) {
-                Alert.alert('⚠️ Campos requeridos', 'Ingresa la Fecha de Inicio, Fecha de Fin, Hora de Inicio, Hora Final y el Lugar del evento.');
-                return;
+            const listErrors: string[] = [];
+            if (form.fechaInicio === '') {
+                listErrors.push('- Fecha de Inicio (requerida)');
+            } else if (validateDateNotPast(form.fechaInicio) !== 'valid') {
+                listErrors.push('- Fecha de Inicio (no puede ser anterior a la actual)');
             }
-            if (new Date(form.fechaInicio) > new Date(form.fechaFin)) {
-                Alert.alert('⚠️ Fechas inválidas', 'La fecha de fin no puede ser anterior a la fecha de inicio.');
+
+            if (form.fechaFin === '') {
+                listErrors.push('- Fecha de Fin (requerida)');
+            } else if (validateDateNotPast(form.fechaFin) !== 'valid') {
+                listErrors.push('- Fecha de Fin (no puede ser anterior a la actual)');
+            } else if (validateDateOrder(form.fechaInicio, form.fechaFin) !== 'valid') {
+                listErrors.push('- Fecha de Fin (no puede ser anterior a la Fecha de Inicio)');
+            }
+
+            if (form.horaInicio === '') {
+                listErrors.push('- Hora de Inicio (requerida)');
+            } else if (validateTimeNotPast(form.fechaInicio, form.horaInicio) !== 'valid') {
+                listErrors.push('- Hora de Inicio (no puede ser anterior a la actual)');
+            }
+
+            if (form.horaFin === '') {
+                listErrors.push('- Hora de Fin (requerida)');
+            } else if (validateEndTime(form.fechaInicio, form.fechaFin, form.horaInicio, form.horaFin) !== 'valid') {
+                listErrors.push('- Hora de Fin (debe ser posterior a la Hora de Inicio)');
+            }
+
+            if (form.lugar.trim().length === 0) {
+                listErrors.push('- Lugar del evento (seleccione en el mapa)');
+            }
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
         } else if (pasoActual === 3) {
-            if (errores.capacidad || errores.edadMinima || errores.requisitos) {
-                Alert.alert('⚠️ Campos requeridos', 'Ingresa la Capacidad de aforo, Edad Mínima y los Requisitos (mín. 10 caracteres) del evento.');
+            const listErrors: string[] = [];
+            if (validateCapacity(form.capacidad) !== 'valid') listErrors.push('- Capacidad de aforo (debe ser mayor a 0)');
+            if (validateCapacity(form.edadMinima) !== 'valid') listErrors.push('- Edad Mínima (debe ser mayor a 0)');
+            if (validateMinLength(form.requisitos, 10) !== 'valid') listErrors.push('- Requisitos (mín. 10 caracteres)');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
         }
@@ -636,7 +675,9 @@ export default function CrearEventoScreen() {
                         <HStack className="justify-between mb-4">
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('horaInicio')}
-                                style={[{ width: '48%' }, getValidationBorderStyle(validateRequired(form.horaInicio))]}
+                                style={[{ width: '48%' }, getValidationBorderStyle(
+                                    form.horaInicio.length === 0 ? 'neutral' : validateTimeNotPast(form.fechaInicio, form.horaInicio)
+                                )]}
                                 className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
@@ -650,7 +691,9 @@ export default function CrearEventoScreen() {
 
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('horaFin')}
-                                style={[{ width: '48%' }, getValidationBorderStyle(validateRequired(form.horaFin))]}
+                                style={[{ width: '48%' }, getValidationBorderStyle(
+                                    form.horaFin.length === 0 ? 'neutral' : validateEndTime(form.fechaInicio, form.fechaFin, form.horaInicio, form.horaFin)
+                                )]}
                                 className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>

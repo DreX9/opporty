@@ -79,7 +79,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     const [apellidos, setApellidos] = useState('');
     const [email, setEmail] = useState('');
     const [dni, setDni] = useState('');
-    const [fechaNacimiento, setFechaNacimiento] = useState('');
+    const [fechaNacimiento, setFechaNacimiento] = useState('01/01/2008');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [carrera, setCarrera] = useState('');
     const [ciclo, setCiclo] = useState('');
@@ -89,7 +89,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     // --- ESTADOS ADICIONALES ---
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [dateValue, setDateValue] = useState(new Date());
+    const [dateValue, setDateValue] = useState(new Date(2008, 0, 1));
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
@@ -117,12 +117,13 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         setApellidos('');
         setEmail('');
         setDni('');
-        setFechaNacimiento('');
+        setFechaNacimiento('01/01/2008');
         setPhoneNumber('');
         setCarrera('');
         setCiclo('');
         setContrasena('');
         setConfirmarContrasena('');
+        setDateValue(new Date(2008, 0, 1));
         setFocusedInput(null);
         onClose();
     };
@@ -151,44 +152,40 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         carrera: carrera.trim().length < 2,
         ciclo: ciclo.trim().length === 0,
         phoneNumber: phoneNumber.trim().length > 0 && !/^\d{9}$/.test(phoneNumber),
-        contrasena: contrasena.length < 6,
-        confirmarContrasena: contrasena !== confirmarContrasena,
+        contrasena: validatePassword(contrasena) !== 'valid',
+        confirmarContrasena: validatePasswordMatch(contrasena, confirmarContrasena) !== 'valid',
     };
 
     const handleSiguiente = () => {
         if (pasoActual === 1) {
-            if (erroresPaso1.nombres || erroresPaso1.apellidos) {
-                Alert.alert('⚠️ Campos inválidos', 'Por favor ingresa nombres y apellidos válidos.');
-                return;
-            }
-            if (erroresPaso1.email) {
-                Alert.alert('⚠️ Correo inválido', 'Por favor ingresa un correo electrónico universitario válido.');
-                return;
-            }
-            if (erroresPaso1.dni) {
-                Alert.alert('⚠️ DNI inválido', 'El DNI debe tener exactamente 8 dígitos.');
-                return;
-            }
-            if (erroresPaso1.fechaNacimiento) {
-                Alert.alert('⚠️ Fecha requerida', 'Por favor selecciona tu fecha de nacimiento.');
+            const listErrors: string[] = [];
+            if (nombres.trim().length < 2) listErrors.push('- Nombres (mín. 2 letras)');
+            if (apellidos.trim().length < 2) listErrors.push('- Apellidos (mín. 2 letras)');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) listErrors.push('- Correo electrónico (formato inválido)');
+            if (!/^\d{8}$/.test(dni)) listErrors.push('- DNI (debe tener exactamente 8 dígitos)');
+            if (fechaNacimiento.trim().length === 0) listErrors.push('- Fecha de nacimiento (requerida)');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
             setPasoActual(2);
         } else {
-            if (erroresPaso2.carrera || erroresPaso2.ciclo) {
-                Alert.alert('⚠️ Información académica incompleta', 'Por favor ingresa tu carrera y ciclo.');
-                return;
+            const listErrors: string[] = [];
+            if (carrera.trim().length < 2) listErrors.push('- Carrera (seleccione una)');
+            if (ciclo.trim().length === 0) listErrors.push('- Ciclo (seleccione uno)');
+            if (phoneNumber.trim().length > 0 && !/^\d{9}$/.test(phoneNumber)) {
+                listErrors.push('- Teléfono (debe tener exactamente 9 dígitos)');
             }
-            if (erroresPaso2.phoneNumber) {
-                Alert.alert('⚠️ Teléfono inválido', 'El número de teléfono debe tener exactamente 9 dígitos.');
-                return;
+            if (validatePassword(contrasena) !== 'valid') {
+                listErrors.push('- Contraseña (debe cumplir los 4 criterios de seguridad)');
             }
-            if (erroresPaso2.contrasena) {
-                Alert.alert('⚠️ Contraseña débil', 'La contraseña debe tener al menos 6 caracteres.');
-                return;
+            if (validatePasswordMatch(contrasena, confirmarContrasena) !== 'valid') {
+                listErrors.push('- Confirmar contraseña (debe coincidir con la contraseña)');
             }
-            if (erroresPaso2.confirmarContrasena) {
-                Alert.alert('⚠️ Contraseñas no coinciden', 'La contraseña de confirmación no coincide.');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
 

@@ -86,6 +86,75 @@ export function validateDateOrder(startDateStr: string, endDateStr: string): Val
     return end >= start ? 'valid' : 'invalid';
 }
 
+export function validateTimeNotPast(dateStr: string, timeStr: string): ValidationState {
+    if (!timeStr || timeStr.length === 0) return 'neutral';
+    if (!dateStr || dateStr.length === 0) return 'neutral';
+
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return 'neutral';
+    const eventDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    
+    const today = new Date();
+    const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    if (eventDate > todayZero) {
+        return 'valid';
+    }
+
+    if (eventDate.getTime() === todayZero.getTime()) {
+        const timeParts = timeStr.split(':');
+        if (timeParts.length < 2) return 'neutral';
+        const eventHour = parseInt(timeParts[0], 10);
+        const eventMin = parseInt(timeParts[1], 10);
+
+        const currentHour = today.getHours();
+        const currentMin = today.getMinutes();
+
+        if (eventHour > currentHour) return 'valid';
+        if (eventHour === currentHour && eventMin >= currentMin) return 'valid';
+        return 'invalid';
+    }
+
+    return 'invalid';
+}
+
+export function validateEndTime(
+    startDateStr: string,
+    endDateStr: string,
+    startTimeStr: string,
+    endTimeStr: string
+): ValidationState {
+    if (!endTimeStr || endTimeStr.length === 0) return 'neutral';
+    if (!startDateStr || !endDateStr || !startTimeStr) return 'neutral';
+
+    const startParts = startDateStr.split('-');
+    const endParts = endDateStr.split('-');
+    if (startParts.length !== 3 || endParts.length !== 3) return 'neutral';
+    
+    const start = new Date(parseInt(startParts[0], 10), parseInt(startParts[1], 10) - 1, parseInt(startParts[2], 10));
+    const end = new Date(parseInt(endParts[0], 10), parseInt(endParts[1], 10) - 1, parseInt(endParts[2], 10));
+
+    if (end < start) return 'invalid';
+
+    if (startDateStr === endDateStr) {
+        const tStartParts = startTimeStr.split(':');
+        const tEndParts = endTimeStr.split(':');
+        if (tStartParts.length < 2 || tEndParts.length < 2) return 'neutral';
+
+        const startHour = parseInt(tStartParts[0], 10);
+        const startMin = parseInt(tStartParts[1], 10);
+        const endHour = parseInt(tEndParts[0], 10);
+        const endMin = parseInt(tEndParts[1], 10);
+
+        if (endHour > startHour) return 'valid';
+        if (endHour === startHour && endMin > startMin) return 'valid';
+        return 'invalid';
+    }
+
+    return 'valid';
+}
+
+
 // ── Helper para obtener estilo de borde ───────────────────────────────────────
 export function getValidationBorderStyle(
     state: ValidationState,

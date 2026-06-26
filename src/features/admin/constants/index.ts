@@ -37,7 +37,7 @@ export const ESTADO_INICIAL_DOCENTE: TeacherFormData = {
   firstName: '',
   lastName: '',
   dni: '',
-  birthDate: '',
+  birthDate: '01/01/2008',
   phoneNumber: '',
   title: '',
   specialty: '',

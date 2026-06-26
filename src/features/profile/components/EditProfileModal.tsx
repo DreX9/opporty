@@ -71,7 +71,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
     const [nombres, setNombres] = useState('');
     const [apellidos, setApellidos] = useState('');
     const [dni, setDni] = useState('');
-    const [fechaNacimiento, setFechaNacimiento] = useState('');
+    const [fechaNacimiento, setFechaNacimiento] = useState('01/01/2008');
     const [phoneNumber, setPhoneNumber] = useState('');
 
     // --- ESTADOS ACADÉMICOS (Estudiante) ---
@@ -94,7 +94,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
     // --- PICKERS DE FECHA ---
     const [showBirthPicker, setShowBirthPicker] = useState(false);
     const [showHiringPicker, setShowHiringPicker] = useState(false);
-    const [birthDateValue, setBirthDateValue] = useState(new Date());
+    const [birthDateValue, setBirthDateValue] = useState(new Date(2008, 0, 1));
     const [hiringDateValue, setHiringDateValue] = useState(new Date());
 
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -113,13 +113,15 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         setNombres(profile.nombres);
                         setApellidos(profile.apellidos);
                         setDni(profile.dni);
-                        setFechaNacimiento(fromIsoDate(profile.fechaNacimiento));
+                        setFechaNacimiento(profile.fechaNacimiento ? fromIsoDate(profile.fechaNacimiento) : '01/01/2008');
                         setPhoneNumber(profile.phoneNumber || '');
                         setCarrera(profile.carrera || '');
                         setCiclo(profile.ciclo ? `Ciclo ${profile.ciclo}` : '');
                         
                         if (profile.fechaNacimiento) {
                             setBirthDateValue(new Date(profile.fechaNacimiento + 'T12:00:00'));
+                        } else {
+                            setBirthDateValue(new Date(2008, 0, 1));
                         }
                     })
                     .catch(() => {
@@ -134,7 +136,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         setNombres(profile.nombres);
                         setApellidos(profile.apellidos);
                         setDni(profile.dni);
-                        setFechaNacimiento(fromIsoDate(profile.fechaNacimiento));
+                        setFechaNacimiento(profile.fechaNacimiento ? fromIsoDate(profile.fechaNacimiento) : '01/01/2008');
                         setPhoneNumber(profile.telefono || '');
                         setTitulo(profile.titulo || '');
                         setEspecialidad(profile.especialidad || '');
@@ -152,6 +154,8 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         
                         if (profile.fechaNacimiento) {
                             setBirthDateValue(new Date(profile.fechaNacimiento + 'T12:00:00'));
+                        } else {
+                            setBirthDateValue(new Date(2008, 0, 1));
                         }
                         if (profile.hiringDate) {
                             setHiringDateValue(new Date(profile.hiringDate + 'T12:00:00'));
@@ -199,31 +203,36 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
     };
 
     // Validaciones
-    const getValidationErrors = (): string | null => {
-        if (nombres.trim().length < 2) return 'Nombres debe tener al menos 2 caracteres.';
-        if (apellidos.trim().length < 2) return 'Apellidos debe tener al menos 2 caracteres.';
-        if (!/^\d{8}$/.test(dni)) return 'El DNI debe tener exactamente 8 dígitos.';
-        if (!fechaNacimiento) return 'La fecha de nacimiento es requerida.';
-        if (phoneNumber && !/^\d{9}$/.test(phoneNumber)) return 'El teléfono debe tener exactamente 9 dígitos.';
+    const getValidationErrors = (): string[] => {
+        const errors: string[] = [];
+        if (nombres.trim().length < 2) errors.push('- Nombres (mín. 2 letras)');
+        if (apellidos.trim().length < 2) errors.push('- Apellidos (mín. 2 letras)');
+        if (!/^\d{8}$/.test(dni)) errors.push('- DNI (debe tener exactamente 8 dígitos)');
+        if (!fechaNacimiento) errors.push('- Fecha de nacimiento (requerida)');
+        if (phoneNumber && !/^\d{9}$/.test(phoneNumber)) errors.push('- Teléfono (debe tener exactamente 9 dígitos)');
 
         if (isStudent) {
-            if (carrera.trim().length < 2) return 'La carrera es obligatoria.';
+            if (carrera.trim().length < 2) errors.push('- Carrera (seleccione una)');
             const cicloNum = Number(ciclo.replace('Ciclo ', ''));
-            if (!ciclo || isNaN(cicloNum) || cicloNum < 1 || cicloNum > 10) return 'El ciclo debe ser un número válido entre 1 y 10.';
+            if (!ciclo || isNaN(cicloNum) || cicloNum < 1 || cicloNum > 10) errors.push('- Ciclo (debe ser un número válido entre 1 y 10)');
         }
 
         if (contrasena) {
-            if (contrasena.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
-            if (contrasena !== confirmarContrasena) return 'Las contraseñas no coinciden.';
+            if (validatePassword(contrasena) !== 'valid') {
+                errors.push('- Contraseña nueva (debe cumplir los 4 criterios de seguridad)');
+            }
+            if (validatePasswordMatch(contrasena, confirmarContrasena) !== 'valid') {
+                errors.push('- Confirmar contraseña (debe coincidir con la contraseña nueva)');
+            }
         }
 
-        return null;
+        return errors;
     };
 
     const handleSave = async () => {
-        const errorMsg = getValidationErrors();
-        if (errorMsg) {
-            Alert.alert('⚠️ Campo inválido', errorMsg);
+        const errors = getValidationErrors();
+        if (errors.length > 0) {
+            Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${errors.join('\n')}`);
             return;
         }
 
