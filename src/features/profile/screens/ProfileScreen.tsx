@@ -26,6 +26,7 @@ import { VStack } from '@/components/ui/vstack';
 import { useRouter } from 'expo-router';
 import { useAuthState, authStateManager } from '../../auth/state';
 import * as Clipboard from 'expo-clipboard';
+import OnboardingScreen from '../../auth/screens/OnboardingScreen';
 
 import { C, MENU_ITEMS } from '../constants';
 import { Interes } from '../types';
@@ -75,6 +76,7 @@ export default function ProfileScreen() {
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+    const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
     // ── Cargar intereses persistidos al montar ─────────────────────────────────
     useEffect(() => {
@@ -250,6 +252,8 @@ export default function ProfileScreen() {
             setIsNotifOpen(true);
         } else if (id === 'eventos') {
             router.push('/tabs/event');
+        } else if (id === 'tutorial') {
+            setIsOnboardingOpen(true);
         } else if (id === 'privacidad') {
             Alert.alert('Privacidad', 'Esta sección se habilitará próximamente.');
         }
@@ -792,6 +796,16 @@ export default function ProfileScreen() {
                 icon={ICONS.arrrowDownUp}
                 iconColor="#EF4444"
             />
+
+            {/* ── MODAL DEL TUTORIAL DE BIENVENIDA ── */}
+            <Modal
+                visible={isOnboardingOpen}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setIsOnboardingOpen(false)}
+            >
+                <OnboardingScreen onFinish={() => setIsOnboardingOpen(false)} isModal={true} />
+            </Modal>
         </ScrollView>
 
     );

@@ -36,5 +36,6 @@ export const INTERESES_INICIAL: Interes[] = [
 export const MENU_ITEMS: MenuItem[] = [
     { id: 'eventos',    icono: ICONS.CalendarDays, etiqueta: 'Mis Eventos',           info: '5 eventos' },
     { id: 'notif',      icono: ICONS.radar,        etiqueta: 'Notificaciones',         badge: 'dot' },
+    { id: 'tutorial',   icono: ICONS.bookOpen,     etiqueta: 'Ver tutorial de bienvenida' },
     { id: 'privacidad', icono: ICONS.Shield,       etiqueta: 'Privacidad y Seguridad' },
 ];
