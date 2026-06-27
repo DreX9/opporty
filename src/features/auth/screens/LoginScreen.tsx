@@ -123,7 +123,7 @@ export default function LoginScreen() {
                                 <InputField
                                     className="text-white flex-1 text-base"
                                     style={{ color: '#ffffff' }}
-                                    placeholder="Usuario (ej. std12032667)"
+                                    placeholder="Usuario (ej. 2026567801)"
                                     placeholderTextColor="rgba(255, 255, 255, 0.6)"
                                     value={user}
                                     onChangeText={setUser}

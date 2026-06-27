@@ -354,12 +354,28 @@ export default function EventManagement({
                     <Text className="text-amber-600 text-xs font-bold mr-2">En Revisión</Text>
                   )
                 ) : (
-                  <TouchableOpacity
-                    onPress={() => onEliminar(evento.id)}
-                    className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200"
-                  >
-                    <Text className="text-rose-700 text-xs font-bold">Eliminar</Text>
-                  </TouchableOpacity>
+                  <>
+                    {/* Botón Corregir para el Manager creador del evento rechazado */}
+                    {evento.estado === 'Rechazado' && role === 'MANAGER' && payload?.sub && evento.raw?.createdByUsername === payload.sub && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          router.push({
+                            pathname: '/tabs/admin/crear-evento',
+                            params: { id: evento.id }
+                          });
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-indigo-600"
+                      >
+                        <Text className="text-white text-xs font-bold">Corregir</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => onEliminar(evento.id)}
+                      className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200"
+                    >
+                      <Text className="text-rose-700 text-xs font-bold">Eliminar</Text>
+                    </TouchableOpacity>
+                  </>
                 )}
               </HStack>
             </HStack>
@@ -1101,7 +1117,9 @@ export default function EventManagement({
                       <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '700' }}>Eliminar</Text>
                     </TouchableOpacity>
 
-                    {reviewingEvent.estado === 'Rechazado' && role === 'ADMIN' && (
+                    {reviewingEvent.estado === 'Rechazado' && (
+                      (role === 'ADMIN' || (role === 'MANAGER' && payload?.sub && reviewingEvent.raw?.createdByUsername === payload.sub))
+                    ) && (
                       <TouchableOpacity
                         onPress={() => {
                           const eventId = reviewingEvent.id;
@@ -1129,7 +1147,9 @@ export default function EventManagement({
                         activeOpacity={0.8}
                       >
                         <Icon as={ICONS.edit2} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
-                        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>Editar</Text>
+                        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
+                          {role === 'MANAGER' ? 'Corregir y Reenviar' : 'Editar'}
+                        </Text>
                       </TouchableOpacity>
                     )}
 

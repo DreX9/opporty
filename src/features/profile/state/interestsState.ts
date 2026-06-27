@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { profileService } from '../services/profileService';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -29,26 +30,52 @@ export async function loadInterests(username: string): Promise<void> {
     try {
         const stored = await AsyncStorage.getItem(getStorageKey(username));
         if (stored) {
-            const parsed: string[] = JSON.parse(stored);
-            globalActiveCategories = parsed;
+            globalActiveCategories = JSON.parse(stored);
+            notifyListeners();
         } else {
             globalActiveCategories = [];
+            notifyListeners();
         }
     } catch {
         globalActiveCategories = [];
+        notifyListeners();
     }
-    notifyListeners();
+
+    // Intentar sincronizar con el backend
+    if (username && username !== 'guest') {
+        try {
+            const backendInterests = await profileService.fetchInterests();
+            const names = backendInterests.map(c => c.nombre.toLowerCase());
+            globalActiveCategories = names;
+            notifyListeners();
+            await AsyncStorage.setItem(getStorageKey(username), JSON.stringify(names));
+        } catch (e) {
+            console.log('Error syncing interests from backend:', e);
+        }
+    }
 }
 
 // ── Guardar intereses ─────────────────────────────────────────────────────────
 
-export async function saveInterests(username: string, activeCategories: string[]): Promise<void> {
+export async function saveInterests(
+    username: string, 
+    activeCategories: string[], 
+    activeIds?: number[]
+): Promise<void> {
     globalActiveCategories = activeCategories;
     notifyListeners();
     try {
         await AsyncStorage.setItem(getStorageKey(username), JSON.stringify(activeCategories));
     } catch {
         // silenciar error de escritura
+    }
+
+    if (username && username !== 'guest' && activeIds) {
+        try {
+            await profileService.saveInterests(activeIds);
+        } catch (e) {
+            console.log('Error saving interests to backend:', e);
+        }
     }
 }
 

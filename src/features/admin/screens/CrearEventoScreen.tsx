@@ -43,6 +43,11 @@ import { useCategories } from '../../event/hooks/useCategories';
 import { eventService } from '../../event/services/eventService';
 import { useAuthState } from '../../auth/state';
 import { eventStateManager } from '../../event/state';
+import {
+    validateRequired, validateMinLength, validateCapacity,
+    validateDateNotPast, validateDateOrder, validateTimeNotPast, validateEndTime,
+    getValidationBorderStyle,
+} from '@/src/utils/formValidation';
 
 export default function CrearEventoScreen() {
     const router = useRouter();
@@ -283,22 +288,61 @@ export default function CrearEventoScreen() {
         }
 
         if (pasoActual === 1) {
-            if (errores.titulo || errores.descripcion || errores.categorias || errores.modalidad || errores.imagenes) {
-                Alert.alert('⚠️ Campos requeridos', 'Completa el Título, Descripción detallada (mín. 10 caracteres), selecciona al menos una Categoría, la Modalidad y sube al menos una Imagen.');
+            const listErrors: string[] = [];
+            if (form.titulo.trim().length === 0) listErrors.push('- Título (requerido)');
+            if (form.descripcion.trim().length < 10) listErrors.push('- Descripción detallada (mín. 10 caracteres)');
+            if (form.categoryIds.length === 0) listErrors.push('- Categorías (selecciona al menos una)');
+            if (form.modalidad === '') listErrors.push('- Modalidad (requerida)');
+            if (form.imageUrls.length === 0) listErrors.push('- Imágenes (sube al menos una)');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
         } else if (pasoActual === 2) {
-            if (errores.fechaInicio || errores.fechaFin || errores.horaInicio || errores.horaFin || errores.lugar) {
-                Alert.alert('⚠️ Campos requeridos', 'Ingresa la Fecha de Inicio, Fecha de Fin, Hora de Inicio, Hora Final y el Lugar del evento.');
-                return;
+            const listErrors: string[] = [];
+            if (form.fechaInicio === '') {
+                listErrors.push('- Fecha de Inicio (requerida)');
+            } else if (validateDateNotPast(form.fechaInicio) !== 'valid') {
+                listErrors.push('- Fecha de Inicio (no puede ser anterior a la actual)');
             }
-            if (new Date(form.fechaInicio) > new Date(form.fechaFin)) {
-                Alert.alert('⚠️ Fechas inválidas', 'La fecha de fin no puede ser anterior a la fecha de inicio.');
+
+            if (form.fechaFin === '') {
+                listErrors.push('- Fecha de Fin (requerida)');
+            } else if (validateDateNotPast(form.fechaFin) !== 'valid') {
+                listErrors.push('- Fecha de Fin (no puede ser anterior a la actual)');
+            } else if (validateDateOrder(form.fechaInicio, form.fechaFin) !== 'valid') {
+                listErrors.push('- Fecha de Fin (no puede ser anterior a la Fecha de Inicio)');
+            }
+
+            if (form.horaInicio === '') {
+                listErrors.push('- Hora de Inicio (requerida)');
+            } else if (validateTimeNotPast(form.fechaInicio, form.horaInicio) !== 'valid') {
+                listErrors.push('- Hora de Inicio (no puede ser anterior a la actual)');
+            }
+
+            if (form.horaFin === '') {
+                listErrors.push('- Hora de Fin (requerida)');
+            } else if (validateEndTime(form.fechaInicio, form.fechaFin, form.horaInicio, form.horaFin) !== 'valid') {
+                listErrors.push('- Hora de Fin (debe ser posterior a la Hora de Inicio)');
+            }
+
+            if (form.lugar.trim().length === 0) {
+                listErrors.push('- Lugar del evento (seleccione en el mapa)');
+            }
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
         } else if (pasoActual === 3) {
-            if (errores.capacidad || errores.edadMinima || errores.requisitos) {
-                Alert.alert('⚠️ Campos requeridos', 'Ingresa la Capacidad de aforo, Edad Mínima y los Requisitos (mín. 10 caracteres) del evento.');
+            const listErrors: string[] = [];
+            if (validateCapacity(form.capacidad) !== 'valid') listErrors.push('- Capacidad de aforo (debe ser mayor a 0)');
+            if (validateCapacity(form.edadMinima) !== 'valid') listErrors.push('- Edad Mínima (debe ser mayor a 0)');
+            if (validateMinLength(form.requisitos, 10) !== 'valid') listErrors.push('- Requisitos (mín. 10 caracteres)');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
         }
@@ -420,7 +464,7 @@ export default function CrearEventoScreen() {
                                 <Icon as={ICONS.Type} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Título del evento *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateRequired(form.titulo))}>
                                 <InputField
                                     placeholder="Ej: Hackathon UTP 2026"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -436,7 +480,7 @@ export default function CrearEventoScreen() {
                                 <Icon as={ICONS.AlignLeft} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Descripción del evento *</Text>
                             </HStack>
-                            <Input className="h-28 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 py-2">
+                            <Input className="h-28 rounded-xl bg-white py-2" style={getValidationBorderStyle(validateMinLength(form.descripcion, 10))}>
                                 <InputField
                                     placeholder="Escribe detalles del evento (mínimo 10 caracteres)..."
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -597,8 +641,8 @@ export default function CrearEventoScreen() {
                         <HStack className="justify-between mb-2">
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('fechaInicio')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(validateDateNotPast(form.fechaInicio))]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.CalendarDays} className="text-indigo-600 w-3.5 h-3.5" />
@@ -611,8 +655,11 @@ export default function CrearEventoScreen() {
 
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('fechaFin')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(
+                                    form.fechaFin.length === 0 ? 'neutral' :
+                                    (validateDateNotPast(form.fechaFin) === 'valid' && validateDateOrder(form.fechaInicio, form.fechaFin) === 'valid' ? 'valid' : 'invalid')
+                                )]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.CalendarDays} className="text-indigo-600 w-3.5 h-3.5" />
@@ -628,8 +675,10 @@ export default function CrearEventoScreen() {
                         <HStack className="justify-between mb-4">
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('horaInicio')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(
+                                    form.horaInicio.length === 0 ? 'neutral' : validateTimeNotPast(form.fechaInicio, form.horaInicio)
+                                )]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.Clock} className="text-indigo-600 w-3.5 h-3.5" />
@@ -642,8 +691,10 @@ export default function CrearEventoScreen() {
 
                             <TouchableOpacity
                                 onPress={() => setCurrentPicker('horaFin')}
-                                style={{ width: '48%' }}
-                                className="bg-white border border-[#E9EAF4] rounded-2xl p-4"
+                                style={[{ width: '48%' }, getValidationBorderStyle(
+                                    form.horaFin.length === 0 ? 'neutral' : validateEndTime(form.fechaInicio, form.fechaFin, form.horaInicio, form.horaFin)
+                                )]}
+                                className="bg-white rounded-2xl p-4"
                             >
                                 <HStack className="items-center mb-1" style={{ gap: 4 }}>
                                     <Icon as={ICONS.Clock} className="text-indigo-600 w-3.5 h-3.5" />
@@ -691,14 +742,18 @@ export default function CrearEventoScreen() {
                                 </TouchableOpacity>
                             </HStack>
 
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
-                                <InputField
-                                    placeholder="Ej: Auditorio Central, Campus San Isidro"
-                                    className="text-[#111827] placeholder:text-gray-400"
-                                    value={form.lugar}
-                                    onChangeText={actualizarCampo('lugar')}
-                                />
-                            </Input>
+                            <TouchableOpacity onPress={() => setModalMapaVisible(true)} activeOpacity={0.7}>
+                                <View pointerEvents="none">
+                                    <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateRequired(form.lugar))}>
+                                        <InputField
+                                            placeholder="Presiona para seleccionar en el mapa..."
+                                            className="text-[#111827] placeholder:text-gray-400"
+                                            value={form.lugar}
+                                            editable={false}
+                                        />
+                                    </Input>
+                                </View>
+                            </TouchableOpacity>
                         </VStack>
 
                         {/* Campo Referencia */}
@@ -720,6 +775,7 @@ export default function CrearEventoScreen() {
                         <SelectorMapaModal
                             visible={modalMapaVisible}
                             onClose={() => setModalMapaVisible(false)}
+                            initialCoords={form.latitud && form.longitud ? { latitude: form.latitud, longitude: form.longitud } : null}
                             onUbicacionSeleccionada={(datos) => {
                                 setForm(prev => ({
                                     ...prev,
@@ -746,7 +802,7 @@ export default function CrearEventoScreen() {
                                     <Icon as={ICONS.Users} className="text-indigo-600 w-4 h-4" />
                                     <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Aforo (Capacidad) *</Text>
                                 </HStack>
-                                <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                                <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateCapacity(form.capacidad))}>
                                     <InputField
                                         placeholder="Ej: 150"
                                         className="text-[#111827] placeholder:text-gray-400"
@@ -762,7 +818,7 @@ export default function CrearEventoScreen() {
                                     <Icon as={ICONS.GraduationCap} className="text-indigo-600 w-4 h-4" />
                                     <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Edad Mínima *</Text>
                                 </HStack>
-                                <Input className="h-12 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500">
+                                <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateCapacity(form.edadMinima))}>
                                     <InputField
                                         placeholder="Ej: 16"
                                         className="text-[#111827] placeholder:text-gray-400"
@@ -780,7 +836,7 @@ export default function CrearEventoScreen() {
                                 <Icon as={ICONS.FileText} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Requisitos para participar *</Text>
                             </HStack>
-                            <Input className="h-24 rounded-xl bg-white border-[#E9EAF4] focus:border-indigo-500 py-2">
+                            <Input className="h-24 rounded-xl bg-white py-2" style={getValidationBorderStyle(validateMinLength(form.requisitos, 10))}>
                                 <InputField
                                     placeholder="Ej: Llevar laptop, carné de estudiante..."
                                     className="text-[#111827] placeholder:text-gray-400"

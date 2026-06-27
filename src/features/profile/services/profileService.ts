@@ -2,6 +2,7 @@ import axios from 'axios';
 import { authStateManager } from '../../auth/state';
 import { StudentProfile, TeacherProfile, StudentWriteData, TeacherWriteData } from '../types';
 import { API_URL } from '../../../config/apiConfig';
+import { CategoriaBackend } from '../../event/types/api';
 
 const apiClient = axios.create({
     baseURL: API_URL,
@@ -62,5 +63,19 @@ export const profileService = {
             headers: getAuthHeaders(),
         });
         return response.data;
+    },
+
+    async fetchInterests(): Promise<CategoriaBackend[]> {
+        const response = await apiClient.get<CategoriaBackend[]>('/users/me/interests', {
+            headers: getAuthHeaders(),
+        });
+        return Array.isArray(response.data) ? response.data : [];
+    },
+
+    async saveInterests(categoryIds: number[]): Promise<CategoriaBackend[]> {
+        const response = await apiClient.put<CategoriaBackend[]>('/users/me/interests', { categoryIds }, {
+            headers: getAuthHeaders(),
+        });
+        return Array.isArray(response.data) ? response.data : [];
     },
 };

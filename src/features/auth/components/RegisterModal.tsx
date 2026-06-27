@@ -23,6 +23,11 @@ import * as Clipboard from 'expo-clipboard';
 
 import { RegisterModalProps, DatosRegistro } from '../types';
 import DropdownSelect from '@/components/DropdownSelect';
+import {
+    validateEmail, validatePassword, validatePasswordMatch,
+    validateDni, validatePhone, validateMinLength, validateRequired,
+    getValidationBorderStyle, PasswordStrengthIndicator,
+} from '@/src/utils/formValidation';
 
 export const LISTA_CARRERAS = [
     'Ingeniería de Sistemas',
@@ -74,7 +79,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     const [apellidos, setApellidos] = useState('');
     const [email, setEmail] = useState('');
     const [dni, setDni] = useState('');
-    const [fechaNacimiento, setFechaNacimiento] = useState('');
+    const [fechaNacimiento, setFechaNacimiento] = useState('01/01/2008');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [carrera, setCarrera] = useState('');
     const [ciclo, setCiclo] = useState('');
@@ -84,7 +89,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     // --- ESTADOS ADICIONALES ---
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [dateValue, setDateValue] = useState(new Date());
+    const [dateValue, setDateValue] = useState(new Date(2008, 0, 1));
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
@@ -96,12 +101,11 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     // --- CÁLCULO DINÁMICO DEL USERNAME ---
     const getGeneratedUsername = () => {
         const hasDni = dni.length === 8;
-        const hasDate = fechaNacimiento.length === 10;
-        const dd = hasDate ? fechaNacimiento.substring(0, 2) : 'DD';
-        const mm = hasDate ? fechaNacimiento.substring(3, 5) : 'MM';
-        const yy = hasDate ? fechaNacimiento.substring(8, 10) : 'YY';
-        const xx = hasDni ? dni.substring(6, 8) : 'XX';
-        return `std${dd}${mm}${yy}${xx}`;
+        const lastFour = hasDni ? dni.substring(4, 8) : 'XXXX';
+        const currentYear = new Date().getFullYear();
+        const suffixVal = currentYear - 2026 + 1;
+        const suffix = suffixVal > 0 ? String(suffixVal).padStart(2, '0') : '01';
+        return `${currentYear}${lastFour}${suffix}`;
     };
     const generatedUsername = getGeneratedUsername();
 
@@ -112,12 +116,13 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         setApellidos('');
         setEmail('');
         setDni('');
-        setFechaNacimiento('');
+        setFechaNacimiento('01/01/2008');
         setPhoneNumber('');
         setCarrera('');
         setCiclo('');
         setContrasena('');
         setConfirmarContrasena('');
+        setDateValue(new Date(2008, 0, 1));
         setFocusedInput(null);
         onClose();
     };
@@ -146,44 +151,40 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         carrera: carrera.trim().length < 2,
         ciclo: ciclo.trim().length === 0,
         phoneNumber: phoneNumber.trim().length > 0 && !/^\d{9}$/.test(phoneNumber),
-        contrasena: contrasena.length < 6,
-        confirmarContrasena: contrasena !== confirmarContrasena,
+        contrasena: validatePassword(contrasena) !== 'valid',
+        confirmarContrasena: validatePasswordMatch(contrasena, confirmarContrasena) !== 'valid',
     };
 
     const handleSiguiente = () => {
         if (pasoActual === 1) {
-            if (erroresPaso1.nombres || erroresPaso1.apellidos) {
-                Alert.alert('⚠️ Campos inválidos', 'Por favor ingresa nombres y apellidos válidos.');
-                return;
-            }
-            if (erroresPaso1.email) {
-                Alert.alert('⚠️ Correo inválido', 'Por favor ingresa un correo electrónico universitario válido.');
-                return;
-            }
-            if (erroresPaso1.dni) {
-                Alert.alert('⚠️ DNI inválido', 'El DNI debe tener exactamente 8 dígitos.');
-                return;
-            }
-            if (erroresPaso1.fechaNacimiento) {
-                Alert.alert('⚠️ Fecha requerida', 'Por favor selecciona tu fecha de nacimiento.');
+            const listErrors: string[] = [];
+            if (nombres.trim().length < 2) listErrors.push('- Nombres (mín. 2 letras)');
+            if (apellidos.trim().length < 2) listErrors.push('- Apellidos (mín. 2 letras)');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) listErrors.push('- Correo electrónico (formato inválido)');
+            if (!/^\d{8}$/.test(dni)) listErrors.push('- DNI (debe tener exactamente 8 dígitos)');
+            if (fechaNacimiento.trim().length === 0) listErrors.push('- Fecha de nacimiento (requerida)');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
             setPasoActual(2);
         } else {
-            if (erroresPaso2.carrera || erroresPaso2.ciclo) {
-                Alert.alert('⚠️ Información académica incompleta', 'Por favor ingresa tu carrera y ciclo.');
-                return;
+            const listErrors: string[] = [];
+            if (carrera.trim().length < 2) listErrors.push('- Carrera (seleccione una)');
+            if (ciclo.trim().length === 0) listErrors.push('- Ciclo (seleccione uno)');
+            if (phoneNumber.trim().length > 0 && !/^\d{9}$/.test(phoneNumber)) {
+                listErrors.push('- Teléfono (debe tener exactamente 9 dígitos)');
             }
-            if (erroresPaso2.phoneNumber) {
-                Alert.alert('⚠️ Teléfono inválido', 'El número de teléfono debe tener exactamente 9 dígitos.');
-                return;
+            if (validatePassword(contrasena) !== 'valid') {
+                listErrors.push('- Contraseña (debe cumplir los 4 criterios de seguridad)');
             }
-            if (erroresPaso2.contrasena) {
-                Alert.alert('⚠️ Contraseña débil', 'La contraseña debe tener al menos 6 caracteres.');
-                return;
+            if (validatePasswordMatch(contrasena, confirmarContrasena) !== 'valid') {
+                listErrors.push('- Confirmar contraseña (debe coincidir con la contraseña)');
             }
-            if (erroresPaso2.confirmarContrasena) {
-                Alert.alert('⚠️ Contraseñas no coinciden', 'La contraseña de confirmación no coincide.');
+
+            if (listErrors.length > 0) {
+                Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`);
                 return;
             }
 
@@ -276,7 +277,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                         <Input
                                             style={[
                                                 styles.inputBox,
-                                                focusedInput === 'nombres' ? styles.inputBoxFocused : {}
+                                                getValidationBorderStyle(validateMinLength(nombres, 2), focusedInput === 'nombres')
                                             ]}
                                         >
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
@@ -296,7 +297,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                         <Input
                                             style={[
                                                 styles.inputBox,
-                                                focusedInput === 'apellidos' ? styles.inputBoxFocused : {}
+                                                getValidationBorderStyle(validateMinLength(apellidos, 2), focusedInput === 'apellidos')
                                             ]}
                                         >
                                             <Icon as={ICONS.user} style={styles.inputIcon} />
@@ -318,7 +319,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'email' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validateEmail(email), focusedInput === 'email')
                                     ]}
                                 >
                                     <Icon as={ICONS.Mail} style={styles.inputIcon} />
@@ -340,7 +341,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'dni' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validateDni(dni), focusedInput === 'dni')
                                     ]}
                                 >
                                     <Icon as={ICONS.FileText} style={styles.inputIcon} />
@@ -364,7 +365,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                     onPress={() => setShowDatePicker(true)}
                                     style={[
                                         styles.pickerBox,
-                                        focusedInput === 'fechaNacimiento' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validateRequired(fechaNacimiento))
                                     ]}
                                 >
                                     <HStack style={{ alignItems: 'center', gap: 10, flex: 1 }}>
@@ -402,7 +403,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'phoneNumber' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validatePhone(phoneNumber, true), focusedInput === 'phoneNumber')
                                     ]}
                                 >
                                     <Icon as={ICONS.Phone} style={styles.inputIcon} />
@@ -455,7 +456,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'contrasena' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validatePassword(contrasena), focusedInput === 'contrasena')
                                     ]}
                                 >
                                     <Icon as={ICONS.lock} style={styles.inputIcon} />
@@ -475,11 +476,14 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                                     </TouchableOpacity>
                                 </Input>
 
+                                {/* Indicador de fortaleza de contraseña */}
+                                <PasswordStrengthIndicator password={contrasena} />
+
                                 {/* Confirmar Contraseña */}
                                 <Input
                                     style={[
                                         styles.inputBox,
-                                        focusedInput === 'confirmarContrasena' ? styles.inputBoxFocused : {}
+                                        getValidationBorderStyle(validatePasswordMatch(contrasena, confirmarContrasena), focusedInput === 'confirmarContrasena')
                                     ]}
                                 >
                                     <Icon as={ICONS.lock} style={styles.inputIcon} />

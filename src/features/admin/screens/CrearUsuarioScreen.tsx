@@ -25,6 +25,11 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { ESTADO_INICIAL_DOCENTE, TEACHER_STATUS_OPTIONS } from '../constants';
 import { TeacherFormData, TeacherStatus, BackendRole, TeacherRegisterResponse } from '../types';
 import { adminService } from '../services/adminService';
+import {
+    validateEmail, validatePassword, validateDni,
+    validatePhone, validateMinLength, validateRequired, validateCapacity,
+    getValidationBorderStyle, PasswordStrengthIndicator,
+} from '@/src/utils/formValidation';
 
 
 export const LISTA_ESPECIALIDADES = [
@@ -70,19 +75,18 @@ export default function CrearUsuarioScreen() {
 
     const getGeneratedUsername = () => {
         const hasDni = form.dni.length === 8;
-        const hasDate = form.birthDate.length === 10;
-        const dd = hasDate ? form.birthDate.substring(0, 2) : 'DD';
-        const mm = hasDate ? form.birthDate.substring(3, 5) : 'MM';
-        const yy = hasDate ? form.birthDate.substring(8, 10) : 'YY';
-        const xx = hasDni ? form.dni.substring(6, 8) : 'XX';
-        return `mr${dd}${mm}${yy}${xx}`;
+        const lastFour = hasDni ? form.dni.substring(4, 8) : 'XXXX';
+        const currentYear = new Date().getFullYear();
+        const suffixVal = currentYear - 2026 + 1;
+        const suffix = suffixVal > 0 ? String(suffixVal).padStart(2, '0') : '01';
+        return `${currentYear}${lastFour}${suffix}`;
     };
 
 
     // Pickers de fecha
     const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
     const [showHiringDatePicker, setShowHiringDatePicker] = useState(false);
-    const [birthDateValue, setBirthDateValue] = useState(new Date());
+    const [birthDateValue, setBirthDateValue] = useState(new Date(2008, 0, 1));
     const [hiringDateValue, setHiringDateValue] = useState(new Date());
 
     // Cargar roles dinámicamente desde el backend
@@ -135,37 +139,41 @@ export default function CrearUsuarioScreen() {
     };
 
     // ── Validaciones por paso ───────────────────────────────────────────────
-    const validarPaso1 = (): string | null => {
-        if (form.firstName.trim().length < 2) return 'El nombre debe tener al menos 2 caracteres.';
-        if (form.lastName.trim().length < 2) return 'Los apellidos deben tener al menos 2 caracteres.';
-        if (!/^\d{8}$/.test(form.dni)) return 'El DNI debe tener exactamente 8 dígitos.';
-        if (!form.birthDate) return 'La fecha de nacimiento es obligatoria.';
+    const validarPaso1 = (): string[] => {
+        const errors: string[] = [];
+        if (form.firstName.trim().length < 2) errors.push('- Nombres (mín. 2 letras)');
+        if (form.lastName.trim().length < 2) errors.push('- Apellidos (mín. 2 letras)');
+        if (!/^\d{8}$/.test(form.dni)) errors.push('- DNI (debe tener exactamente 8 dígitos)');
+        if (!form.birthDate) errors.push('- Fecha de nacimiento (requerida)');
         if (form.phoneNumber && !/^\d{9}$/.test(form.phoneNumber))
-            return 'El teléfono debe tener exactamente 9 dígitos.';
-        return null;
+            errors.push('- Teléfono (debe tener exactamente 9 dígitos)');
+        return errors;
     };
 
-    const validarPaso2 = (): string | null => {
-        if (!form.status) return 'El estado del docente es obligatorio.';
-        return null;
+    const validarPaso2 = (): string[] => {
+        const errors: string[] = [];
+        if (!form.status) errors.push('- Estado del docente (requerido)');
+        return errors;
     };
 
-    const validarPaso3 = (): string | null => {
+    const validarPaso3 = (): string[] => {
+        const errors: string[] = [];
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-            return 'Por favor ingresa un correo electrónico válido.';
-        if (form.password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
-        if (form.roleId === null) return 'Debes seleccionar un rol para el docente.';
-        return null;
+            errors.push('- Correo electrónico (formato inválido)');
+        if (validatePassword(form.password) !== 'valid')
+            errors.push('- Contraseña (debe cumplir los 4 criterios de seguridad)');
+        if (form.roleId === null) errors.push('- Rol del docente (seleccione uno)');
+        return errors;
     };
 
     const pasoSiguiente = () => {
-        let error: string | null = null;
-        if (pasoActual === 1) error = validarPaso1();
-        else if (pasoActual === 2) error = validarPaso2();
-        else if (pasoActual === 3) error = validarPaso3();
+        let errors: string[] = [];
+        if (pasoActual === 1) errors = validarPaso1();
+        else if (pasoActual === 2) errors = validarPaso2();
+        else if (pasoActual === 3) errors = validarPaso3();
 
-        if (error) {
-            Alert.alert('⚠️ Campo inválido', error);
+        if (errors.length > 0) {
+            Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${errors.join('\n')}`);
             return;
         }
 
@@ -343,7 +351,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.user} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Nombres *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateMinLength(form.firstName, 2))}>
                                 <InputField
                                     placeholder="Ej: Juan Carlos"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -359,7 +367,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.user} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Apellidos *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateMinLength(form.lastName, 2))}>
                                 <InputField
                                     placeholder="Ej: Pérez Rodríguez"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -375,7 +383,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.FileText} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">DNI * (8 dígitos)</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateDni(form.dni))}>
                                 <InputField
                                     placeholder="12345678"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -395,9 +403,12 @@ export default function CrearUsuarioScreen() {
                             </HStack>
                             <TouchableOpacity
                                 onPress={() => setShowBirthDatePicker(true)}
-                                className="h-12 rounded-xl bg-white border border-[#E9EAF4] px-4 justify-center"
+                                style={[
+                                    { height: 48, borderRadius: 12, backgroundColor: '#FFFFFF', paddingHorizontal: 16, justifyContent: 'center' },
+                                    getValidationBorderStyle(validateRequired(form.birthDate))
+                                ]}
                             >
-                                <Text className={form.birthDate ? 'text-[#111827]' : 'text-gray-400'}>
+                                <Text style={{ color: form.birthDate ? '#111827' : '#9CA3AF', fontSize: 14 }}>
                                     {form.birthDate || 'Seleccionar fecha'}
                                 </Text>
                             </TouchableOpacity>
@@ -418,7 +429,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.Phone} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Teléfono (opcional, 9 dígitos)</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validatePhone(form.phoneNumber, true))}>
                                 <InputField
                                     placeholder="987654321"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -574,7 +585,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.Mail} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Correo Electrónico *</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validateEmail(form.email))}>
                                 <InputField
                                     placeholder="docente@universidad.edu"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -592,7 +603,7 @@ export default function CrearUsuarioScreen() {
                                 <Icon as={ICONS.lock} className="text-indigo-600 w-4 h-4" />
                                 <Text className="text-gray-500 text-xs font-bold uppercase tracking-wider">Contraseña * (mín. 6 caracteres)</Text>
                             </HStack>
-                            <Input className="h-12 rounded-xl bg-white border-[#E9EAF4]">
+                            <Input className="h-12 rounded-xl bg-white" style={getValidationBorderStyle(validatePassword(form.password))}>
                                 <InputField
                                     placeholder="Contraseña segura"
                                     className="text-[#111827] placeholder:text-gray-400"
@@ -602,6 +613,9 @@ export default function CrearUsuarioScreen() {
                                     onChangeText={actualizarCampo('password')}
                                 />
                             </Input>
+
+                            {/* Indicador de fortaleza de contraseña */}
+                            <PasswordStrengthIndicator password={form.password} />
                         </VStack>
 
                         {/* Selector de Rol (dinámico desde el backend) */}
