@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
-import { ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity } from 'react-native';
+import { ScrollView, KeyboardAvoidingView, Platform, Alert, TouchableOpacity, Modal } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Input, InputField } from '@/components/ui/input';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,6 +9,9 @@ import { Icon } from '@/components/ui/icon';
 import { Button, ButtonText } from '@/components/ui/button';
 import { useRouter } from 'expo-router';
 import { ICONS } from '@/components/icons';
+import * as NavigationBar from 'expo-navigation-bar';
+import { MotiView } from 'moti';
+import OnboardingScreen from './OnboardingScreen';
 
 import RegisterModal from '../components/RegisterModal';
 import { DatosRegistro } from '../types';
@@ -18,6 +21,20 @@ import { authStateManager } from '../state';
 export default function LoginScreen() {
     const router = useRouter();
 
+    // --- CONFIGURACIÓN DE LA NAV BAR (ANDROID) ---
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            NavigationBar.setBackgroundColorAsync('#A82BFA').catch(() => {});
+            NavigationBar.setButtonStyleAsync('light').catch(() => {});
+        }
+        return () => {
+            if (Platform.OS === 'android') {
+                NavigationBar.setBackgroundColorAsync('#131927').catch(() => {});
+                NavigationBar.setButtonStyleAsync('light').catch(() => {});
+            }
+        };
+    }, []);
+
     // --- ESTADOS PARA LOS INPUTS ---
     const [user, setUser] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -25,6 +42,7 @@ export default function LoginScreen() {
 
     // --- ESTADOS DEL MODAL DE REGISTRO ---
     const [showModal, setShowModal] = useState<boolean>(false);
+    const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
     // --- LÓGICA DE LOGIN ---
     const handleLogin = async () => {
@@ -96,87 +114,150 @@ export default function LoginScreen() {
                     <Box className="w-full max-w-[400px] items-center">
                         
                         {/* 🔵 LOGO CIRCULAR (White circle with blue Radar icon) */}
-                        <Box className="w-28 h-28 rounded-full bg-white items-center justify-center mb-6 shadow-xl shadow-black/20">
-                            <Icon as={ICONS.radar} className="w-14 h-14 text-uniradar-blue" style={{ color: '#1E3FFF' }} />
-                        </Box>
+                        <MotiView
+                            from={{ opacity: 0, scale: 0.8, translateY: -20 }}
+                            animate={{ opacity: 1, scale: 1, translateY: 0 }}
+                            transition={{ type: 'timing', duration: 600, delay: 100 }}
+                        >
+                            <Box className="w-28 h-28 rounded-full bg-white items-center justify-center mb-6 shadow-xl shadow-black/20">
+                                <Icon as={ICONS.radar} className="w-14 h-14 text-uniradar-blue" style={{ color: '#1E3FFF' }} />
+                            </Box>
+                        </MotiView>
 
                         {/* TÍTULO PRINCIPAL */}
-                        <Text className="text-white text-4xl font-extrabold mb-2 text-center" style={{ fontFamily: 'System' }}>
-                            Echo
-                        </Text>
+                        <MotiView
+                            from={{ opacity: 0, translateY: 15 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: 'timing', duration: 600, delay: 200 }}
+                            className="items-center"
+                        >
+                            <Text className="text-white text-4xl font-extrabold mb-2 text-center" style={{ fontFamily: 'System' }}>
+                                Echo
+                            </Text>
+                        </MotiView>
 
                         {/* SUBTÍTULO */}
-                        <Text className="text-white/85 text-sm font-medium text-center max-w-[280px] mb-10">
-                            Descubre eventos universitarios cerca de ti
-                        </Text>
+                        <MotiView
+                            from={{ opacity: 0, translateY: 15 }}
+                            animate={{ opacity: 1, translateY: 0 }}
+                            transition={{ type: 'timing', duration: 600, delay: 300 }}
+                            className="items-center"
+                        >
+                            <Text className="text-white/85 text-sm font-medium text-center max-w-[280px] mb-10">
+                                Descubre eventos universitarios cerca de ti
+                            </Text>
+                        </MotiView>
 
-                        {/* FORMULARIO DE ACCESO */}
+                        {/* FORMULARIO DE ACCESO (CONTROLES INDIVIDUALMENTE ANIMADOS) */}
                         <VStack className="w-full">
                             {/* INPUT USERNAME */}
-                            <Input 
-                                className="mb-4 h-14 rounded-full px-5 flex-row items-center border"
-                                style={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                                    borderColor: 'rgba(255, 255, 255, 0.25)'
-                                }}
+                            <MotiView
+                                from={{ opacity: 0, translateY: 20 }}
+                                animate={{ opacity: 1, translateY: 0 }}
+                                transition={{ type: 'timing', duration: 600, delay: 400 }}
+                                className="w-full"
                             >
-                                <InputField
-                                    className="text-white flex-1 text-base"
-                                    style={{ color: '#ffffff' }}
-                                    placeholder="Usuario (ej. 2026567801)"
-                                    placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                                    value={user}
-                                    onChangeText={setUser}
-                                    autoCapitalize="none"
-                                />
-                            </Input>
+                                <Input 
+                                    className="mb-4 h-14 rounded-full px-5 flex-row items-center border-0"
+                                    style={{
+                                        backgroundColor: '#FFFFFF',
+                                    }}
+                                >
+                                    <InputField
+                                        className="flex-1 text-base"
+                                        style={{ color: '#1E3FFF' }}
+                                        placeholder="Correo universitario"
+                                        placeholderTextColor="#6B7280"
+                                        value={user}
+                                        onChangeText={setUser}
+                                        autoCapitalize="none"
+                                    />
+                                </Input>
+                            </MotiView>
 
                             {/* INPUT PASSWORD */}
-                            <Input 
-                                className="mb-6 h-14 rounded-full px-5 flex-row items-center justify-between border"
-                                style={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                                    borderColor: 'rgba(255, 255, 255, 0.25)'
-                                }}
+                            <MotiView
+                                from={{ opacity: 0, translateY: 20 }}
+                                animate={{ opacity: 1, translateY: 0 }}
+                                transition={{ type: 'timing', duration: 600, delay: 500 }}
+                                className="w-full"
                             >
-                                <InputField
-                                    className="text-white flex-1 text-base pr-2"
-                                    style={{ color: '#ffffff' }}
-                                    placeholder="Contraseña"
-                                    placeholderTextColor="rgba(255, 255, 255, 0.6)"
-                                    secureTextEntry={!showPassword}
-                                    value={password}
-                                    onChangeText={setPassword}
-                                />
-                                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                    <Icon 
-                                        as={showPassword ? ICONS.eye : ICONS.eyeOff} 
-                                        className="text-white/60 w-5 h-5" 
-                                        style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                                <Input 
+                                    className="mb-6 h-14 rounded-full px-5 flex-row items-center justify-between border-0"
+                                    style={{
+                                        backgroundColor: '#FFFFFF',
+                                    }}
+                                >
+                                    <InputField
+                                        className="flex-1 text-base pr-2"
+                                        style={{ color: '#1E3FFF' }}
+                                        placeholder="Contraseña"
+                                        placeholderTextColor="#6B7280"
+                                        secureTextEntry={!showPassword}
+                                        value={password}
+                                        onChangeText={setPassword}
                                     />
-                                </TouchableOpacity>
-                            </Input>
+                                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                                        <Icon 
+                                            as={showPassword ? ICONS.eye : ICONS.eyeOff} 
+                                            className="w-5 h-5" 
+                                            style={{ color: '#1E3FFF' }}
+                                        />
+                                    </TouchableOpacity>
+                                </Input>
+                            </MotiView>
 
                             {/* BOTÓN INICIAR SESIÓN */}
-                            <Button 
-                                className="bg-white w-full h-14 rounded-full items-center justify-center shadow-lg shadow-black/15 active:bg-white/90"
-                                onPress={handleLogin}
+                            <MotiView
+                                from={{ opacity: 0, translateY: 20 }}
+                                animate={{ opacity: 1, translateY: 0 }}
+                                transition={{ type: 'timing', duration: 600, delay: 600 }}
+                                className="w-full"
                             >
-                                <ButtonText className="text-uniradar-blue font-bold text-base" style={{ color: '#1E3FFF' }}>
-                                    Iniciar Sesión
-                                </ButtonText>
-                            </Button>
+                                <Button 
+                                    className="bg-white w-full h-14 rounded-full items-center justify-center shadow-lg shadow-black/15 active:bg-white/90"
+                                    onPress={handleLogin}
+                                >
+                                    <ButtonText className="text-uniradar-blue font-bold text-base" style={{ color: '#1E3FFF' }}>
+                                        Iniciar Sesión
+                                    </ButtonText>
+                                </Button>
+                            </MotiView>
                         </VStack>
 
                         {/* REGISTRO FOOTER */}
-                        <Box className='flex-row items-center justify-center mt-8'>
-                            <Text className='mr-1.5 text-white/80 text-sm font-medium'>¿No tienes cuenta?</Text>
-                            <TouchableOpacity onPress={() => setShowModal(true)}>
-                                <Text className='text-white font-extrabold text-sm underline decoration-white'>
-                                    Regístrate
+                        <MotiView
+                            from={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ type: 'timing', duration: 600, delay: 700 }}
+                        >
+                            <Box className='flex-row items-center justify-center mt-8'>
+                                <Text className='mr-1.5 text-white/80 text-sm font-medium'>¿No tienes cuenta?</Text>
+                                <TouchableOpacity onPress={() => setShowModal(true)}>
+                                    <Text className='text-white font-extrabold text-sm underline decoration-white'>
+                                        Regístrate
+                                    </Text>
+                                </TouchableOpacity>
+                            </Box>
+                        </MotiView>
+
+                        {/* BOTÓN VER TUTORIAL EN LOGIN */}
+                        <MotiView
+                            from={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ type: 'timing', duration: 600, delay: 800 }}
+                        >
+                            <TouchableOpacity
+                                onPress={() => setIsOnboardingOpen(true)}
+                                className="flex-row items-center justify-center mt-6 px-5 py-2.5 rounded-full border border-white/20"
+                                style={{ backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+                            >
+                                <Icon as={ICONS.bookOpen} className="text-white w-4 h-4 mr-2" style={{ color: '#FFFFFF' }} />
+                                <Text className="text-white text-sm font-semibold">
+                                    Ver tutorial de bienvenida
                                 </Text>
                             </TouchableOpacity>
-                        </Box>
+                        </MotiView>
 
                     </Box>
                 </ScrollView>
@@ -187,6 +268,16 @@ export default function LoginScreen() {
                     onClose={() => setShowModal(false)} 
                     onRegister={handleRegister} 
                 />
+
+                {/* MODAL DEL TUTORIAL DE BIENVENIDA */}
+                <Modal
+                    visible={isOnboardingOpen}
+                    animationType="slide"
+                    transparent={true}
+                    onRequestClose={() => setIsOnboardingOpen(false)}
+                >
+                    <OnboardingScreen onFinish={() => setIsOnboardingOpen(false)} isModal={false} />
+                </Modal>
             </KeyboardAvoidingView>
         </LinearGradient>
     );
