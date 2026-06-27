@@ -101,12 +101,11 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     // --- CÁLCULO DINÁMICO DEL USERNAME ---
     const getGeneratedUsername = () => {
         const hasDni = dni.length === 8;
-        const hasDate = fechaNacimiento.length === 10;
-        const dd = hasDate ? fechaNacimiento.substring(0, 2) : 'DD';
-        const mm = hasDate ? fechaNacimiento.substring(3, 5) : 'MM';
-        const yy = hasDate ? fechaNacimiento.substring(8, 10) : 'YY';
-        const xx = hasDni ? dni.substring(6, 8) : 'XX';
-        return `std${dd}${mm}${yy}${xx}`;
+        const lastFour = hasDni ? dni.substring(4, 8) : 'XXXX';
+        const currentYear = new Date().getFullYear();
+        const suffixVal = currentYear - 2026 + 1;
+        const suffix = suffixVal > 0 ? String(suffixVal).padStart(2, '0') : '01';
+        return `${currentYear}${lastFour}${suffix}`;
     };
     const generatedUsername = getGeneratedUsername();
 

@@ -75,12 +75,11 @@ export default function CrearUsuarioScreen() {
 
     const getGeneratedUsername = () => {
         const hasDni = form.dni.length === 8;
-        const hasDate = form.birthDate.length === 10;
-        const dd = hasDate ? form.birthDate.substring(0, 2) : 'DD';
-        const mm = hasDate ? form.birthDate.substring(3, 5) : 'MM';
-        const yy = hasDate ? form.birthDate.substring(8, 10) : 'YY';
-        const xx = hasDni ? form.dni.substring(6, 8) : 'XX';
-        return `mr${dd}${mm}${yy}${xx}`;
+        const lastFour = hasDni ? form.dni.substring(4, 8) : 'XXXX';
+        const currentYear = new Date().getFullYear();
+        const suffixVal = currentYear - 2026 + 1;
+        const suffix = suffixVal > 0 ? String(suffixVal).padStart(2, '0') : '01';
+        return `${currentYear}${lastFour}${suffix}`;
     };
 
 
