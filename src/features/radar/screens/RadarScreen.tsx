@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import RadarRing from '@/components/animations/RadarRing';
 import { ICONS } from '@/components/icons';
 import { HStack } from '@/components/ui/hstack';
 import { Icon } from '@/components/ui/icon';
@@ -16,7 +15,6 @@ import {
     Alert,
     Linking,
     Modal,
-    Animated,
     LayoutAnimation,
     Platform,
     UIManager,
@@ -31,9 +29,17 @@ import Reanimated, {
     useSharedValue,
     useAnimatedStyle,
     withSpring,
+    withRepeat,
+    withTiming,
+    withSequence,
+    Easing,
+    cancelAnimation,
+    useDerivedValue,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Location from 'expo-location';
+import { useIsFocused } from '@react-navigation/native';
+import Svg, { Circle, Line, Path, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 
 import { C } from '../constants';
 import EventCard from '../components/EventCard';
@@ -45,6 +51,7 @@ import { Evento } from '../../event/types';
 import EventDetailModal from '../../event/components/EventDetailModal';
 import RecommendedEventCard from '../components/RecommendedEventCard';
 import { useInterests } from '../../profile/state/interestsState';
+import RadarBlip from '../components/RadarBlip';
 
 // ── Coordenadas por defecto (Lima, Perú — UTP) ────────────────────────────────
 const DEFAULT_LOCATION = { latitude: -12.046374, longitude: -77.042793 };
@@ -63,9 +70,9 @@ function calcularDistanciaKm(
     const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos((lat1 * Math.PI) / 180) *
-            Math.cos((lat2 * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
@@ -111,6 +118,82 @@ interface RadarEvento {
 export default function RadarScreen() {
     const { data: backendEvents, loading } = useEvents();
 
+    const isFocused = useIsFocused();
+
+    // 1. Barrido de radar rotatorio 360° continuo en el hilo de UI
+    const sweepRotation = useSharedValue(0);
+    useEffect(() => {
+        if (isFocused) {
+            sweepRotation.value = 0; // Resetear para que empiece de forma limpia a velocidad constante
+            sweepRotation.value = withRepeat(
+                withTiming(360, {
+                    duration: 8000, // Barrido a velocidad balanceada (3.2 segundos)
+                    easing: Easing.linear,
+                }),
+                -1,
+                false
+            );
+        } else {
+            cancelAnimation(sweepRotation);
+        }
+        return () => {
+            cancelAnimation(sweepRotation);
+        };
+    }, [isFocused]);
+
+    // 2. Pulso para favoritos y recomendados (halo externo)
+    const pulseScale = useSharedValue(1);
+    useEffect(() => {
+        if (isFocused) {
+            pulseScale.value = 1;
+            pulseScale.value = withRepeat(
+                withSequence(
+                    withTiming(1.6, { duration: 1100, easing: Easing.inOut(Easing.ease) }),
+                    withTiming(1.0, { duration: 1100, easing: Easing.inOut(Easing.ease) })
+                ),
+                -1,
+                false
+            );
+        } else {
+            cancelAnimation(pulseScale);
+        }
+        return () => {
+            cancelAnimation(pulseScale);
+        };
+    }, [isFocused]);
+
+    // 3. Animación de pulso para anillos concéntricos
+    const pulseTime = useSharedValue(0);
+    useEffect(() => {
+        if (isFocused) {
+            pulseTime.value = 0; // Resetear al iniciar ciclo
+            pulseTime.value = withRepeat(
+                withTiming(3000, {
+                    duration: 3000,
+                    easing: Easing.linear,
+                }),
+                -1,
+                false
+            );
+        } else {
+            cancelAnimation(pulseTime);
+        }
+        return () => {
+            cancelAnimation(pulseTime);
+        };
+    }, [isFocused]);
+
+    // Fases derivadas para cada anillo concéntrico
+    const phase1 = useDerivedValue(() => {
+        return pulseTime.value / 3000;
+    });
+    const phase2 = useDerivedValue(() => {
+        return ((pulseTime.value + 1000) % 3000) / 3000;
+    });
+    const phase3 = useDerivedValue(() => {
+        return ((pulseTime.value + 2000) % 3000) / 3000;
+    });
+
     const [userLocation, setUserLocation] = useState<{
         latitude: number;
         longitude: number;
@@ -128,9 +211,9 @@ export default function RadarScreen() {
         if (prevW.current !== W) {
             LayoutAnimation.configureNext({
                 duration: 280,
-                create:  { type: 'easeInEaseOut', property: 'opacity' },
-                update:  { type: 'easeInEaseOut' },
-                delete:  { type: 'easeInEaseOut', property: 'opacity' },
+                create: { type: 'easeInEaseOut', property: 'opacity' },
+                update: { type: 'easeInEaseOut' },
+                delete: { type: 'easeInEaseOut', property: 'opacity' },
             });
             prevW.current = W;
         }
@@ -228,10 +311,10 @@ export default function RadarScreen() {
 
         const filtrados = searchQuery.trim()
             ? eventosConCoordenadas.filter(
-                  (e) =>
-                      e.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                      (e.lugar ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
-              )
+                (e) =>
+                    e.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (e.lugar ?? '').toLowerCase().includes(searchQuery.toLowerCase()),
+            )
             : eventosConCoordenadas;
 
         if (filtrados.length === 0) return [];
@@ -289,6 +372,12 @@ export default function RadarScreen() {
         });
     }, [backendEvents, userLocation, searchQuery]);
 
+    const maxDistanciaKm = useMemo(() => {
+        if (radarEventos.length === 0) return 1.5;
+        const dists = radarEventos.map((re) => re.distanciaKm);
+        return Math.max(...dists, 1.5);
+    }, [radarEventos]);
+
     const toggleFavorito = (id: string) => {
         setFavoritos((prev) => {
             const next = new Set(prev);
@@ -310,52 +399,12 @@ export default function RadarScreen() {
             .slice(0, 3);
     }, [radarEventos, matchesInterest, isLoading]);
 
-    // ── Animación de pulso para puntos recomendados ───────────────────────────
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-    const dotPulseAnim = useRef(new Animated.Value(1)).current;
-    const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
-    const dotPulseLoop = useRef<Animated.CompositeAnimation | null>(null);
-
-    useEffect(() => {
-        pulseLoop.current = Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulseAnim, { toValue: 1.7, duration: 900, useNativeDriver: true }),
-                Animated.timing(pulseAnim, { toValue: 1.0, duration: 900, useNativeDriver: true }),
-            ])
-        );
-        dotPulseLoop.current = Animated.loop(
-            Animated.sequence([
-                Animated.timing(dotPulseAnim, { toValue: 1.25, duration: 600, useNativeDriver: true }),
-                Animated.timing(dotPulseAnim, { toValue: 1.0, duration: 600, useNativeDriver: true }),
-            ])
-        );
-
-        pulseLoop.current.start();
-        dotPulseLoop.current.start();
-
-        return () => {
-            pulseLoop.current?.stop();
-            dotPulseLoop.current?.stop();
-        };
-    }, [pulseAnim, dotPulseAnim]);
-
-    // Reiniciar las animaciones si cambia la lista de recomendados para evitar congelamiento
-    useEffect(() => {
-        if (eventosRecomendados.length > 0) {
-            pulseLoop.current?.start();
-            dotPulseLoop.current?.start();
-        }
-    }, [eventosRecomendados.length]);
-
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: C.bg }}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 }}
         >
-            {/* Mantener las animaciones de recomendados activas para evitar que se congelen si no hay elementos visibles */}
-            <Animated.View style={{ opacity: 0, width: 0, height: 0, position: 'absolute', transform: [{ scale: pulseAnim }] }} />
-            <Animated.View style={{ opacity: 0, width: 0, height: 0, position: 'absolute', transform: [{ scale: dotPulseAnim }] }} />
             {/* Subtítulo */}
             <Text style={{ color: C.textSecondary, fontSize: 13, marginBottom: 16 }}>
                 {userLocation
@@ -405,134 +454,206 @@ export default function RadarScreen() {
                         animatedRadarStyle,
                     ]}
                 >
-                {/* Badge de eventos detectados */}
-                <View style={styles.badge}>
-                    <Text style={{ color: C.textPrimary, fontSize: 11, fontWeight: '600' }}>
-                        {isLoading ? '...' : `${radarEventos.length} eventos detectados`}
-                    </Text>
-                </View>
-
-                {/* Anillos estáticos (estructura visual) — reducidos para evitar recorte */}
-                {[RADAR_SIZE * 0.80, RADAR_SIZE * 0.56, RADAR_SIZE * 0.30].map((s, i) => (
-                    <View
-                        key={i}
-                        style={{
-                            position: 'absolute',
-                            width: s,
-                            height: s,
-                            borderRadius: s / 2,
-                            borderWidth: 1,
-                            borderColor: '#C7C8E8',
-                        }}
-                    />
-                ))}
-
-                {/* Anillos animados (pulso) — tamaño reducido para que el scale de Moti no se recorte */}
-                <RadarRing size={RADAR_SIZE * 0.80} delay={0} color={C.radarRing1} />
-                <RadarRing size={RADAR_SIZE * 0.56} delay={1000} color={C.radarRing2} />
-                <RadarRing size={RADAR_SIZE * 0.30} delay={2000} color={C.radarRing3} />
-
-                {/* Punto central (usuario) */}
-                <View style={styles.centerDot}>
-                    <View style={styles.centerDotInner} />
-                </View>
-
-                {/* Spinner de carga sobre el radar */}
-                {isLoading && (
-                    <ActivityIndicator
-                        size="large"
-                        color={C.accent}
-                        style={{ position: 'absolute' }}
-                    />
-                )}
-
-                {/* Puntos de eventos reales sobre el radar */}
-                {!isLoading &&
-                    radarEventos.map((re) => {
-                        const esRecomendado = matchesInterest(re.card.categoria);
-                        const accentColor = getCategoryAccentColor(re.card.categoria);
-                        const dotSize = esRecomendado ? 16 : 12;
-                        return (
-                            <View
-                                key={re.card.id}
-                                style={{
-                                    position: 'absolute',
-                                    top: `${re.top * 100}%` as DimensionValue,
-                                    left: `${re.left * 100}%` as DimensionValue,
-                                    transform: [{ translateX: -(dotSize / 2) }, { translateY: -(dotSize / 2) }],
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    zIndex: esRecomendado ? 20 : 10,
-                                }}
-                            >
-                                {/* Halo pulsante solo para eventos recomendados */}
-                                {esRecomendado && (
-                                    <Animated.View
-                                        style={{
-                                            position: 'absolute',
-                                            width: dotSize * 2.2,
-                                            height: dotSize * 2.2,
-                                            borderRadius: dotSize * 1.1,
-                                            backgroundColor: `${accentColor}40`,
-                                            transform: [{ scale: pulseAnim }],
-                                        }}
-                                    />
-                                )}
-                                {esRecomendado ? (
-                                    <Animated.View
-                                        style={{
-                                            transform: [{ scale: dotPulseAnim }],
-                                            opacity: dotPulseAnim.interpolate({
-                                                inputRange: [1, 1.25],
-                                                outputRange: [0.8, 1.0],
-                                            }),
-                                        }}
-                                    >
-                                        <TouchableOpacity
-                                            onPress={() => handleEventDotPress(re)}
-                                            style={{
-                                                width: dotSize,
-                                                height: dotSize,
-                                                borderRadius: dotSize / 2,
-                                                backgroundColor: accentColor,
-                                                borderWidth: 2,
-                                                borderColor: '#FFFFFF',
-                                            }}
-                                            accessibilityLabel={`Ver evento ${re.card.titulo}`}
-                                            accessibilityRole="button"
-                                        />
-                                    </Animated.View>
-                                ) : (
-                                    <TouchableOpacity
-                                        onPress={() => handleEventDotPress(re)}
-                                        style={{
-                                            width: dotSize,
-                                            height: dotSize,
-                                            borderRadius: dotSize / 2,
-                                            backgroundColor: accentColor,
-                                            borderWidth: 0,
-                                            borderColor: '#FFFFFF',
-                                        }}
-                                        accessibilityLabel={`Ver evento ${re.card.titulo}`}
-                                        accessibilityRole="button"
-                                    />
-                                )}
-                            </View>
-                        );
-                    })}
-
-                {/* Mensaje si no hay eventos con coordenadas */}
-                {!isLoading && radarEventos.length === 0 && (
-                    <View style={styles.emptyOverlay}>
-                        <Icon as={ICONS.MapPin} style={{ color: C.textSecondary, width: 24, height: 24 }} />
-                        <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 6, textAlign: 'center' }}>
-                            {searchQuery
-                                ? 'Sin coincidencias en el radar'
-                                : 'No hay eventos con ubicación registrada'}
+                    {/* Badge de eventos detectados */}
+                    <View style={styles.badge}>
+                        <Text style={{ color: C.textPrimary, fontSize: 11, fontWeight: '600' }}>
+                            {isLoading ? '...' : `${radarEventos.length} eventos detectados`}
                         </Text>
                     </View>
-                )}
-            </Reanimated.View>
+
+                    {/* Contenedor del Radar de tamaño fijo, centrado para asegurar alineación y escala perfectas */}
+                    <View style={styles.radarCanvas}>
+                        {/* 1. Fondo de Svg estático con ejes, círculos concéntricos y textos de distancia */}
+                        <Svg
+                            width="100%"
+                            height="100%"
+                            viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`}
+                            style={StyleSheet.absoluteFillObject}
+                            pointerEvents="none"
+                        >
+                            {/* Círculos concéntricos uniformes */}
+                            <Circle cx="140" cy="140" r="112" stroke="#D1D5DB" strokeWidth="1.2" fill="none" />
+                            <Circle cx="140" cy="140" r="78.4" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="3 3" fill="none" />
+                            <Circle cx="140" cy="140" r="42" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="3 3" fill="none" />
+
+                            {/* Ejes estilizados */}
+                            <Line x1="28" y1="140" x2="252" y2="140" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4 4" />
+                            <Line x1="140" y1="28" x2="140" y2="252" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4 4" />
+
+                            {/* Referencia de distancias sobre los anillos */}
+                            <SvgText x="145" y="38" fill="#94A3B8" fontSize="8" fontWeight="600" textAnchor="start">
+                                {formatearDistancia(maxDistanciaKm)}
+                            </SvgText>
+                            <SvgText x="145" y="72" fill="#94A3B8" fontSize="8" fontWeight="600" textAnchor="start">
+                                {formatearDistancia(maxDistanciaKm * 0.7)}
+                            </SvgText>
+                            <SvgText x="145" y="108" fill="#94A3B8" fontSize="8" fontWeight="600" textAnchor="start">
+                                {formatearDistancia(maxDistanciaKm * 0.375)}
+                            </SvgText>
+                        </Svg>
+
+                        {/* 2. Anillos animados pulsantes nativos (Reanimated loops) con escala fluida porcentual */}
+                        <Reanimated.View
+                            style={[
+                                StyleSheet.absoluteFillObject,
+                                { alignItems: 'center', justifyContent: 'center' },
+                                useAnimatedStyle(() => {
+                                    return {
+                                        transform: [{ scale: 0.15 + 0.85 * phase1.value }],
+                                        opacity: 0.6 * (1 - phase1.value),
+                                    };
+                                })
+                            ]}
+                            pointerEvents="none"
+                        >
+                            <View
+                                style={{
+                                    width: '80%',
+                                    height: '80%',
+                                    borderRadius: 9999,
+                                    borderWidth: 1.5,
+                                    borderColor: C.radarRing1,
+                                }}
+                            />
+                        </Reanimated.View>
+
+                        <Reanimated.View
+                            style={[
+                                StyleSheet.absoluteFillObject,
+                                { alignItems: 'center', justifyContent: 'center' },
+                                useAnimatedStyle(() => {
+                                    return {
+                                        transform: [{ scale: 0.15 + 0.85 * phase2.value }],
+                                        opacity: 0.6 * (1 - phase2.value),
+                                    };
+                                })
+                            ]}
+                            pointerEvents="none"
+                        >
+                            <View
+                                style={{
+                                    width: '56%',
+                                    height: '56%',
+                                    borderRadius: 9999,
+                                    borderWidth: 1.5,
+                                    borderColor: C.radarRing2,
+                                }}
+                            />
+                        </Reanimated.View>
+
+                        <Reanimated.View
+                            style={[
+                                StyleSheet.absoluteFillObject,
+                                { alignItems: 'center', justifyContent: 'center' },
+                                useAnimatedStyle(() => {
+                                    return {
+                                        transform: [{ scale: 0.15 + 0.85 * phase3.value }],
+                                        opacity: 0.6 * (1 - phase3.value),
+                                    };
+                                })
+                            ]}
+                            pointerEvents="none"
+                        >
+                            <View
+                                style={{
+                                    width: '30%',
+                                    height: '30%',
+                                    borderRadius: 9999,
+                                    borderWidth: 1.5,
+                                    borderColor: C.radarRing3,
+                                }}
+                            />
+                        </Reanimated.View>
+
+                        {/* 3. Barrido de radar rotatorio con estela (Sweep y cono de luz) */}
+                        <Reanimated.View
+                            style={[
+                                StyleSheet.absoluteFillObject,
+                                useAnimatedStyle(() => {
+                                    return {
+                                        transform: [{ rotate: `${sweepRotation.value}deg` }],
+                                    };
+                                })
+                            ]}
+                            pointerEvents="none"
+                        >
+                            <Svg width="100%" height="100%" viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`} style={StyleSheet.absoluteFillObject}>
+                                <Defs>
+                                    <LinearGradient id="sweepGrad" x1="100%" y1="50%" x2="75%" y2="10%" gradientUnits="userSpaceOnUse">
+                                        <Stop offset="0%" stopColor="#6366F1" stopOpacity="0.32" />
+                                        <Stop offset="50%" stopColor="#6366F1" stopOpacity="0.12" />
+                                        <Stop offset="100%" stopColor="#6366F1" stopOpacity="0.0" />
+                                    </LinearGradient>
+                                </Defs>
+                                {/* Estela luminosa: cono gradual */}
+                                <Path
+                                    d="M 140 140 L 210 18.76 A 140 140 0 0 1 280 140 Z"
+                                    fill="url(#sweepGrad)"
+                                />
+                                {/* Brazo de barrido */}
+                                <Line
+                                    x1="140"
+                                    y1="140"
+                                    x2="280"
+                                    y2="140"
+                                    stroke="#6366F1"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                />
+                                {/* Punta brillante */}
+                                <Circle cx="280" cy="140" r="3.5" fill="#FFFFFF" />
+                            </Svg>
+                        </Reanimated.View>
+
+                        {/* Punto central (usuario) */}
+                        <View style={styles.centerDot}>
+                            <View style={styles.centerDotInner} />
+                        </View>
+
+                        {/* Puntos (blips) de eventos reales sobre el radar */}
+                        {!isLoading &&
+                            radarEventos.map((re) => {
+                                const esRecomendado = matchesInterest(re.card.categoria);
+                                const esFavorito = favoritos.has(re.card.id);
+                                const accentColor = getCategoryAccentColor(re.card.categoria);
+                                return (
+                                    <RadarBlip
+                                        key={re.card.id}
+                                        id={re.card.id}
+                                        titulo={re.card.titulo}
+                                        top={re.top}
+                                        left={re.left}
+                                        isFavorite={esRecomendado || esFavorito}
+                                        accentColor={accentColor}
+                                        onPress={() => handleEventDotPress(re)}
+                                        sweepRotation={sweepRotation}
+                                        pulseScale={pulseScale}
+                                    />
+                                );
+                            })}
+                    </View>
+
+                    {/* Spinner de carga sobre el radar */}
+                    {isLoading && (
+                        <ActivityIndicator
+                            size="large"
+                            color={C.accent}
+                            style={{ position: 'absolute', zIndex: 30 }}
+                        />
+                    )}
+
+                    {/* Mensaje si no hay eventos con coordenadas */}
+                    {!isLoading && radarEventos.length === 0 && (
+                        <View style={styles.emptyOverlay}>
+                            <Icon as={ICONS.MapPin} style={{ color: C.textSecondary, width: 24, height: 24 }} />
+                            <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 6, textAlign: 'center' }}>
+                                {searchQuery
+                                    ? 'Sin coincidencias en el radar'
+                                    : 'No hay eventos con ubicación registrada'}
+                            </Text>
+                        </View>
+                    )}
+                </Reanimated.View>
             </GestureDetector>
 
             {/* ── Sección "Puede interesarte" ───────────────────────────────── */}
@@ -632,15 +753,15 @@ export default function RadarScreen() {
                         {eventoParaOpciones && (
                             <>
                                 <View style={styles.sheetIndicator} />
-                                
+
                                 <Text style={[styles.optionsCategory, { color: getCategoryAccentColor(eventoParaOpciones.card.categoria) }]} numberOfLines={1}>
                                     {eventoParaOpciones.card.categoria.toUpperCase()}
                                 </Text>
-                                
+
                                 <Text style={styles.optionsTitle} numberOfLines={2}>
                                     {eventoParaOpciones.card.titulo}
                                 </Text>
-                                
+
                                 <HStack style={styles.optionsLocationRow}>
                                     <Icon as={ICONS.MapPin} style={{ color: C.textSecondary, width: 14, height: 14 }} />
                                     <Text style={styles.optionsLocationText} numberOfLines={1}>
@@ -710,7 +831,7 @@ export default function RadarScreen() {
                 onClose={() => setEventoSeleccionado(null)}
                 favorito={eventoSeleccionado ? favoritos.has(eventoSeleccionado.id) : false}
                 onToggleFavorito={toggleFavorito}
-                onEventSaved={() => {}}
+                onEventSaved={() => { }}
             />
         </ScrollView>
     );
@@ -736,6 +857,13 @@ const styles = StyleSheet.create({
         // overflow visible para que los anillos animados de Moti no se recorten al expandirse
         overflow: 'visible',
         position: 'relative',
+    },
+    radarCanvas: {
+        width: RADAR_SIZE,
+        height: RADAR_SIZE,
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     badge: {
         position: 'absolute',
