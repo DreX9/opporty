@@ -8,6 +8,7 @@ import {
     QrSessionWritePayload,
     QrSessionResponse,
     RegistrationBackend,
+    UpdateCheck,
 } from '../types/api';
 
 const apiClient = axios.create({
@@ -156,5 +157,16 @@ export const eventService = {
             headers: getAuthHeaders(),
         });
         return Array.isArray(response.data) ? response.data : [];
+    },
+
+    /**
+     * Verifica si ha habido actualizaciones en los eventos o registros en el backend.
+     * Endpoint: GET /api/v1/events/check-updates
+     */
+    async checkUpdates(): Promise<UpdateCheck> {
+        const response = await apiClient.get<UpdateCheck>('/events/check-updates', {
+            headers: getAuthHeaders(),
+        });
+        return response.data;
     },
 };

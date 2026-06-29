@@ -48,7 +48,8 @@ export default function EventScreen() {
 
     // Convert and filter events
     const eventos = Array.isArray(backendEvents)
-        ? backendEvents
+        ? [...backendEvents]
+              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
               .filter((ev) => ev.estado === 'PUBLISHED')
               .map(mapBackendToEvento)
         : [];
