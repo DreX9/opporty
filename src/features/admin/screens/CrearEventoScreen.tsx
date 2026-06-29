@@ -399,7 +399,16 @@ export default function CrearEventoScreen() {
                 eventStateManager.markNotificationAsRead(String(id));
                 
                 Alert.alert('✅ ¡Evento actualizado!', msgExito, [
-                    { text: 'Excelente', onPress: () => router.replace('/tabs/radar') }
+                    {
+                        text: 'Excelente',
+                        onPress: () => {
+                            if (role === 'ADMIN') {
+                                router.replace({ pathname: '/tabs/admin', params: { tab: 'eventos' } });
+                            } else {
+                                router.replace('/tabs/radar');
+                            }
+                        }
+                    }
                 ]);
             } else {
                 await eventService.createEvent(payload);
@@ -407,7 +416,16 @@ export default function CrearEventoScreen() {
                     ? `El evento "${form.titulo}" ha sido creado y enviado para revisión del administrador.`
                     : `El evento "${form.titulo}" se publicó correctamente. Será visible para los estudiantes de inmediato.`;
                 Alert.alert('✅ ¡Evento publicado!', msgExito, [
-                    { text: 'Excelente', onPress: () => router.replace('/tabs/radar') }
+                    {
+                        text: 'Excelente',
+                        onPress: () => {
+                            if (role === 'ADMIN') {
+                                router.replace({ pathname: '/tabs/admin', params: { tab: 'eventos' } });
+                            } else {
+                                router.replace('/tabs/radar');
+                            }
+                        }
+                    }
                 ]);
             }
         } catch (err) {
@@ -443,7 +461,7 @@ export default function CrearEventoScreen() {
                             Paso {pasoActual} de {totalPasos}
                         </Text>
                         <Text className="text-indigo-600 text-xs font-extrabold tracking-widest uppercase">
-                            {id ? 'Corregir Evento' : (pasoActual === 1 ? 'Detalles Básicos' : pasoActual === 2 ? 'Programación' : pasoActual === 3 ? 'Ajustes Finales' : 'Verificación')}
+                            {id ? (role === 'ADMIN' ? 'Editar Evento' : 'Corregir Evento') : (pasoActual === 1 ? 'Detalles Básicos' : pasoActual === 2 ? 'Programación' : pasoActual === 3 ? 'Ajustes Finales' : 'Verificación')}
                         </Text>
                     </HStack>
                     <Box className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">

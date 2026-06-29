@@ -313,8 +313,8 @@ export default function AdminDashboardScreen() {
 
   const handleEliminarEvento = (id: string) => {
     Alert.alert(
-      'Confirmar eliminación',
-      '¿Estás seguro de que deseas eliminar este evento permanentemente?',
+      'Eliminar Evento',
+      '¿Está seguro de que desea eliminar este evento? Esta acción no se puede deshacer.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -323,12 +323,16 @@ export default function AdminDashboardScreen() {
           onPress: async () => {
             try {
               await eventService.deleteEvent(Number(id));
-              Alert.alert('✅ Éxito', 'El evento ha sido eliminado permanentemente.');
+              Alert.alert('✅ Éxito', 'El evento ha sido eliminado correctamente.');
               refetchEvents();
-            } catch (error: unknown) {
+            } catch (error: any) {
               console.error('Error al eliminar evento:', error);
-              const errMsg = error instanceof Error ? error.message : 'No se pudo eliminar el evento.';
-              Alert.alert('⚠️ Error', errMsg);
+              let errMsg = 'No se pudo eliminar el evento.';
+              if (error && typeof error === 'object') {
+                const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
+                errMsg = axiosErr.response?.data?.message || axiosErr.message || errMsg;
+              }
+              Alert.alert('⚠️ Error al eliminar', errMsg);
             }
           }
         }
@@ -405,7 +409,7 @@ export default function AdminDashboardScreen() {
       {/* 🔴 HEADER CON GRADIENTE PREMIUM */}
       <LinearGradient
         colors={['#6366F1', '#4F46E5']}
-        style={{ paddingHorizontal: 20, paddingTop: 40, paddingBottom: 24 }}
+        style={{ paddingHorizontal: 24, paddingTop: 40, paddingBottom: 24 }}
       >
         <HStack className="justify-between items-center">
           <VStack>
@@ -423,9 +427,9 @@ export default function AdminDashboardScreen() {
           </Box>
         </HStack>
       </LinearGradient>
-
+ 
       {/* 🧭 SUB-HEADER NAVIGATION TABS */}
-      <HStack className="px-4 border-b border-gray-200 pb-3 mb-6" style={{ gap: 8 }}>
+      <HStack className="px-6 border-b border-gray-200 pb-4 mb-8 mt-4" style={{ gap: 12, alignItems: 'center' }}>
         <TouchableOpacity
           onPress={() => setActiveTab('dashboard')}
           className={`px-4 py-2 rounded-full border ${activeTab === 'dashboard' ? 'bg-indigo-50 border-indigo-600/30' : 'bg-transparent border-transparent'}`}
@@ -434,7 +438,7 @@ export default function AdminDashboardScreen() {
             Dashboard
           </Text>
         </TouchableOpacity>
-
+ 
         {(role === 'ADMIN' || role === 'MANAGER') && (
           <TouchableOpacity
             onPress={() => setActiveTab('eventos')}
@@ -445,7 +449,7 @@ export default function AdminDashboardScreen() {
             </Text>
           </TouchableOpacity>
         )}
-
+ 
         {role === 'ADMIN' && (
           <TouchableOpacity
             onPress={() => setActiveTab('usuarios')}
@@ -456,20 +460,21 @@ export default function AdminDashboardScreen() {
             </Text>
           </TouchableOpacity>
         )}
-
+ 
         {(role === 'ADMIN' || role === 'MANAGER') && (
           <TouchableOpacity
             onPress={handleNavigationToCreation}
-            className="px-4 py-2 rounded-full bg-indigo-600 items-center justify-center ml-auto"
+            className="px-5 py-2.5 rounded-full bg-indigo-600 items-center justify-center ml-auto"
+            style={{ shadowColor: '#6366F1', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 1 }}
           >
             <Text className="text-white text-xs font-extrabold">
-              {activeTab === 'usuarios' ? '+ Crear Us' : '+ Crear Ev'}
+              {activeTab === 'usuarios' ? '+ Usuario' : '+ Evento'}
             </Text>
           </TouchableOpacity>
         )}
       </HStack>
-
-      <Box className="px-4">
+ 
+      <Box className="px-6">
         {activeTab === 'dashboard' && (
           <VStack>
             <StatsGrid stats={stats} isAdmin={role === 'ADMIN'} />
