@@ -241,7 +241,7 @@ export default function RadarScreen() {
     };
 
     // ── Pinch-to-zoom ─────────────────────────────────────────────────────────
-    const ZOOM_MIN = 0.6;
+    const ZOOM_MIN = 1.0;
     const ZOOM_MAX = 3.0;
     const scale = useSharedValue(1);
     const savedScale = useSharedValue(1);
