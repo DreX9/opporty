@@ -118,3 +118,10 @@ export interface RegistrationBackend {
   notes: string | null;
   createdAt: string;          // ISO datetime
 }
+
+export interface UpdateCheck {
+  eventsCount: number;
+  eventsLastUpdated: string | null;
+  registrationsCount: number;
+  registrationsLastUpdated: string | null;
+}
