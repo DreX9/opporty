@@ -56,9 +56,9 @@ export default function ProfileScreen() {
         if (prevW.current !== W) {
             LayoutAnimation.configureNext({
                 duration: 280,
-                create:  { type: 'easeInEaseOut', property: 'opacity' },
-                update:  { type: 'easeInEaseOut' },
-                delete:  { type: 'easeInEaseOut', property: 'opacity' },
+                create: { type: 'easeInEaseOut', property: 'opacity' },
+                update: { type: 'easeInEaseOut' },
+                delete: { type: 'easeInEaseOut', property: 'opacity' },
             });
             prevW.current = W;
         }
@@ -455,23 +455,19 @@ export default function ProfileScreen() {
                 )}
             </View>
 
-            {/* ── Sección Mis Constancias ── */}
+            {/* ── Sección Historial de Eventos Asistidos ── */}
             {(() => {
                 const registradosConConstancia = EVENTOS.filter(ev => eventState.registrados.has(ev.id));
-                const totalConstanciasObtenidas = registradosConConstancia.filter(ev => {
-                    const ins = eventState.insignias[ev.id] || { ingreso: false, salida: false };
-                    return ins.ingreso && ins.salida;
-                }).length;
 
                 return (
                     <View style={[styles.section, { backgroundColor: C.cardBg, borderColor: C.cardBorder, marginTop: 16 }]}>
                         <View style={styles.sectionHeader}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Icon as={ICONS.GraduationCap} style={{ color: '#EAB308', width: 18, height: 18 }} />
-                                <Text style={styles.sectionTitle}>Mis Constancias Oficiales</Text>
+                                <Icon as={ICONS.Clock} style={{ color: '#6366F1', width: 18, height: 18 }} />
+                                <Text style={styles.sectionTitle}>Historial de Eventos</Text>
                             </View>
                             <Text style={{ color: C.textSecondary, fontSize: 13, fontWeight: '700' }}>
-                                {totalConstanciasObtenidas} Obtenidas
+                                {registradosConConstancia.length} Asistidos
                             </Text>
                         </View>
 
@@ -483,32 +479,63 @@ export default function ProfileScreen() {
                                     const hasDescargado = eventStateManager.hasDescargadoConstancia(ev.id);
 
                                     return (
-                                        <View key={ev.id} style={styles.badgeRowContainer}>
-                                            <View style={{ flex: 1, marginRight: 8 }}>
-                                                <Text style={styles.badgeEventTitle} numberOfLines={1}>
+                                        <View key={ev.id} style={[styles.badgeRowContainer, { flexDirection: 'column', alignItems: 'stretch', gap: 12 }]}>
+                                            <View style={{ flex: 1 }}>
+                                                <Text style={[styles.badgeEventTitle, { marginBottom: 2 }]} numberOfLines={1}>
                                                     {ev.titulo}
                                                 </Text>
-                                                <Text style={{ fontSize: 11, color: completado ? '#10B981' : '#6B7280', fontWeight: '600' }}>
-                                                    {completado ? '🎓 Constancia Disponible' : '⏳ Asistencia en curso'}
+                                                <Text style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>
+                                                    {ev.fecha} · {ev.hora} · {ev.lugar}
+                                                </Text>
+                                                <Text style={{ fontSize: 11, color: completado ? '#10B981' : '#F59E0B', fontWeight: '600' }}>
+                                                    {completado ? '🎓 Asistencia Completa' : '⏳ Asistencia Incompleta (Faltan QRs)'}
                                                 </Text>
                                             </View>
 
-                                            {completado ? (
-                                                <TouchableOpacity
-                                                    onPress={() => handleOpenDiploma(ev)}
-                                                    style={hasDescargado ? styles.certDownloadBtnMiniSuccess : styles.certDownloadBtnMini}
-                                                >
-                                                    <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
-                                                    <Text style={styles.certDownloadBtnMiniText}>
-                                                        {hasDescargado ? 'Descargada ✓' : 'Descargar PDF'}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ) : (
-                                                <View style={styles.certStatusPendingBox}>
-                                                    <Icon as={ICONS.lock} style={{ color: '#94A3B8', width: 11, height: 11 }} />
-                                                    <Text style={styles.certStatusPendingText}>Faltan QRs</Text>
-                                                </View>
-                                            )}
+                                            <HStack style={{ gap: 8 }}>
+                                                {ev.grabacionUrl && (
+                                                    <TouchableOpacity
+                                                        onPress={() => Alert.alert('Grabación', 'Redirigiendo a la grabación del evento...')}
+                                                        style={{
+                                                            flex: 1,
+                                                            flexDirection: 'row',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            gap: 6,
+                                                            backgroundColor: '#EEF2FF',
+                                                            paddingVertical: 8,
+                                                            borderRadius: 8,
+                                                            borderWidth: 1,
+                                                            borderColor: '#C7D2FE',
+                                                        }}
+                                                    >
+                                                        <Icon as={ICONS.Play} style={{ color: '#4F46E5', width: 14, height: 14 }} />
+                                                        <Text style={{ fontSize: 12, color: '#4F46E5', fontWeight: '600' }}>
+                                                            Ver Grabación
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                )}
+
+                                                {completado ? (
+                                                    <TouchableOpacity
+                                                        onPress={() => handleOpenDiploma(ev)}
+                                                        style={[
+                                                            hasDescargado ? styles.certDownloadBtnMiniSuccess : styles.certDownloadBtnMini,
+                                                            { flex: 1, paddingVertical: 8, height: 'auto', marginBottom: 0 }
+                                                        ]}
+                                                    >
+                                                        <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
+                                                        <Text style={styles.certDownloadBtnMiniText}>
+                                                            {hasDescargado ? 'Descargada ✓' : 'Constancia'}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ) : (
+                                                    <View style={[styles.certStatusPendingBox, { flex: 1, paddingVertical: 8, height: 'auto' }]}>
+                                                        <Icon as={ICONS.lock} style={{ color: '#94A3B8', width: 14, height: 14 }} />
+                                                        <Text style={styles.certStatusPendingText}>No disponible</Text>
+                                                    </View>
+                                                )}
+                                            </HStack>
                                         </View>
                                     );
                                 })}
@@ -516,7 +543,7 @@ export default function ProfileScreen() {
                         ) : (
                             <View style={styles.noBadgesBox}>
                                 <Text style={styles.noBadgesText}>
-                                    Aún no tienes constancias académicas. Regístrate a eventos, asiste y escanea tus códigos QR para desbloquearlas.
+                                    Aún no tienes eventos en tu historial. Regístrate y asiste a eventos para verlos aquí.
                                 </Text>
                             </View>
                         )}
