@@ -73,5 +73,22 @@ export const notificationService = {
       console.error(`Error al marcar notificación ${id} como leída:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Marca todas las notificaciones como leídas
+   */
+  async markAllAsRead(): Promise<void> {
+    try {
+      await apiClient.patch('/notifications/mark-all-read', null, {
+          headers: getAuthHeaders(),
+      });
+      import('react-native').then(({ DeviceEventEmitter }) => {
+          DeviceEventEmitter.emit('notificationMarkedAsRead');
+      });
+    } catch (error: any) {
+      console.error('Error al marcar todas las notificaciones como leídas:', error);
+      throw error;
+    }
   }
 };

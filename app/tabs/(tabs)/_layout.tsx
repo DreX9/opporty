@@ -147,7 +147,7 @@ export default function TabLayout() {
     };
 
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30_000);
+    const interval = setInterval(fetchUnread, 5000);
     
     // Escuchar cuando una notificación es marcada como leída desde cualquier pantalla
     const { DeviceEventEmitter } = require('react-native');
