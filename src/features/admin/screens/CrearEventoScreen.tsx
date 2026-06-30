@@ -363,6 +363,7 @@ export default function CrearEventoScreen() {
     };
 
     const ejecutarCreacion = async () => {
+        if (publicando) return;
         setPublicando(true);
         try {
             const payload = {

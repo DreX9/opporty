@@ -315,7 +315,7 @@ export default function EventManagement({
               {/* Botón de QR removido a petición del usuario */}
 
               <HStack style={{ gap: 8, marginLeft: 'auto', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                {role === 'ADMIN' && (
+                {(role === 'ADMIN' || ((role === 'MANAGER' || role === 'TEACHER') && payload?.sub && evento.raw?.createdByUsername === payload.sub)) && (
                   <>
                     <TouchableOpacity
                       onPress={() => {
@@ -940,8 +940,7 @@ export default function EventManagement({
                 shadowRadius: 3,
                 elevation: 5,
               }}>
-                {/* Botones de acción dinámicos según el Rol del usuario y estado del evento */}
-                {role === 'ADMIN' && (
+                {(role === 'ADMIN' || ((role === 'MANAGER' || role === 'TEACHER') && payload?.sub && reviewingEvent.raw?.createdByUsername === payload.sub)) && (
                   <>
                     <TouchableOpacity
                       onPress={() => {
@@ -968,7 +967,7 @@ export default function EventManagement({
                       <Icon as={ICONS.Trash2} style={{ color: '#EF4444', width: 14, height: 14 }} />
                       <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '700' }}>Eliminar</Text>
                     </TouchableOpacity>
-
+ 
                     <TouchableOpacity
                       onPress={() => {
                         const eventId = reviewingEvent.id;

@@ -146,7 +146,7 @@ export default function ProfileScreen() {
         const interval = setInterval(() => {
             refetchEvents?.();
             fetchNotifs();
-        }, 30_000);
+        }, 5000);
         return () => clearInterval(interval);
     }, [refetchEvents]);
 
@@ -675,6 +675,39 @@ export default function ProfileScreen() {
                                 <Icon as={ICONS.X} style={{ color: '#6B7280', width: 20, height: 20 }} />
                             </TouchableOpacity>
                         </View>
+
+                        {/* Botón de Marcar todo como leído */}
+                        {listaSolicitudes.length > 0 && (
+                            <HStack style={{ justifyContent: 'flex-end', marginBottom: 12, paddingHorizontal: 4, width: '100%' }}>
+                                <TouchableOpacity
+                                    onPress={async () => {
+                                        try {
+                                            const { notificationService } = require('../services/notificationService');
+                                            await notificationService.markAllAsRead();
+                                            setServerNotifications([]);
+                                        } catch (e) {
+                                            console.error('Error al marcar todo como leído:', e);
+                                        }
+                                    }}
+                                    style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        backgroundColor: '#F1F5F9',
+                                        borderRadius: 8,
+                                        paddingVertical: 6,
+                                        paddingHorizontal: 12,
+                                        borderWidth: 1,
+                                        borderColor: '#E2E8F0',
+                                    }}
+                                >
+                                    <Icon as={ICONS.CheckCircle} style={{ color: '#475569', width: 14, height: 14 }} />
+                                    <Text style={{ fontSize: 12, color: '#475569', fontWeight: '700' }}>
+                                        Marcar todo como leído
+                                    </Text>
+                                </TouchableOpacity>
+                            </HStack>
+                        )}
 
                         {/* Listado de Solicitudes/Notificaciones */}
                         {listaSolicitudes.length > 0 ? (
