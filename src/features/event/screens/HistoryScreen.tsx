@@ -201,6 +201,7 @@ export default function HistoryScreen() {
             {filtrados.map((ev) => {
               const insignias = eventStateManager.getInsignias(ev.id);
               const hasVideo = !!(ev.raw?.grabacionUrl || (ev as any).grabacionUrl);
+              const hasConstancia = eventStateManager.isCertificateUnlocked(ev.id);
 
               return (
                 <View key={ev.id} style={{ width: cardWidth, marginBottom: GAP }}>
@@ -210,7 +211,7 @@ export default function HistoryScreen() {
                       favorito={false} 
                       onToggleFavorito={() => {}} 
                       onVerDetalle={(evento) => setEventoSeleccionado(evento)}
-                      style={{ borderBottomWidth: 0 }}
+                      style={{ borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
                     />
                     {/* Add a finished indicator overlay / footer */}
                     <View style={styles.cardFooter}>
@@ -218,15 +219,23 @@ export default function HistoryScreen() {
                         <HStack style={{ gap: 4, alignItems: 'center' }}>
                           <View style={[styles.dot, (insignias.ingreso && insignias.salida) ? styles.dotGreen : styles.dotGray]} />
                           <Text style={styles.statusText}>
-                            {(insignias.ingreso && insignias.salida) ? 'Asistencia Completa' : (ev.estado === 'FINISHED' ? 'Finalizado' : 'Inscrito')}
+                            {(insignias.ingreso && insignias.salida) ? 'Asistencia Completa' : (ev.raw?.estado === 'FINISHED' ? 'Finalizado' : 'Inscrito')}
                           </Text>
                         </HStack>
-                        {hasVideo && (
-                          <HStack style={{ gap: 4, alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
-                            <Icon as={ICONS.Play} style={{ color: '#4F46E5', width: 10, height: 10 }} />
-                            <Text style={styles.videoText}>Grabación</Text>
-                          </HStack>
-                        )}
+                        <HStack style={{ gap: 6 }}>
+                          {hasConstancia && (
+                            <HStack style={{ gap: 4, alignItems: 'center', backgroundColor: '#ECFDF5', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, borderWidth: 1, borderColor: '#A7F3D0' }}>
+                              <Icon as={ICONS.Award} style={{ color: '#059669', width: 10, height: 10 }} />
+                              <Text style={[styles.videoText, { color: '#059669' }]}>Constancia</Text>
+                            </HStack>
+                          )}
+                          {hasVideo && (
+                            <HStack style={{ gap: 4, alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                              <Icon as={ICONS.Play} style={{ color: '#4F46E5', width: 10, height: 10 }} />
+                              <Text style={styles.videoText}>Grabación</Text>
+                            </HStack>
+                          )}
+                        </HStack>
                       </HStack>
                     </View>
                   </TouchableOpacity>
@@ -312,11 +321,10 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 16,
     paddingHorizontal: 12,
     paddingBottom: 12,
-    paddingTop: 4,
+    paddingTop: 8,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderTopWidth: 0,
-    marginTop: -10, // Adjust overlap with EventCard container spacing
   },
   dot: {
     width: 6,

@@ -9,6 +9,9 @@ import { ICONS } from '@/components/icons';
 import { Evento } from '../types';
 import { eventStateManager } from '../state';
 import EventVideoPlayer from './EventVideoPlayer';
+import { exportConstanciaPDF } from '../services/constanciaService';
+import { authStateManager } from '../../auth/state';
+import { Alert, ActivityIndicator } from 'react-native';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -23,6 +26,53 @@ export default function HistoryDetailModal({ visible, evento, onClose }: History
 
   const insignias = eventStateManager.getInsignias(evento.id);
   const grabacionUrl = evento.raw?.grabacionUrl || (evento as any).grabacionUrl;
+  const hasConstancia = eventStateManager.isCertificateUnlocked(evento.id);
+
+  const [isExporting, setIsExporting] = React.useState(false);
+
+  const handleDownloadConstancia = async () => {
+    if (!evento) return;
+    try {
+      setIsExporting(true);
+      const regMeta = eventStateManager.getRegistrationMeta(evento.id);
+
+      const authState = authStateManager.getState();
+      const payload = authState.payload;
+      if (!payload) throw new Error('No token found');
+
+      const nombreCompleto = (payload.firstName && payload.lastName)
+          ? `${payload.firstName} ${payload.lastName}`
+          : '';
+
+      const constanciaData = {
+          participanteNombre: nombreCompleto,
+          participanteUsername: payload.sub,
+          eventoId: evento.id,
+          eventoTitulo: evento.titulo,
+          eventoFecha: evento.fecha,
+          eventoHora: evento.hora,
+          eventoLugar: evento.lugar,
+          eventoModalidad: evento.raw?.modalidad ?? 'PRESENCIAL',
+          eventoCategoria: evento.categoria,
+          organizadorUsername: evento.raw?.createdByUsername ?? 'organizador',
+          registrationId: regMeta?.registrationId ?? 0,
+          checkInAt: regMeta?.checkInAt ?? null,
+          checkOutAt: regMeta?.checkOutAt ?? null,
+      };
+
+      await exportConstanciaPDF(constanciaData);
+      eventStateManager.descargarConstancia(evento.id);
+    } catch (err) {
+      console.error('Error exportando constancia:', err);
+      Alert.alert(
+          'Error al exportar',
+          'No se pudo generar el PDF. Por favor intenta nuevamente.',
+          [{ text: 'Aceptar' }]
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <Modal
@@ -79,6 +129,22 @@ export default function HistoryDetailModal({ visible, evento, onClose }: History
                 <View style={styles.totalSuccessBox}>
                   <Text style={styles.totalSuccessText}>🏆 ¡Asistencia completa acreditada!</Text>
                 </View>
+              )}
+              {hasConstancia && (
+                <TouchableOpacity 
+                  style={styles.downloadBtn}
+                  onPress={handleDownloadConstancia}
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <HStack style={{ alignItems: 'center', gap: 6 }}>
+                      <Icon as={ICONS.Download} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
+                      <Text style={styles.downloadBtnText}>Descargar Constancia</Text>
+                    </HStack>
+                  )}
+                </TouchableOpacity>
               )}
             </VStack>
 
@@ -273,6 +339,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#047857',
     fontWeight: '800',
+  },
+  downloadBtn: {
+    marginTop: 12,
+    backgroundColor: '#4F46E5',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  downloadBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   detailRow: {
     flexDirection: 'row',
