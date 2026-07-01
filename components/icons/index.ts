@@ -8,7 +8,7 @@ import {
 
     // Icons Gustavo
     CalendarDays, MapPin, Users, Search, Heart, Clock, Tag,
-    ChevronRight, Star, Zap, Music2, Laptop, Trophy, FileText,
+    ChevronRight, ChevronLeft, Star, Zap, Music2, Laptop, Trophy, FileText,
     PlusCircle, X, CheckCircle, AlertCircle, DollarSign, Type,
     AlignLeft, Hash, Image as ImageIcon, ToggleLeft, ToggleRight,
     Mail, Smile, Shield, Layers, ChevronDown, Phone, GraduationCap,
@@ -50,6 +50,7 @@ export const ICONS = {
     Clock: Clock,
     Tag: Tag,
     ChevronRight: ChevronRight,
+    ChevronLeft: ChevronLeft,
     Star: Star,
     Zap: Zap,
     Music2: Music2,

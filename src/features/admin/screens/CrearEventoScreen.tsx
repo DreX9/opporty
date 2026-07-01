@@ -95,6 +95,7 @@ export default function CrearEventoScreen() {
                         requisitos: ev.requisitos || '',
                         categoryIds: ev.categories ? ev.categories.map(c => c.id) : [],
                         tagIds: ev.tags ? ev.tags.map(t => t.id) : [],
+                        grabacionUrl: ev.grabacionUrl || '',
                     });
                 } catch (err) {
                     console.error('Error al cargar detalles del evento:', err);
@@ -389,6 +390,7 @@ export default function CrearEventoScreen() {
                 tagIds: form.tagIds,
                 imageUrls: form.imageUrls,
                 motivoRechazo: null,
+                grabacionUrl: form.grabacionUrl || null,
             };
 
             if (id) {

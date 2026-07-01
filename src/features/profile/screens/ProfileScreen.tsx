@@ -455,99 +455,52 @@ export default function ProfileScreen() {
                 )}
             </View>
 
-            {/* ── Sección Historial de Eventos Asistidos ── */}
+            {/* ── Sección Historial de Eventos (Compacta) ── */}
             {(() => {
                 const registradosConConstancia = EVENTOS.filter(ev => eventState.registrados.has(ev.id));
 
                 return (
-                    <View style={[styles.section, { backgroundColor: C.cardBg, borderColor: C.cardBorder, marginTop: 16 }]}>
-                        <View style={styles.sectionHeader}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Icon as={ICONS.Clock} style={{ color: '#6366F1', width: 18, height: 18 }} />
-                                <Text style={styles.sectionTitle}>Historial de Eventos</Text>
-                            </View>
-                            <Text style={{ color: C.textSecondary, fontSize: 13, fontWeight: '700' }}>
-                                {registradosConConstancia.length} Asistidos
-                            </Text>
-                        </View>
-
-                        {registradosConConstancia.length > 0 ? (
-                            <View style={{ gap: 12 }}>
-                                {registradosConConstancia.map((ev) => {
-                                    const ins = eventState.insignias[ev.id] || { ingreso: false, salida: false };
-                                    const completado = ins.ingreso && ins.salida;
-                                    const hasDescargado = eventStateManager.hasDescargadoConstancia(ev.id);
-
-                                    return (
-                                        <View key={ev.id} style={[styles.badgeRowContainer, { flexDirection: 'column', alignItems: 'stretch', gap: 12 }]}>
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={[styles.badgeEventTitle, { marginBottom: 2 }]} numberOfLines={1}>
-                                                    {ev.titulo}
-                                                </Text>
-                                                <Text style={{ fontSize: 12, color: '#64748B', marginBottom: 4 }}>
-                                                    {ev.fecha} · {ev.hora} · {ev.lugar}
-                                                </Text>
-                                                <Text style={{ fontSize: 11, color: completado ? '#10B981' : '#F59E0B', fontWeight: '600' }}>
-                                                    {completado ? '🎓 Asistencia Completa' : '⏳ Asistencia Incompleta (Faltan QRs)'}
-                                                </Text>
-                                            </View>
-
-                                            <HStack style={{ gap: 8 }}>
-                                                {ev.grabacionUrl && (
-                                                    <TouchableOpacity
-                                                        onPress={() => Alert.alert('Grabación', 'Redirigiendo a la grabación del evento...')}
-                                                        style={{
-                                                            flex: 1,
-                                                            flexDirection: 'row',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            gap: 6,
-                                                            backgroundColor: '#EEF2FF',
-                                                            paddingVertical: 8,
-                                                            borderRadius: 8,
-                                                            borderWidth: 1,
-                                                            borderColor: '#C7D2FE',
-                                                        }}
-                                                    >
-                                                        <Icon as={ICONS.Play} style={{ color: '#4F46E5', width: 14, height: 14 }} />
-                                                        <Text style={{ fontSize: 12, color: '#4F46E5', fontWeight: '600' }}>
-                                                            Ver Grabación
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                )}
-
-                                                {completado ? (
-                                                    <TouchableOpacity
-                                                        onPress={() => handleOpenDiploma(ev)}
-                                                        style={[
-                                                            hasDescargado ? styles.certDownloadBtnMiniSuccess : styles.certDownloadBtnMini,
-                                                            { flex: 1, paddingVertical: 8, height: 'auto', marginBottom: 0 }
-                                                        ]}
-                                                    >
-                                                        <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
-                                                        <Text style={styles.certDownloadBtnMiniText}>
-                                                            {hasDescargado ? 'Descargada ✓' : 'Constancia'}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                ) : (
-                                                    <View style={[styles.certStatusPendingBox, { flex: 1, paddingVertical: 8, height: 'auto' }]}>
-                                                        <Icon as={ICONS.lock} style={{ color: '#94A3B8', width: 14, height: 14 }} />
-                                                        <Text style={styles.certStatusPendingText}>No disponible</Text>
-                                                    </View>
-                                                )}
-                                            </HStack>
-                                        </View>
-                                    );
-                                })}
-                            </View>
-                        ) : (
-                            <View style={styles.noBadgesBox}>
-                                <Text style={styles.noBadgesText}>
-                                    Aún no tienes eventos en tu historial. Regístrate y asiste a eventos para verlos aquí.
-                                </Text>
-                            </View>
-                        )}
-                    </View>
+                    <TouchableOpacity
+                        onPress={() => router.push('/tabs/history')}
+                        activeOpacity={0.8}
+                        style={[styles.section, { backgroundColor: C.cardBg, borderColor: C.cardBorder, marginTop: 16 }]}
+                    >
+                        <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                            <HStack style={{ alignItems: 'center', gap: 10 }}>
+                                <View style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 20,
+                                    backgroundColor: '#EEF2FF',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderWidth: 1,
+                                    borderColor: '#E0E7FF'
+                                }}>
+                                    <Icon as={ICONS.Clock} style={{ color: '#6366F1', width: 20, height: 20 }} />
+                                </View>
+                                <VStack>
+                                    <Text style={styles.sectionTitle}>Historial de Eventos</Text>
+                                    <Text style={{ fontSize: 11, color: C.textSecondary, marginTop: 2 }}>
+                                        Ver grabaciones, detalles y asistencias pasadas
+                                    </Text>
+                                </VStack>
+                            </HStack>
+                            <HStack style={{ alignItems: 'center', gap: 6 }}>
+                                <View style={{
+                                    backgroundColor: '#6366F1',
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 3,
+                                    borderRadius: 10,
+                                }}>
+                                    <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>
+                                        {registradosConConstancia.length}
+                                    </Text>
+                                </View>
+                                <Icon as={ICONS.ChevronRight} style={{ color: '#94A3B8', width: 18, height: 18 }} />
+                            </HStack>
+                        </HStack>
+                    </TouchableOpacity>
                 );
             })()}
 

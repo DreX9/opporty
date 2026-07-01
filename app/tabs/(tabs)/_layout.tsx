@@ -252,6 +252,15 @@ export default function TabLayout() {
             ),
           }}
         />
+
+        {/* ─── HISTORY (OCULTO) ──────────────────────────────────────────────── */}
+        <Tabs.Screen
+          name="history"
+          options={{
+            href: null,
+            headerShown: false,
+          }}
+        />
       </Tabs>
 
       {/* Modal Lector QR global */}
