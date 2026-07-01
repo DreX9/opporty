@@ -38,7 +38,8 @@ export default function HistoryScreen() {
   const { categorias } = useCategories();
 
   const [busqueda, setBusqueda] = useState<string>('');
-  const [filtroActivo, setFiltroActivo] = useState<string>('Todos');
+  const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
+  const [filtroConstancia, setFiltroConstancia] = useState<string>('Todos');
   const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
   const [refrescar, setRefrescar] = useState<boolean>(false);
 
@@ -50,13 +51,26 @@ export default function HistoryScreen() {
         .map(mapBackendToEvento)
     : [];
 
-  const filtrados = eventos.filter(
-    (ev) =>
-      (ev.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
+  const filtrados = eventos.filter((ev) => {
+      const matchBusqueda = (ev.titulo.toLowerCase().includes(busqueda.toLowerCase()) ||
         ev.lugar.toLowerCase().includes(busqueda.toLowerCase()) ||
-        ev.descripcion.toLowerCase().includes(busqueda.toLowerCase())) &&
-      (filtroActivo === 'Todos' || ev.categoria === filtroActivo)
-  );
+        ev.descripcion.toLowerCase().includes(busqueda.toLowerCase()));
+      
+      let matchEstado = false;
+      if (filtroEstado === 'Todos') matchEstado = true;
+      else if (filtroEstado === 'Próximos') matchEstado = ev.raw?.estado === 'SCHEDULED';
+      else if (filtroEstado === 'En curso') matchEstado = ev.raw?.estado === 'PUBLISHED';
+      else if (filtroEstado === 'Finalizados') matchEstado = ev.raw?.estado === 'FINISHED';
+      
+      let matchConstancia = true;
+      if (filtroEstado === 'Finalizados' && filtroConstancia !== 'Todos') {
+         const hasConstancia = eventStateManager.isCertificateUnlocked(ev.id);
+         if (filtroConstancia === 'Con constancia') matchConstancia = hasConstancia;
+         else if (filtroConstancia === 'Sin constancia') matchConstancia = !hasConstancia;
+      }
+      
+      return matchBusqueda && matchEstado && matchConstancia;
+  });
 
   const handleRefresh = async () => {
     setRefrescar(true);
@@ -64,12 +78,8 @@ export default function HistoryScreen() {
     setRefrescar(false);
   };
 
-  const cambiarFiltro = (cat: string) => {
-    setFiltroActivo(cat);
-    setBusqueda('');
-  };
-
-  const listaCategorias = ['Todos', ...categorias.map((c) => c.nombre)];
+  const listaFiltrosEstado = ['Todos', 'Próximos', 'En curso', 'Finalizados'];
+  const listaFiltrosConstancia = ['Todos', 'Con constancia', 'Sin constancia'];
   const cargando = loadingEvents && backendEvents.length === 0;
 
   const { width: W } = useWindowDimensions();
@@ -118,18 +128,21 @@ export default function HistoryScreen() {
       </VStack>
 
       {/* Categories Horizontal Scroll */}
-      <View style={{ height: 48, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' }}>
+      <View style={{ backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingVertical: 10 }}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center', gap: 8 }}
         >
-          {listaCategorias.map((cat) => {
-            const activo = filtroActivo === cat;
+          {listaFiltrosEstado.map((cat) => {
+            const activo = filtroEstado === cat;
             return (
               <TouchableOpacity
                 key={cat}
-                onPress={() => cambiarFiltro(cat)}
+                onPress={() => {
+                  setFiltroEstado(cat);
+                  setBusqueda('');
+                }}
                 style={[styles.categoryBadge, activo && styles.categoryBadgeActive]}
                 activeOpacity={0.8}
               >
@@ -140,6 +153,29 @@ export default function HistoryScreen() {
             );
           })}
         </ScrollView>
+        {filtroEstado === 'Finalizados' && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center', gap: 8, marginTop: 10 }}
+          >
+            {listaFiltrosConstancia.map((cat) => {
+              const activo = filtroConstancia === cat;
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  onPress={() => setFiltroConstancia(cat)}
+                  style={[styles.categoryBadge, activo && styles.categoryBadgeActive]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.categoryBadgeText, activo && styles.categoryBadgeTextActive]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
       </View>
 
       {/* Main List */}

@@ -318,45 +318,58 @@ export default function AdminDashboardScreen() {
     }
   };
 
-  const handleFinalizarEvento = async (id: string) => {
-    try {
-      const original = backendEvents.find(e => String(e.id) === id);
-      if (!original) return;
+  const handleFinalizarEvento = (id: string) => {
+    Alert.alert(
+      'Finalizar Evento',
+      '¿Está seguro de que desea finalizar este evento? Ya no se podrán escanear más asistencias.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Finalizar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const original = backendEvents.find(e => String(e.id) === id);
+              if (!original) return;
 
-      const payload = {
-        titulo: original.titulo,
-        descripcion: original.descripcion || '',
-        fechaInicio: original.fechaInicio,
-        fechaFin: original.fechaFin,
-        horaInicio: original.horaInicio,
-        horaFin: original.horaFin,
-        capacidad: original.capacidad,
-        imagenUrl: original.imagenUrl,
-        modalidad: original.modalidad,
-        lugar: original.lugar,
-        referencia: original.referencia,
-        latitud: original.latitud,
-        longitud: original.longitud,
-        estado: 'FINISHED',
-        requiresApproval: original.requiresApproval,
-        allowQrAttendance: original.allowQrAttendance,
-        edadMinima: original.edadMinima,
-        requisitos: original.requisitos,
-        categoryIds: original.categories.map(c => c.id),
-        tagIds: original.tags.map(t => t.id),
-        imageUrls: original.imageUrls || [],
-        grabacionUrl: original.grabacionUrl || null,
-        motivoRechazo: original.motivoRechazo,
-      };
+              const payload = {
+                titulo: original.titulo,
+                descripcion: original.descripcion || '',
+                fechaInicio: original.fechaInicio,
+                fechaFin: original.fechaFin,
+                horaInicio: original.horaInicio,
+                horaFin: original.horaFin,
+                capacidad: original.capacidad,
+                imagenUrl: original.imagenUrl,
+                modalidad: original.modalidad,
+                lugar: original.lugar,
+                referencia: original.referencia,
+                latitud: original.latitud,
+                longitud: original.longitud,
+                estado: 'FINISHED',
+                requiresApproval: original.requiresApproval,
+                allowQrAttendance: original.allowQrAttendance,
+                edadMinima: original.edadMinima,
+                requisitos: original.requisitos,
+                categoryIds: original.categories.map(c => c.id),
+                tagIds: original.tags.map(t => t.id),
+                imageUrls: original.imageUrls || [],
+                grabacionUrl: original.grabacionUrl || null,
+                motivoRechazo: original.motivoRechazo,
+              };
 
-      await eventService.updateEvent(Number(id), payload);
-      Alert.alert('🏁 Éxito', `El evento "${original.titulo}" ha sido finalizado.`);
-      refetchEvents();
-    } catch (error: unknown) {
-      console.error('Error al finalizar evento:', error);
-      const errMsg = error instanceof Error ? error.message : 'No se pudo finalizar el evento.';
-      Alert.alert('⚠️ Error', errMsg);
-    }
+              await eventService.updateEvent(Number(id), payload);
+              Alert.alert('🏁 Éxito', `El evento "${original.titulo}" ha sido finalizado.`);
+              refetchEvents();
+            } catch (error: unknown) {
+              console.error('Error al finalizar evento:', error);
+              const errMsg = error instanceof Error ? error.message : 'No se pudo finalizar el evento.';
+              Alert.alert('⚠️ Error', errMsg);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleSaveVideoUrl = async (id: string, url: string) => {
