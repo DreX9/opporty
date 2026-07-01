@@ -7,6 +7,7 @@ import {
     Platform,
     ActivityIndicator,
     BackHandler,
+    DimensionValue,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 
