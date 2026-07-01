@@ -5,8 +5,8 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    DimensionValue,
     ActivityIndicator,
+    BackHandler,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 
@@ -19,7 +19,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Input, InputField } from '@/components/ui/input';
 import DropdownSelect from '@/components/DropdownSelect';
 import { ICONS } from '@/components/icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { ESTADO_INICIAL_DOCENTE, TEACHER_STATUS_OPTIONS } from '../constants';
@@ -61,6 +61,44 @@ export default function CrearUsuarioScreen() {
     const [submitting, setSubmitting] = useState(false);
     const [registeredTeacher, setRegisteredTeacher] = useState<TeacherRegisterResponse | null>(null);
     const [selectedSpecialtyOption, setSelectedSpecialtyOption] = useState<string>('');
+
+    const navigation = useNavigation();
+
+    const hasUnsavedChanges = () => {
+        return form.firstName.trim() !== '' ||
+               form.lastName.trim() !== '' ||
+               form.dni.trim() !== '' ||
+               form.email.trim() !== '';
+    };
+
+    useEffect(() => {
+        const backAction = () => {
+            if (pasoActual > 1) {
+                setPasoActual((prev) => prev - 1);
+                return true; 
+            }
+            if (hasUnsavedChanges() && !submitting && !registeredTeacher) {
+                Alert.alert(
+                    '¿Cancelar registro?',
+                    'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
+                    [
+                        { text: 'No', style: 'cancel', onPress: () => {} },
+                        {
+                            text: 'Sí, salir',
+                            style: 'destructive',
+                            onPress: () => router.back(),
+                        },
+                    ]
+                );
+                return true; // prevent default exit
+            }
+            return false; // allow default exit
+        };
+
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+        return () => backHandler.remove();
+    }, [pasoActual, form, submitting, registeredTeacher]);
 
     // Sincronizar el dropdown con el valor real de la especialidad (por si se navega o se limpia el form)
     useEffect(() => {
@@ -188,7 +226,22 @@ export default function CrearUsuarioScreen() {
         if (pasoActual > 1) {
             setPasoActual((prev) => prev - 1);
         } else {
-            router.back();
+            if (hasUnsavedChanges() && !submitting && !registeredTeacher) {
+                Alert.alert(
+                    '¿Cancelar registro?',
+                    'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
+                    [
+                        { text: 'No', style: 'cancel', onPress: () => {} },
+                        {
+                            text: 'Sí, salir',
+                            style: 'destructive',
+                            onPress: () => router.back(),
+                        },
+                    ]
+                );
+            } else {
+                router.back();
+            }
         }
     };
 
