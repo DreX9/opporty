@@ -69,31 +69,56 @@ export default function EventVideoPlayer({ url }: EventVideoPlayerProps) {
   }
 
   // On Native (Android/iOS)
-  try {
-    const { WebView } = require('react-native-webview');
-    
-    let embedUrl = url;
-    if (ytId) {
-      embedUrl = `https://www.youtube.com/embed/${ytId}`;
-    } else if (vimeoId) {
-      embedUrl = `https://player.vimeo.com/video/${vimeoId}`;
-    }
+  const isDirectVideo = ytId === null && vimeoId === null;
 
-    return (
-      <View style={styles.nativeContainer}>
-        <WebView
-          source={{ uri: embedUrl }}
-          style={styles.webview}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          allowsFullscreenVideo={true}
-        />
-        <TouchableOpacity onPress={openInBrowser} style={styles.openLinkBtn}>
-          <Text style={styles.openLinkText}>Abrir en pantalla completa ↗</Text>
-        </TouchableOpacity>
-      </View>
-    );
+  try {
+    if (ytId) {
+      const YoutubePlayer = require('react-native-youtube-iframe').default;
+      return (
+        <View style={[styles.nativeContainer, { backgroundColor: '#000', justifyContent: 'center' }]}>
+          <YoutubePlayer
+            height={220}
+            play={false}
+            videoId={ytId}
+          />
+        </View>
+      );
+    } else if (isDirectVideo) {
+      const { Video, ResizeMode } = require('expo-av');
+      return (
+        <View style={styles.nativeContainer}>
+          <Video
+            source={{ uri: url }}
+            style={styles.webview}
+            useNativeControls
+            resizeMode={ResizeMode.CONTAIN}
+          />
+        </View>
+      );
+    } else {
+      const { WebView } = require('react-native-webview');
+      let embedUrl = url;
+      if (vimeoId) {
+        embedUrl = `https://player.vimeo.com/video/${vimeoId}`;
+      }
+
+      return (
+        <View style={styles.nativeContainer}>
+          <WebView
+            source={{ uri: embedUrl }}
+            style={styles.webview}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            allowsFullscreenVideo={true}
+          />
+          <TouchableOpacity onPress={openInBrowser} style={styles.openLinkBtn}>
+            <Text style={styles.openLinkText}>Abrir en pantalla completa ↗</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
   } catch (error) {
+    console.error("Error loading video player:", error);
     return (
       <View style={styles.fallbackContainer}>
         <Text style={styles.fallbackText}>Video del evento disponible</Text>
