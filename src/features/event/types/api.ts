@@ -42,6 +42,7 @@ export interface EventoBackend {
   categories: CategoriaBackend[];
   tags: TagBackend[];
   imageUrls: string[];        // imágenes adicionales
+  grabacionUrl?: string | null; // URL de la grabación del evento
 }
 
 export interface EventoWritePayload {
@@ -68,6 +69,7 @@ export interface EventoWritePayload {
   tagIds: number[];
   imageUrls: string[];
   motivoRechazo?: string | null;
+  grabacionUrl?: string | null;
 }
 
 export interface QrSessionWritePayload {

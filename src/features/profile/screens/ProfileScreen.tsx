@@ -56,9 +56,9 @@ export default function ProfileScreen() {
         if (prevW.current !== W) {
             LayoutAnimation.configureNext({
                 duration: 280,
-                create:  { type: 'easeInEaseOut', property: 'opacity' },
-                update:  { type: 'easeInEaseOut' },
-                delete:  { type: 'easeInEaseOut', property: 'opacity' },
+                create: { type: 'easeInEaseOut', property: 'opacity' },
+                update: { type: 'easeInEaseOut' },
+                delete: { type: 'easeInEaseOut', property: 'opacity' },
             });
             prevW.current = W;
         }
@@ -455,72 +455,52 @@ export default function ProfileScreen() {
                 )}
             </View>
 
-            {/* ── Sección Mis Constancias ── */}
+            {/* ── Sección Historial de Eventos (Compacta) ── */}
             {(() => {
                 const registradosConConstancia = EVENTOS.filter(ev => eventState.registrados.has(ev.id));
-                const totalConstanciasObtenidas = registradosConConstancia.filter(ev => {
-                    const ins = eventState.insignias[ev.id] || { ingreso: false, salida: false };
-                    return ins.ingreso && ins.salida;
-                }).length;
 
                 return (
-                    <View style={[styles.section, { backgroundColor: C.cardBg, borderColor: C.cardBorder, marginTop: 16 }]}>
-                        <View style={styles.sectionHeader}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Icon as={ICONS.GraduationCap} style={{ color: '#EAB308', width: 18, height: 18 }} />
-                                <Text style={styles.sectionTitle}>Mis Constancias Oficiales</Text>
-                            </View>
-                            <Text style={{ color: C.textSecondary, fontSize: 13, fontWeight: '700' }}>
-                                {totalConstanciasObtenidas} Obtenidas
-                            </Text>
-                        </View>
-
-                        {registradosConConstancia.length > 0 ? (
-                            <View style={{ gap: 12 }}>
-                                {registradosConConstancia.map((ev) => {
-                                    const ins = eventState.insignias[ev.id] || { ingreso: false, salida: false };
-                                    const completado = ins.ingreso && ins.salida;
-                                    const hasDescargado = eventStateManager.hasDescargadoConstancia(ev.id);
-
-                                    return (
-                                        <View key={ev.id} style={styles.badgeRowContainer}>
-                                            <View style={{ flex: 1, marginRight: 8 }}>
-                                                <Text style={styles.badgeEventTitle} numberOfLines={1}>
-                                                    {ev.titulo}
-                                                </Text>
-                                                <Text style={{ fontSize: 11, color: completado ? '#10B981' : '#6B7280', fontWeight: '600' }}>
-                                                    {completado ? '🎓 Constancia Disponible' : '⏳ Asistencia en curso'}
-                                                </Text>
-                                            </View>
-
-                                            {completado ? (
-                                                <TouchableOpacity
-                                                    onPress={() => handleOpenDiploma(ev)}
-                                                    style={hasDescargado ? styles.certDownloadBtnMiniSuccess : styles.certDownloadBtnMini}
-                                                >
-                                                    <Icon as={ICONS.FileText} style={{ color: '#FFFFFF', width: 12, height: 12 }} />
-                                                    <Text style={styles.certDownloadBtnMiniText}>
-                                                        {hasDescargado ? 'Descargada ✓' : 'Descargar PDF'}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            ) : (
-                                                <View style={styles.certStatusPendingBox}>
-                                                    <Icon as={ICONS.lock} style={{ color: '#94A3B8', width: 11, height: 11 }} />
-                                                    <Text style={styles.certStatusPendingText}>Faltan QRs</Text>
-                                                </View>
-                                            )}
-                                        </View>
-                                    );
-                                })}
-                            </View>
-                        ) : (
-                            <View style={styles.noBadgesBox}>
-                                <Text style={styles.noBadgesText}>
-                                    Aún no tienes constancias académicas. Regístrate a eventos, asiste y escanea tus códigos QR para desbloquearlas.
-                                </Text>
-                            </View>
-                        )}
-                    </View>
+                    <TouchableOpacity
+                        onPress={() => router.push('/tabs/history')}
+                        activeOpacity={0.8}
+                        style={[styles.section, { backgroundColor: C.cardBg, borderColor: C.cardBorder, marginTop: 16 }]}
+                    >
+                        <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                            <HStack style={{ alignItems: 'center', gap: 10 }}>
+                                <View style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 20,
+                                    backgroundColor: '#EEF2FF',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderWidth: 1,
+                                    borderColor: '#E0E7FF'
+                                }}>
+                                    <Icon as={ICONS.Clock} style={{ color: '#6366F1', width: 20, height: 20 }} />
+                                </View>
+                                <VStack>
+                                    <Text style={styles.sectionTitle}>Historial de Eventos</Text>
+                                    <Text style={{ fontSize: 11, color: C.textSecondary, marginTop: 2 }}>
+                                        Ver grabaciones, detalles y asistencias pasadas
+                                    </Text>
+                                </VStack>
+                            </HStack>
+                            <HStack style={{ alignItems: 'center', gap: 6 }}>
+                                <View style={{
+                                    backgroundColor: '#6366F1',
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 3,
+                                    borderRadius: 10,
+                                }}>
+                                    <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>
+                                        {registradosConConstancia.length}
+                                    </Text>
+                                </View>
+                                <Icon as={ICONS.ChevronRight} style={{ color: '#94A3B8', width: 18, height: 18 }} />
+                            </HStack>
+                        </HStack>
+                    </TouchableOpacity>
                 );
             })()}
 

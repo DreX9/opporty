@@ -34,7 +34,7 @@ export interface AdminEvent {
   id: string;
   titulo: string;
   categoria: string;
-  estado: 'Aprobado' | 'Pendiente' | 'Rechazado' | 'Programado' | 'Suspendido' | 'Cancelado' | 'DRAFT' | 'CANCELLED' | 'FINISHED';
+  estado: 'Aprobado' | 'Pendiente' | 'Rechazado' | 'Programado' | 'Suspendido' | 'Cancelado' | 'DRAFT' | 'CANCELLED' | 'FINISHED' | 'Finalizado';
   fecha: string;
   color?: string;
   motivoRechazo?: string | null;
@@ -117,6 +117,7 @@ export interface FormCrearEvento {
   requisitos: string;
   categoryIds: number[];
   tagIds: number[];
+  grabacionUrl?: string;
 }
 
 

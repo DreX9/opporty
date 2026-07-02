@@ -71,6 +71,7 @@ export const ESTADO_INICIAL_EVENTO: FormCrearEvento = {
   requisitos: '',
   categoryIds: [],
   tagIds: [],
+  grabacionUrl: '',
 };
 
 

@@ -10,7 +10,8 @@ import {
     Image,
     Switch,
     StyleSheet,
-    View
+    View,
+    BackHandler
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadImageToCloudinary } from '../services/cloudinaryService';
@@ -23,7 +24,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { Input, InputField } from '@/components/ui/input';
 import { ICONS } from '@/components/icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { SelectorMapaModal } from '@/components/SelectorMapaModal';
 
 import {
@@ -63,6 +64,82 @@ export default function CrearEventoScreen() {
     const [cargandoEdicion, setCargandoEdicion] = useState(false);
     const [currentPicker, setCurrentPicker] = useState<'fechaInicio' | 'fechaFin' | 'horaInicio' | 'horaFin' | null>(null);
 
+    const navigation = useNavigation();
+
+    const hasUnsavedChanges = () => {
+        return form.titulo.trim() !== '' || 
+               form.descripcion.trim() !== '' || 
+               form.imageUrls.length > 0 ||
+               form.categoryIds.length > 0 ||
+               form.lugar.trim() !== '' ||
+               form.fechaInicio !== '';
+    };
+
+    useEffect(() => {
+        const backAction = () => {
+            if (pasoActual > 1) {
+                setPasoActual(prev => prev - 1);
+                return true; 
+            }
+            
+            if (hasUnsavedChanges() && !publicando && !id) {
+                Alert.alert(
+                    '¿Cancelar creación?',
+                    'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
+                    [
+                        { text: 'No', style: 'cancel', onPress: () => {} },
+                        {
+                            text: 'Sí, salir',
+                            style: 'destructive',
+                            onPress: () => router.back(),
+                        },
+                    ]
+                );
+                return true; // prevent default, we handle the exit
+            }
+            return false;
+        };
+
+        const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+        return () => backHandler.remove();
+    }, [pasoActual, form, publicando, id]);
+
+    // Interceptar retroceder en el header (arriba a la izquierda)
+    useEffect(() => {
+        navigation.setOptions({
+            headerLeft: () => (
+                <TouchableOpacity 
+                    onPress={() => {
+                        if (pasoActual > 1) {
+                            setPasoActual(prev => prev - 1);
+                        } else {
+                            if (hasUnsavedChanges() && !publicando && !id) {
+                                Alert.alert(
+                                    '¿Cancelar creación?',
+                                    'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
+                                    [
+                                        { text: 'No', style: 'cancel', onPress: () => {} },
+                                        {
+                                            text: 'Sí, salir',
+                                            style: 'destructive',
+                                            onPress: () => router.back(),
+                                        },
+                                    ]
+                                );
+                            } else {
+                                router.back();
+                            }
+                        }
+                    }}
+                    style={{ padding: 8, marginLeft: Platform.OS === 'ios' ? -8 : 0 }}
+                >
+                    <Icon as={ICONS.ChevronRight} style={{ color: '#4F46E5', width: 24, height: 24, transform: [{ rotate: '180deg' }] }} />
+                </TouchableOpacity>
+            )
+        });
+    }, [navigation, pasoActual, form, publicando, id]);
+
     useEffect(() => {
         if (id) {
             const cargarDetallesEvento = async () => {
@@ -95,6 +172,7 @@ export default function CrearEventoScreen() {
                         requisitos: ev.requisitos || '',
                         categoryIds: ev.categories ? ev.categories.map(c => c.id) : [],
                         tagIds: ev.tags ? ev.tags.map(t => t.id) : [],
+                        grabacionUrl: ev.grabacionUrl || '',
                     });
                 } catch (err) {
                     console.error('Error al cargar detalles del evento:', err);
@@ -358,7 +436,22 @@ export default function CrearEventoScreen() {
         if (pasoActual > 1) {
             setPasoActual(prev => prev - 1);
         } else {
-            router.back();
+            if (hasUnsavedChanges() && !publicando && !id) {
+                Alert.alert(
+                    '¿Cancelar creación?',
+                    'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
+                    [
+                        { text: 'No', style: 'cancel', onPress: () => {} },
+                        {
+                            text: 'Sí, salir',
+                            style: 'destructive',
+                            onPress: () => router.back(),
+                        },
+                    ]
+                );
+            } else {
+                router.back();
+            }
         }
     };
 
@@ -389,6 +482,7 @@ export default function CrearEventoScreen() {
                 tagIds: form.tagIds,
                 imageUrls: form.imageUrls,
                 motivoRechazo: null,
+                grabacionUrl: form.grabacionUrl || null,
             };
 
             if (id) {

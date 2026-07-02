@@ -204,11 +204,33 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         }
     };
 
+    const hasUnsavedChanges = () => {
+        return nombres.trim() !== '' ||
+               apellidos.trim() !== '' ||
+               email.trim() !== '' ||
+               dni.trim() !== '';
+    };
+
     const handleAtras = () => {
         if (pasoActual > 1) {
             setPasoActual(pasoActual - 1);
         } else {
-            handleClose();
+            if (hasUnsavedChanges()) {
+                Alert.alert(
+                    '¿Cancelar registro?',
+                    'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
+                    [
+                        { text: 'No', style: 'cancel', onPress: () => {} },
+                        {
+                            text: 'Sí, salir',
+                            style: 'destructive',
+                            onPress: () => handleClose(),
+                        },
+                    ]
+                );
+            } else {
+                handleClose();
+            }
         }
     };
 

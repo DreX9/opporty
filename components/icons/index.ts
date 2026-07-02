@@ -8,11 +8,11 @@ import {
 
     // Icons Gustavo
     CalendarDays, MapPin, Users, Search, Heart, Clock, Tag,
-    ChevronRight, Star, Zap, Music2, Laptop, Trophy, FileText,
+    ChevronRight, ChevronLeft, Star, Zap, Music2, Laptop, Trophy, FileText,
     PlusCircle, X, CheckCircle, AlertCircle, DollarSign, Type,
     AlignLeft, Hash, Image as ImageIcon, ToggleLeft, ToggleRight,
     Mail, Smile, Shield, Layers, ChevronDown, Phone, GraduationCap,
-    Copy, Camera, Trash2, UploadCloud, Bell, Share2
+    Copy, Camera, Trash2, UploadCloud, Bell, Share2, Play, Award, Download
 } from "lucide-react-native"
 
 export const ICONS = {
@@ -50,6 +50,7 @@ export const ICONS = {
     Clock: Clock,
     Tag: Tag,
     ChevronRight: ChevronRight,
+    ChevronLeft: ChevronLeft,
     Star: Star,
     Zap: Zap,
     Music2: Music2,
@@ -80,4 +81,7 @@ export const ICONS = {
     UploadCloud: UploadCloud,
     Bell: Bell,
     Share: Share2,
+    Play: Play,
+    Award: Award,
+    Download: Download
 }

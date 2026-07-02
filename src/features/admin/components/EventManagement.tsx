@@ -59,6 +59,8 @@ interface EventManagementProps {
   onConfirmarInicio?: (id: string) => void;
   onSuspender?: (id: string) => void;
   onCancelar?: (id: string) => void;
+  onFinalizar?: (id: string) => void;
+  onSaveVideoUrl?: (id: string, url: string) => void;
 }
 
 export default function EventManagement({
@@ -70,6 +72,8 @@ export default function EventManagement({
   onConfirmarInicio,
   onSuspender,
   onCancelar,
+  onFinalizar,
+  onSaveVideoUrl,
 }: EventManagementProps) {
   const router = useRouter();
   const eventState = useEventState();
@@ -78,6 +82,17 @@ export default function EventManagement({
   const [reviewingEvent, setReviewingEvent] = useState<AdminEvent | null>(null);
   const [subTab, setSubTab] = useState<'aprobados' | 'solicitudes' | 'borradores'>('aprobados');
   const [lastProcessedEventId, setLastProcessedEventId] = useState<string | null>(null);
+
+  const [tempVideoUrl, setTempVideoUrl] = useState('');
+
+  // Hydrate tempVideoUrl when reviewingEvent changes
+  useEffect(() => {
+    if (reviewingEvent) {
+      setTempVideoUrl(reviewingEvent.raw?.grabacionUrl || '');
+    } else {
+      setTempVideoUrl('');
+    }
+  }, [reviewingEvent]);
 
   // Carousel states for dynamic responsiveness
   const [containerWidth, setContainerWidth] = useState<number>(340);
@@ -338,6 +353,17 @@ export default function EventManagement({
                 )}
 
                 {/* Acciones específicas de estado */}
+                {evento.estado === 'Aprobado' && (
+                  (role === 'ADMIN' || (role === 'MANAGER' && payload?.sub && evento.raw?.createdByUsername === payload.sub)) ? (
+                    <TouchableOpacity
+                      onPress={() => onFinalizar?.(evento.id)}
+                      className="px-3 py-1.5 rounded-xl bg-gray-800"
+                    >
+                      <Text className="text-white text-xs font-bold">Finalizar Evento</Text>
+                    </TouchableOpacity>
+                  ) : null
+                )}
+
                 {evento.estado === 'Programado' && (
                   (role === 'ADMIN' || (role === 'MANAGER' && payload?.sub && evento.raw?.createdByUsername === payload.sub)) ? (
                     <>
@@ -908,6 +934,67 @@ export default function EventManagement({
                     </Text>
                   </VStack>
 
+                  {/* Sección: Grabación del Evento (Solo para eventos Finalizados) */}
+                  {reviewingEvent.estado === 'Finalizado' && (
+                    <VStack style={styles.reviewSectionCard} space="xs">
+                      <HStack style={styles.reviewSectionHeader}>
+                        <Icon as={ICONS.Play} style={{ color: '#6366F1', width: 15, height: 15 }} />
+                        <Text style={styles.reviewSectionTitle}>Grabación del Evento</Text>
+                      </HStack>
+                      <Text style={{ fontSize: 12, color: '#475569', marginTop: 4, lineHeight: 17 }}>
+                        {reviewingEvent.raw?.grabacionUrl
+                          ? `Enlace actual: ${reviewingEvent.raw.grabacionUrl}`
+                          : 'Aún no se ha añadido una grabación para este evento.'}
+                      </Text>
+
+                      {(role === 'ADMIN' || ((role === 'MANAGER' || role === 'TEACHER') && payload?.sub && reviewingEvent.raw?.createdByUsername === payload.sub)) && (
+                        <VStack style={{ marginTop: 10, gap: 8 }}>
+                          <Text style={{ fontSize: 10, fontWeight: '700', color: '#64748B', textTransform: 'uppercase' }}>
+                            {reviewingEvent.raw?.grabacionUrl ? 'Editar enlace de video:' : 'Añadir enlace de video:'}
+                          </Text>
+                          <View style={{
+                            borderColor: '#E2E8F0',
+                            borderWidth: 1,
+                            borderRadius: 12,
+                            backgroundColor: '#FFFFFF',
+                            paddingHorizontal: 12,
+                            height: 44,
+                            justifyContent: 'center',
+                          }}>
+                            <TextInput
+                              placeholder="Ej: https://www.youtube.com/watch?v=..."
+                              placeholderTextColor="#94A3B8"
+                              value={tempVideoUrl}
+                              onChangeText={setTempVideoUrl}
+                              style={{ fontSize: 12, color: '#1E293B', height: 40 }}
+                              autoCapitalize="none"
+                              autoCorrect={false}
+                            />
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => {
+                              onSaveVideoUrl?.(reviewingEvent.id, tempVideoUrl);
+                              setReviewingEvent(null);
+                            }}
+                            style={{
+                              backgroundColor: '#6366F1',
+                              borderRadius: 12,
+                              height: 40,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginTop: 4,
+                            }}
+                            activeOpacity={0.8}
+                          >
+                            <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '800' }}>
+                              {role === 'MANAGER' ? 'Enviar para Aprobación' : 'Guardar Grabación'}
+                            </Text>
+                          </TouchableOpacity>
+                        </VStack>
+                      )}
+                    </VStack>
+                  )}
+
                   {/* Motivo de Rechazo (si ya está rechazado) */}
                   {reviewingEvent.estado === 'Rechazado' && reviewingEvent.motivoRechazo && (
                     <Box style={[styles.rejectionReasonBox, { marginTop: 4 }]}>
@@ -1104,6 +1191,30 @@ export default function EventManagement({
                         <Text style={{ color: '#D97706', fontSize: 13, fontWeight: '700' }}>Suspender Evento</Text>
                       </TouchableOpacity>
                     </>
+                  ) : null
+                )}
+
+                {reviewingEvent.estado === 'Aprobado' && (
+                  (role === 'ADMIN' || (role === 'MANAGER' && payload?.sub && reviewingEvent.raw?.createdByUsername === payload.sub)) ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        onFinalizar?.(reviewingEvent.id);
+                        setReviewingEvent(null);
+                      }}
+                      style={{
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        borderRadius: 14,
+                        backgroundColor: '#1E293B',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'row',
+                        gap: 6,
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>Finalizar Evento</Text>
+                    </TouchableOpacity>
                   ) : null
                 )}
 

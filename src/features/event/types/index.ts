@@ -23,6 +23,9 @@ export interface Evento {
     tags?: string[];
     latitud?: number | null;
     longitud?: number | null;
+    grabacionUrl?: string | null;
+    modalidad?: string;
+    raw?: EventoBackend;
 }
 
 export interface EventCardProps {
@@ -121,6 +124,9 @@ export function mapBackendToEvento(dto: EventoBackend): Evento {
         tags: dto.tags ? dto.tags.map(t => t.nombre) : [],
         latitud: dto.latitud,
         longitud: dto.longitud,
+        grabacionUrl: dto.grabacionUrl,
+        modalidad: dto.modalidad,
+        raw: dto,
     };
 }
 
