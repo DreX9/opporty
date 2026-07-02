@@ -105,6 +105,41 @@ export default function CrearEventoScreen() {
         return () => backHandler.remove();
     }, [pasoActual, form, publicando, id]);
 
+    // Interceptar retroceder en el header (arriba a la izquierda)
+    useEffect(() => {
+        navigation.setOptions({
+            headerLeft: () => (
+                <TouchableOpacity 
+                    onPress={() => {
+                        if (pasoActual > 1) {
+                            setPasoActual(prev => prev - 1);
+                        } else {
+                            if (hasUnsavedChanges() && !publicando && !id) {
+                                Alert.alert(
+                                    '¿Cancelar creación?',
+                                    'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
+                                    [
+                                        { text: 'No', style: 'cancel', onPress: () => {} },
+                                        {
+                                            text: 'Sí, salir',
+                                            style: 'destructive',
+                                            onPress: () => router.back(),
+                                        },
+                                    ]
+                                );
+                            } else {
+                                router.back();
+                            }
+                        }
+                    }}
+                    style={{ padding: 8, marginLeft: Platform.OS === 'ios' ? -8 : 0 }}
+                >
+                    <Icon as={ICONS.ChevronRight} style={{ color: '#4F46E5', width: 24, height: 24, transform: [{ rotate: '180deg' }] }} />
+                </TouchableOpacity>
+            )
+        });
+    }, [navigation, pasoActual, form, publicando, id]);
+
     useEffect(() => {
         if (id) {
             const cargarDetallesEvento = async () => {
