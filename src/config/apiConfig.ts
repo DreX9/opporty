@@ -5,16 +5,22 @@ import Constants from 'expo-constants';
 // - "WIFI": Usa la IP detectada automáticamente por Expo (ideal para Expo Go sobre Wi-Fi).
 // - "USB": Usa localhost (ideal para cable USB con 'adb reverse tcp:8080 tcp:8080').
 // - "EMULATOR": Usa 10.0.2.2 (ideal para el emulador de Android Studio).
-type ConnectionMethod = 'WIFI' | 'USB' | 'EMULATOR';
+// - "PROD_APK": Usa la IP de tu laptop de forma manual (ideal para el APK instalado en tu celular físico).
+type ConnectionMethod = 'WIFI' | 'USB' | 'EMULATOR' | 'PROD_APK';
 
 // MODO DE CONEXIÓN PREFERIDO:
-// Puedes cambiar esto a 'USB' si usas cable con adb reverse, 'WIFI' para Expo Go sin cables,
-// o dejarlo en 'AUTO' para detección inteligente.
-const PREFERRED_METHOD: 'AUTO' | ConnectionMethod = 'AUTO';
+// Cambiar a 'PROD_APK' cuando vayas a generar el APK final con eas build.
+const PREFERRED_METHOD: 'AUTO' | ConnectionMethod = 'PROD_APK';
+
+// IP REAL DE TU LAPTOP (Sacada de tu ipconfig: Adaptador de LAN inalámbrica Wi-Fi):
+const LAPTOP_IP = '192.168.0.8';
 
 const getBackendUrl = (): { url: string; method: string } => {
     // Si el usuario fuerza un método específico:
-    if (PREFERRED_METHOD !== 'AUTO') {
+    if ((PREFERRED_METHOD as string) !== 'AUTO') {
+        if (PREFERRED_METHOD === 'PROD_APK') {
+            return { url: `http://${LAPTOP_IP}:8080/api/v1`, method: 'APK Producción (Forzado)' };
+        }
         if (PREFERRED_METHOD === 'USB') {
             return { url: 'http://localhost:8080/api/v1', method: 'USB (Forzado)' };
         }
