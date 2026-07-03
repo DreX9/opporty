@@ -148,6 +148,16 @@ export const eventService = {
     },
 
     /**
+     * Elimina el registro del usuario autenticado en un evento.
+     * Endpoint: DELETE /api/v1/event-registrations/event/{eventId}
+     */
+    async unregisterFromEvent(eventId: number): Promise<void> {
+        await apiClient.delete(`/event-registrations/event/${eventId}`, {
+            headers: getAuthHeaders(),
+        });
+    },
+
+    /**
      * Obtiene los registros (asistencia) del usuario autenticado.
      * La sesión está vinculada al Bearer token: cada usuario solo obtiene SUS registros.
      * Endpoint: GET /api/v1/event-registrations/me

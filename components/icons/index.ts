@@ -12,7 +12,7 @@ import {
     PlusCircle, X, CheckCircle, AlertCircle, DollarSign, Type,
     AlignLeft, Hash, Image as ImageIcon, ToggleLeft, ToggleRight,
     Mail, Smile, Shield, Layers, ChevronDown, Phone, GraduationCap,
-    Copy, Camera, Trash2, UploadCloud, Bell, Share2, Play, Award, Download
+    Copy, Camera, Trash2, UploadCloud, Bell, Share2, Play, Award, Download, Info
 } from "lucide-react-native"
 
 export const ICONS = {
@@ -83,5 +83,6 @@ export const ICONS = {
     Share: Share2,
     Play: Play,
     Award: Award,
-    Download: Download
+    Download: Download,
+    Info: Info
 }

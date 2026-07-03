@@ -144,6 +144,32 @@ export default function EventDetailModal({
         }
     };
 
+    const handleUnregister = () => {
+        showAlert(
+            'Desinscribirse',
+            '¿Estás seguro de que deseas cancelar tu inscripción? Perderás tu lugar en el evento.',
+            'warning',
+            async () => {
+                if (isRegistering) return;
+                setIsRegistering(true);
+                try {
+                    await eventService.unregisterFromEvent(Number(evento.id));
+                    eventStateManager.unregisterFromEvent(evento.id);
+                    showAlert('Cancelado', 'Tu inscripción ha sido cancelada correctamente.', 'info');
+                    onEventSaved?.();
+                } catch (err: any) {
+                    const serverMsg: string = err?.response?.data?.message || err?.message || 'Ocurrió un error al desinscribirse.';
+                    showAlert('Error', serverMsg, 'error');
+                } finally {
+                    setIsRegistering(false);
+                }
+            },
+            'Confirmar',
+            'Cancelar',
+            false
+        );
+    };
+
     const handleDownloadCert = async () => {
         if (!evento || !payload) return;
         setIsExporting(true);
@@ -517,10 +543,22 @@ export default function EventDetailModal({
                     </VStack>
 
                     {isRegistered ? (
-                        <View style={[styles.actionBtn, styles.actionBtnInscribed, isCertUnlocked && { backgroundColor: '#10B981', borderColor: '#059669' }]}>
+                        <TouchableOpacity 
+                            onPress={isCertUnlocked ? undefined : handleUnregister}
+                            disabled={isRegistering}
+                            activeOpacity={isCertUnlocked ? 1 : 0.7}
+                            style={[
+                                styles.actionBtn, 
+                                styles.actionBtnInscribed, 
+                                isCertUnlocked && { backgroundColor: '#10B981', borderColor: '#059669' },
+                                isRegistering && { opacity: 0.7 }
+                            ]}
+                        >
                             <Icon as={isCertUnlocked ? ICONS.Trophy : ICONS.CheckCircle} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
-                            <Text style={styles.actionBtnInscribedText}>{isCertUnlocked ? 'Completado 🏆' : 'Inscrito ✓'}</Text>
-                        </View>
+                            <Text style={styles.actionBtnInscribedText}>
+                                {isRegistering ? 'Cancelando...' : (isCertUnlocked ? 'Completado 🏆' : 'Inscrito ✓')}
+                            </Text>
+                        </TouchableOpacity>
                     ) : isFull ? (
                         <View style={[styles.actionBtn, { backgroundColor: '#9CA3AF', borderColor: '#6B7280' }]}>
                             <Icon as={ICONS.Users} style={{ color: '#FFFFFF', width: 16, height: 16 }} />
