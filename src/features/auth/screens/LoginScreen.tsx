@@ -24,13 +24,13 @@ export default function LoginScreen() {
     // --- CONFIGURACIÓN DE LA NAV BAR (ANDROID) ---
     useEffect(() => {
         if (Platform.OS === 'android') {
-            NavigationBar.setBackgroundColorAsync('#A82BFA').catch(() => {});
-            NavigationBar.setButtonStyleAsync('light').catch(() => {});
+            NavigationBar.setBackgroundColorAsync('#A82BFA').catch(() => { });
+            NavigationBar.setButtonStyleAsync('light').catch(() => { });
         }
         return () => {
             if (Platform.OS === 'android') {
-                NavigationBar.setBackgroundColorAsync('#131927').catch(() => {});
-                NavigationBar.setButtonStyleAsync('light').catch(() => {});
+                NavigationBar.setBackgroundColorAsync('#131927').catch(() => { });
+                NavigationBar.setButtonStyleAsync('light').catch(() => { });
             }
         };
     }, []);
@@ -80,7 +80,7 @@ export default function LoginScreen() {
             const responseData = await authService.registerStudent(datos);
             const usernameGenerated = responseData.user?.username || "generado";
             Alert.alert(
-                "¡Éxito!", 
+                "¡Éxito!",
                 `Tu cuenta ha sido creada exitosamente.\n\nTu nombre de usuario es: ${usernameGenerated}\n\nPor favor, úsalo para iniciar sesión.`
             );
             setShowModal(false);
@@ -112,7 +112,7 @@ export default function LoginScreen() {
                     }}
                 >
                     <Box className="w-full max-w-[400px] items-center">
-                        
+
                         {/* 🔵 LOGO CIRCULAR (White circle with blue Radar icon) */}
                         <MotiView
                             from={{ opacity: 0, scale: 0.8, translateY: -20 }}
@@ -157,7 +157,7 @@ export default function LoginScreen() {
                                 transition={{ type: 'timing', duration: 600, delay: 400 }}
                                 className="w-full"
                             >
-                                <Input 
+                                <Input
                                     className="mb-4 h-14 rounded-full px-5 flex-row items-center border-0"
                                     style={{
                                         backgroundColor: '#FFFFFF',
@@ -166,7 +166,7 @@ export default function LoginScreen() {
                                     <InputField
                                         className="flex-1 text-base"
                                         style={{ color: '#1E3FFF' }}
-                                        placeholder="Correo universitario"
+                                        placeholder="Usuario"
                                         placeholderTextColor="#6B7280"
                                         value={user}
                                         onChangeText={setUser}
@@ -182,7 +182,7 @@ export default function LoginScreen() {
                                 transition={{ type: 'timing', duration: 600, delay: 500 }}
                                 className="w-full"
                             >
-                                <Input 
+                                <Input
                                     className="mb-6 h-14 rounded-full px-5 flex-row items-center justify-between border-0"
                                     style={{
                                         backgroundColor: '#FFFFFF',
@@ -198,9 +198,9 @@ export default function LoginScreen() {
                                         onChangeText={setPassword}
                                     />
                                     <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                                        <Icon 
-                                            as={showPassword ? ICONS.eye : ICONS.eyeOff} 
-                                            className="w-5 h-5" 
+                                        <Icon
+                                            as={showPassword ? ICONS.eye : ICONS.eyeOff}
+                                            className="w-5 h-5"
                                             style={{ color: '#1E3FFF' }}
                                         />
                                     </TouchableOpacity>
@@ -214,7 +214,7 @@ export default function LoginScreen() {
                                 transition={{ type: 'timing', duration: 600, delay: 600 }}
                                 className="w-full"
                             >
-                                <Button 
+                                <Button
                                     className="bg-white w-full h-14 rounded-full items-center justify-center shadow-lg shadow-black/15 active:bg-white/90"
                                     onPress={handleLogin}
                                 >
@@ -263,10 +263,10 @@ export default function LoginScreen() {
                 </ScrollView>
 
                 {/* MODAL DE REGISTRO */}
-                <RegisterModal 
-                    isOpen={showModal} 
-                    onClose={() => setShowModal(false)} 
-                    onRegister={handleRegister} 
+                <RegisterModal
+                    isOpen={showModal}
+                    onClose={() => setShowModal(false)}
+                    onRegister={handleRegister}
                 />
 
                 {/* MODAL DEL TUTORIAL DE BIENVENIDA */}

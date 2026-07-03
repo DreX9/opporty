@@ -13,6 +13,7 @@ export interface DatosRegistro {
     ciclo: string;
     phoneNumber: string;
     contrasena: string;
+    profilePictureUrl?: string;
 }
 
 export interface RegisterModalProps {

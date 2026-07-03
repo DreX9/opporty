@@ -12,6 +12,7 @@ import {
     Platform,
     UIManager,
     useWindowDimensions,
+    Image,
 } from 'react-native';
 
 // Habilitar LayoutAnimation en Android
@@ -365,7 +366,15 @@ export default function ProfileScreen() {
                 {/* Avatar */}
                 <View style={styles.avatarRing}>
                     <View style={styles.avatarInner}>
-                        <Icon as={ICONS.user} style={{ color: C.accent, width: 44, height: 44 }} />
+                        {payload?.profilePictureUrl ? (
+                            <Image
+                                source={{ uri: payload.profilePictureUrl }}
+                                style={{ width: 80, height: 80, borderRadius: 40 }}
+                                resizeMode="cover"
+                            />
+                        ) : (
+                            <Icon as={ICONS.user} style={{ color: C.accent, width: 44, height: 44 }} />
+                        )}
                     </View>
                 </View>
 

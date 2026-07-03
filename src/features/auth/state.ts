@@ -9,6 +9,7 @@ export interface JwtPayload {
   exp: number;
   firstName?: string;
   lastName?: string;
+  profilePictureUrl?: string;
 }
 
 
@@ -121,7 +122,7 @@ export const authStateManager = {
     notify();
   },
 
-  updateProfileNames(firstName: string, lastName: string) {
+  updateProfile(firstName: string, lastName: string, profilePictureUrl?: string) {
     if (globalAuthState.payload) {
       globalAuthState = {
         ...globalAuthState,
@@ -129,10 +130,15 @@ export const authStateManager = {
           ...globalAuthState.payload,
           firstName,
           lastName,
+          profilePictureUrl,
         },
       };
       notify();
     }
+  },
+
+  updateProfileNames(firstName: string, lastName: string) {
+    this.updateProfile(firstName, lastName, globalAuthState.payload?.profilePictureUrl);
   },
 
   isAdmin(): boolean {

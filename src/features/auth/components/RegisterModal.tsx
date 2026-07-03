@@ -8,7 +8,11 @@ import {
     Alert,
     StyleSheet,
     View,
+    Image,
+    ActivityIndicator,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadImageToCloudinary } from '../../admin/services/cloudinaryService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -76,6 +80,8 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
 
     // --- ESTADOS DEL FORMULARIO ---
     const [nombres, setNombres] = useState('');
+    const [fotoPerfil, setFotoPerfil] = useState('');
+    const [subiendoFoto, setSubiendoFoto] = useState(false);
     const [apellidos, setApellidos] = useState('');
     const [email, setEmail] = useState('');
     const [dni, setDni] = useState('');
@@ -105,9 +111,53 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         const currentYear = new Date().getFullYear();
         const suffixVal = currentYear - 2026 + 1;
         const suffix = suffixVal > 0 ? String(suffixVal).padStart(2, '0') : '01';
-        return `${currentYear}${lastFour}${suffix}`;
+        return `u${currentYear}${lastFour}${suffix}`;
     };
     const generatedUsername = getGeneratedUsername();
+
+    const seleccionarFotoPerfil = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('⚠️ Permiso denegado', 'Se requieren permisos de la galería para seleccionar una foto de perfil.');
+            return;
+        }
+
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const localUri = result.assets[0].uri;
+                
+                const filename = localUri.split('/').pop() || '';
+                const match = /\.(\w+)$/.exec(filename);
+                const extension = match ? match[1].toLowerCase() : '';
+                const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                if (extension && !allowedExtensions.includes(extension)) {
+                    Alert.alert('⚠️ Archivo no válido', 'Solo se permiten imágenes (JPG, JPEG, PNG, WEBP, GIF).');
+                    return;
+                }
+
+                setSubiendoFoto(true);
+                const secureUrl = await uploadImageToCloudinary(localUri);
+                setFotoPerfil(secureUrl);
+                Alert.alert('✅ Éxito', 'Foto de perfil subida correctamente.');
+            }
+        } catch (error: any) {
+            console.error('[RegisterModal] Error al subir foto de perfil:', error);
+            Alert.alert('⚠️ Error', error.message || 'No se pudo subir la foto de perfil.');
+        } finally {
+            setSubiendoFoto(false);
+        }
+    };
+
+    const eliminarFotoPerfil = () => {
+        setFotoPerfil('');
+    };
 
     const handleClose = () => {
         // Reset states
@@ -124,6 +174,8 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         setConfirmarContrasena('');
         setDateValue(new Date(2008, 0, 1));
         setFocusedInput(null);
+        setFotoPerfil('');
+        setSubiendoFoto(false);
         onClose();
     };
 
@@ -197,7 +249,8 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                 carrera,
                 ciclo: ciclo.replace('Ciclo ', ''),
                 phoneNumber,
-                contrasena
+                contrasena,
+                profilePictureUrl: fotoPerfil || undefined
             };
             onRegister(datos);
             handleClose();
@@ -293,6 +346,50 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                         ======================================================== */}
                         {pasoActual === 1 && (
                             <VStack style={{ gap: 16 }}>
+                                {/* Foto de perfil (Opcional) */}
+                                <VStack style={{ alignItems: 'center', marginBottom: 12 }}>
+                                    <TouchableOpacity
+                                        activeOpacity={0.8}
+                                        onPress={seleccionarFotoPerfil}
+                                        style={styles.avatarPickerRing}
+                                        accessibilityLabel="Seleccionar foto de perfil"
+                                        accessibilityRole="button"
+                                    >
+                                        <View style={styles.avatarPickerInner}>
+                                            {subiendoFoto ? (
+                                                <ActivityIndicator size="small" color={C.accent} />
+                                            ) : fotoPerfil ? (
+                                                <Image
+                                                    source={{ uri: fotoPerfil }}
+                                                    style={styles.avatarPickerImage}
+                                                />
+                                            ) : (
+                                                <Icon as={ICONS.user} style={{ color: C.accent, width: 44, height: 44 }} />
+                                            )}
+                                        </View>
+                                        
+                                        {/* Camera Icon Overlay */}
+                                        <View style={styles.cameraIconOverlay}>
+                                            <Icon as={ICONS.Camera} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
+                                        </View>
+                                    </TouchableOpacity>
+                                    
+                                    {fotoPerfil ? (
+                                        <TouchableOpacity
+                                            onPress={eliminarFotoPerfil}
+                                            style={{ marginTop: 8 }}
+                                        >
+                                            <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '600' }}>
+                                                Eliminar foto
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ) : (
+                                        <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 6 }}>
+                                            Foto de perfil (opcional)
+                                        </Text>
+                                    )}
+                                </VStack>
+
                                 {/* Nombre y Apellido lado a lado */}
                                 <HStack style={{ gap: 12 }}>
                                     <VStack style={{ flex: 1 }}>
@@ -692,6 +789,44 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 10,
+    },
+    avatarPickerRing: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        borderWidth: 2,
+        borderColor: '#6366F1',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    avatarPickerInner: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    avatarPickerImage: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+    },
+    cameraIconOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#6366F1',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
 

@@ -48,6 +48,7 @@ export const authService = {
             ciclo: Number(datos.ciclo),
             phoneNumber: datos.phoneNumber || null,
             password: datos.contrasena,
+            profilePictureUrl: datos.profilePictureUrl || null,
         };
 
         const response = await apiClient.post('/auth/register/student', payload);
