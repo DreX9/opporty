@@ -48,6 +48,7 @@ export interface StudentProfile {
             name: string;
             description: string;
         };
+        profilePictureUrl?: string;
     };
 }
 
@@ -73,6 +74,7 @@ export interface TeacherProfile {
             name: string;
             description: string;
         };
+        profilePictureUrl?: string;
     };
 }
 
@@ -88,6 +90,7 @@ export interface StudentWriteData {
     status: string;
     userId: number;
     password?: string;
+    profilePictureUrl?: string;
 }
 
 export interface TeacherWriteData {
@@ -104,5 +107,6 @@ export interface TeacherWriteData {
     hiringDate?: string;
     userId: number;
     password?: string;
+    profilePictureUrl?: string;
 }
 

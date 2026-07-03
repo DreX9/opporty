@@ -9,7 +9,10 @@ import {
     StyleSheet,
     View,
     ActivityIndicator,
+    Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadImageToCloudinary } from '../../admin/services/cloudinaryService';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -84,6 +87,8 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
     const [selectedSpecialtyOption, setSelectedSpecialtyOption] = useState('');
     const [biography, setBiography] = useState('');
     const [hiringDate, setHiringDate] = useState('');
+    const [profilePictureUrl, setProfilePictureUrl] = useState('');
+    const [subiendoFoto, setSubiendoFoto] = useState(false);
 
     // --- ESTADOS DE SEGURIDAD ---
     const [contrasena, setContrasena] = useState('');
@@ -117,6 +122,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         setPhoneNumber(profile.phoneNumber || '');
                         setCarrera(profile.carrera || '');
                         setCiclo(profile.ciclo ? `Ciclo ${profile.ciclo}` : '');
+                        setProfilePictureUrl(profile.user?.profilePictureUrl || '');
                         
                         if (profile.fechaNacimiento) {
                             setBirthDateValue(new Date(profile.fechaNacimiento + 'T12:00:00'));
@@ -140,6 +146,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                         setPhoneNumber(profile.telefono || '');
                         setTitulo(profile.titulo || '');
                         setEspecialidad(profile.especialidad || '');
+                        setProfilePictureUrl(profile.user?.profilePictureUrl || '');
                         if (profile.especialidad) {
                             if (LISTA_ESPECIALIDADES.includes(profile.especialidad)) {
                                 setSelectedSpecialtyOption(profile.especialidad);
@@ -229,6 +236,50 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
         return errors;
     };
 
+    const seleccionarFotoPerfil = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('⚠️ Permiso denegado', 'Se requieren permisos de la galería para seleccionar una foto de perfil.');
+            return;
+        }
+
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const localUri = result.assets[0].uri;
+                
+                const filename = localUri.split('/').pop() || '';
+                const match = /\.(\w+)$/.exec(filename);
+                const extension = match ? match[1].toLowerCase() : '';
+                const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                if (extension && !allowedExtensions.includes(extension)) {
+                    Alert.alert('⚠️ Archivo no válido', 'Solo se permiten imágenes (JPG, JPEG, PNG, WEBP, GIF).');
+                    return;
+                }
+
+                setSubiendoFoto(true);
+                const secureUrl = await uploadImageToCloudinary(localUri);
+                setProfilePictureUrl(secureUrl);
+                Alert.alert('✅ Éxito', 'Foto de perfil subida correctamente.');
+            }
+        } catch (error: any) {
+            console.error('[EditProfileModal] Error al subir foto de perfil:', error);
+            Alert.alert('⚠️ Error', error.message || 'No se pudo subir la foto de perfil.');
+        } finally {
+            setSubiendoFoto(false);
+        }
+    };
+
+    const eliminarFotoPerfil = () => {
+        setProfilePictureUrl('');
+    };
+
     const handleSave = async () => {
         const errors = getValidationErrors();
         if (errors.length > 0) {
@@ -251,6 +302,7 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                     status: studentProfile.status,
                     userId: studentProfile.user.id,
                     password: contrasena ? contrasena : undefined,
+                    profilePictureUrl: profilePictureUrl || undefined,
                 };
                 await profileService.updateStudent(data);
             } else if (!isStudent && teacherProfile) {
@@ -268,11 +320,12 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                     status: teacherProfile.status,
                     userId: teacherProfile.user.id,
                     password: contrasena ? contrasena : undefined,
+                    profilePictureUrl: profilePictureUrl || undefined,
                 };
                 await profileService.updateTeacher(data);
             }
 
-            authStateManager.updateProfileNames(nombres.trim(), apellidos.trim());
+            authStateManager.updateProfile(nombres.trim(), apellidos.trim(), profilePictureUrl || undefined);
 
             Alert.alert('✅ ¡Éxito!', 'Tu perfil ha sido actualizado correctamente.', [
                 {
@@ -336,6 +389,50 @@ export default function EditProfileModal({ isOpen, onClose, onProfileUpdated }: 
                             keyboardShouldPersistTaps="handled"
                             contentContainerStyle={styles.scrollContainer}
                         >
+                            {/* Foto de perfil (Opcional) */}
+                            <VStack style={{ alignItems: 'center', marginVertical: 20 }}>
+                                <TouchableOpacity
+                                    activeOpacity={0.8}
+                                    onPress={seleccionarFotoPerfil}
+                                    style={styles.avatarPickerRing}
+                                    accessibilityLabel="Cambiar foto de perfil"
+                                    accessibilityRole="button"
+                                >
+                                    <View style={styles.avatarPickerInner}>
+                                        {subiendoFoto ? (
+                                            <ActivityIndicator size="small" color={C.accent} />
+                                        ) : profilePictureUrl ? (
+                                            <Image
+                                                source={{ uri: profilePictureUrl }}
+                                                style={styles.avatarPickerImage}
+                                            />
+                                        ) : (
+                                            <Icon as={ICONS.user} style={{ color: C.accent, width: 44, height: 44 }} />
+                                        )}
+                                    </View>
+                                    
+                                    {/* Camera Icon Overlay */}
+                                    <View style={styles.cameraIconOverlay}>
+                                        <Icon as={ICONS.Camera} style={{ color: '#FFFFFF', width: 14, height: 14 }} />
+                                    </View>
+                                </TouchableOpacity>
+                                
+                                {profilePictureUrl ? (
+                                    <TouchableOpacity
+                                        onPress={eliminarFotoPerfil}
+                                        style={{ marginTop: 8 }}
+                                    >
+                                        <Text style={{ color: '#EF4444', fontSize: 13, fontWeight: '600' }}>
+                                            Eliminar foto
+                                        </Text>
+                                    </TouchableOpacity>
+                                ) : (
+                                    <Text style={{ color: C.textSecondary, fontSize: 12, marginTop: 6 }}>
+                                        Añadir foto de perfil
+                                    </Text>
+                                )}
+                            </VStack>
+
                             {/* Información congelada de Cuenta */}
                             <VStack style={styles.frozenSection}>
                                 <Text style={styles.sectionTitle}>Mi Cuenta</Text>
@@ -801,5 +898,43 @@ const styles = StyleSheet.create({
         color: '#6B7280',
         fontSize: 14,
         fontWeight: '500',
+    },
+    avatarPickerRing: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        borderWidth: 2,
+        borderColor: '#6366F1',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+    },
+    avatarPickerInner: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    avatarPickerImage: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+    },
+    cameraIconOverlay: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#6366F1',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });
