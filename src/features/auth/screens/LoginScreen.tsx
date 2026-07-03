@@ -12,6 +12,7 @@ import { ICONS } from '@/components/icons';
 import * as NavigationBar from 'expo-navigation-bar';
 import { MotiView } from 'moti';
 import OnboardingScreen from './OnboardingScreen';
+import ConfirmModal from '@/components/ConfirmModal';
 
 import RegisterModal from '../components/RegisterModal';
 import { DatosRegistro } from '../types';
@@ -44,13 +45,31 @@ export default function LoginScreen() {
     const [showModal, setShowModal] = useState<boolean>(false);
     const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
 
+    // --- ESTADO DE ALERTAS PERSONALIZADAS ---
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        type: 'error' | 'success' | 'info';
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        type: 'info'
+    });
+    const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
+    const showAlert = (title: string, description: string, type: 'error' | 'success' | 'info') => {
+        setAlertConfig({ isOpen: true, title, description, type });
+    };
+
+    // --- ESTADO PARA ERROR INLINE DE LOGIN ---
+    const [loginError, setLoginError] = useState<string | null>(null);
+
     // --- LÓGICA DE LOGIN ---
     const handleLogin = async () => {
+        setLoginError(null);
         if (!user || !password) {
-            Alert.alert(
-                "Campos incompletos",
-                "Por favor, ingresa tu usuario y contraseña."
-            );
+            setLoginError("Por favor, ingresa tu usuario y contraseña.");
             return;
         }
 
@@ -65,12 +84,14 @@ export default function LoginScreen() {
             router.replace('/tabs/radar');
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } }; message?: string };
-            const msg = err.response?.data?.message || err.message || "El usuario o la contraseña no son correctos.";
-            Alert.alert(
-                "Acceso Denegado",
-                `No se pudo iniciar sesión: ${msg}`,
-                [{ text: "Entendido", style: "default" }]
-            );
+            let msg = err.response?.data?.message || err.message || "El usuario o la contraseña no son correctos.";
+            
+            // Traducir Bad credentials
+            if (msg.toLowerCase().includes("bad credentials")) {
+                msg = "La contraseña o el usuario ingresados son incorrectos.";
+            }
+            
+            setLoginError(msg);
         }
     };
 
@@ -79,15 +100,16 @@ export default function LoginScreen() {
         try {
             const responseData = await authService.registerStudent(datos);
             const usernameGenerated = responseData.user?.username || "generado";
-            Alert.alert(
+            showAlert(
                 "¡Éxito!",
-                `Tu cuenta ha sido creada exitosamente.\n\nTu nombre de usuario es: ${usernameGenerated}\n\nPor favor, úsalo para iniciar sesión.`
+                `Tu cuenta ha sido creada exitosamente.\n\nTu nombre de usuario es: ${usernameGenerated}\n\nPor favor, úsalo para iniciar sesión.`,
+                "success"
             );
             setShowModal(false);
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } }; message?: string };
             const msg = err.response?.data?.message || err.message || "Error al conectar con el servidor.";
-            Alert.alert("Error al Registrar", `No se pudo crear la cuenta: ${msg}`);
+            showAlert("Error al Registrar", `No se pudo crear la cuenta: ${msg}`, "error");
         }
     };
 
@@ -207,6 +229,21 @@ export default function LoginScreen() {
                                 </Input>
                             </MotiView>
 
+                            {/* ERROR INLINE PARA LOGIN */}
+                            {loginError && (
+                                <MotiView
+                                    from={{ opacity: 0, translateY: -10 }}
+                                    animate={{ opacity: 1, translateY: 0 }}
+                                    transition={{ type: 'timing', duration: 300 }}
+                                    className="mb-6 bg-rose-500/20 px-4 py-3.5 rounded-2xl flex-row items-center border border-rose-500/30"
+                                >
+                                    <Icon as={ICONS.AlertCircle} className="w-5 h-5 mr-3" style={{ color: '#FECDD3' }} />
+                                    <Text className="text-sm font-medium flex-1" style={{ color: '#FFE4E6' }}>
+                                        {loginError}
+                                    </Text>
+                                </MotiView>
+                            )}
+
                             {/* BOTÓN INICIAR SESIÓN */}
                             <MotiView
                                 from={{ opacity: 0, translateY: 20 }}
@@ -278,6 +315,29 @@ export default function LoginScreen() {
                 >
                     <OnboardingScreen onFinish={() => setIsOnboardingOpen(false)} isModal={false} />
                 </Modal>
+
+                {/* MODAL DE ALERTAS */}
+                <ConfirmModal
+                    isOpen={alertConfig.isOpen}
+                    onClose={closeAlert}
+                    onConfirm={closeAlert}
+                    title={alertConfig.title}
+                    description={alertConfig.description}
+                    confirmLabel="Entendido"
+                    hideCancel={true}
+                    icon={
+                        alertConfig.type === 'error' ? ICONS.AlertCircle : 
+                        alertConfig.type === 'success' ? ICONS.CheckCircle : ICONS.AlertCircle
+                    }
+                    iconColor={
+                        alertConfig.type === 'error' ? '#EF4444' : 
+                        alertConfig.type === 'success' ? '#10B981' : '#3B82F6'
+                    }
+                    confirmColor={
+                        alertConfig.type === 'error' ? '#EF4444' : 
+                        alertConfig.type === 'success' ? '#10B981' : '#3B82F6'
+                    }
+                />
             </KeyboardAvoidingView>
         </LinearGradient>
     );

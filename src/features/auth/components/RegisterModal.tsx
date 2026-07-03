@@ -24,6 +24,7 @@ import { Button, ButtonText } from '@/components/ui/button';
 import { ICONS } from '@/components/icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as Clipboard from 'expo-clipboard';
+import ConfirmModal from '@/components/ConfirmModal';
 
 import { RegisterModalProps, DatosRegistro } from '../types';
 import DropdownSelect from '@/components/DropdownSelect';
@@ -99,9 +100,30 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+    // --- ESTADO DE ALERTAS PERSONALIZADAS ---
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        type: 'error' | 'success' | 'info' | 'warning';
+        onConfirm?: () => void;
+        confirmLabel?: string;
+        cancelLabel?: string;
+        hideCancel?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        type: 'info'
+    });
+    const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
+    const showAlert = (title: string, description: string, type: 'error' | 'success' | 'info' | 'warning', onConfirm?: () => void, confirmLabel: string = 'Entendido', cancelLabel: string = '', hideCancel: boolean = true) => {
+        setAlertConfig({ isOpen: true, title, description, type, onConfirm, confirmLabel, cancelLabel, hideCancel });
+    };
+
     const copyToClipboard = async () => {
         await Clipboard.setStringAsync(generatedUsername);
-        Alert.alert('¡Copiado! 📋', 'El nombre de usuario sugerido ha sido copiado al portapapeles.');
+        showAlert('¡Copiado! 📋', 'El nombre de usuario sugerido ha sido copiado al portapapeles.', 'success');
     };
 
     // --- CÁLCULO DINÁMICO DEL USERNAME ---
@@ -118,7 +140,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
     const seleccionarFotoPerfil = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('⚠️ Permiso denegado', 'Se requieren permisos de la galería para seleccionar una foto de perfil.');
+            showAlert('⚠️ Permiso denegado', 'Se requieren permisos de la galería para seleccionar una foto de perfil.', 'warning');
             return;
         }
 
@@ -138,18 +160,18 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                 const extension = match ? match[1].toLowerCase() : '';
                 const allowedExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
                 if (extension && !allowedExtensions.includes(extension)) {
-                    Alert.alert('⚠️ Archivo no válido', 'Solo se permiten imágenes (JPG, JPEG, PNG, WEBP, GIF).');
+                    showAlert('⚠️ Archivo no válido', 'Solo se permiten imágenes (JPG, JPEG, PNG, WEBP, GIF).', 'error');
                     return;
                 }
 
                 setSubiendoFoto(true);
                 const secureUrl = await uploadImageToCloudinary(localUri);
                 setFotoPerfil(secureUrl);
-                Alert.alert('✅ Éxito', 'Foto de perfil subida correctamente.');
+                showAlert('✅ Éxito', 'Foto de perfil subida correctamente.', 'success');
             }
         } catch (error: any) {
             console.error('[RegisterModal] Error al subir foto de perfil:', error);
-            Alert.alert('⚠️ Error', error.message || 'No se pudo subir la foto de perfil.');
+            showAlert('⚠️ Error', error.message || 'No se pudo subir la foto de perfil.', 'error');
         } finally {
             setSubiendoFoto(false);
         }
@@ -217,7 +239,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
             if (fechaNacimiento.trim().length === 0) listErrors.push('- Fecha de nacimiento (requerida)');
 
             if (listErrors.length > 0) {
-                Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`);
+                showAlert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`, 'error');
                 return;
             }
             setPasoActual(2);
@@ -236,7 +258,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
             }
 
             if (listErrors.length > 0) {
-                Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`);
+                showAlert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${listErrors.join('\n')}`, 'error');
                 return;
             }
 
@@ -269,17 +291,14 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
             setPasoActual(pasoActual - 1);
         } else {
             if (hasUnsavedChanges()) {
-                Alert.alert(
+                showAlert(
                     '¿Cancelar registro?',
                     'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
-                    [
-                        { text: 'No', style: 'cancel', onPress: () => {} },
-                        {
-                            text: 'Sí, salir',
-                            style: 'destructive',
-                            onPress: () => handleClose(),
-                        },
-                    ]
+                    'warning',
+                    () => handleClose(),
+                    'Sí, salir',
+                    'No',
+                    false
                 );
             } else {
                 handleClose();
@@ -662,6 +681,36 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
                         </Button>
                     </ScrollView>
                 </KeyboardAvoidingView>
+
+                {/* MODAL DE ALERTAS */}
+                <ConfirmModal
+                    isOpen={alertConfig.isOpen}
+                    onClose={closeAlert}
+                    onConfirm={() => {
+                        if (alertConfig.onConfirm) alertConfig.onConfirm();
+                        closeAlert();
+                    }}
+                    title={alertConfig.title}
+                    description={alertConfig.description}
+                    confirmLabel={alertConfig.confirmLabel}
+                    cancelLabel={alertConfig.cancelLabel}
+                    hideCancel={alertConfig.hideCancel}
+                    icon={
+                        alertConfig.type === 'error' ? ICONS.AlertCircle : 
+                        alertConfig.type === 'success' ? ICONS.CheckCircle : 
+                        alertConfig.type === 'warning' ? ICONS.AlertCircle : ICONS.AlertCircle
+                    }
+                    iconColor={
+                        alertConfig.type === 'error' ? '#EF4444' : 
+                        alertConfig.type === 'success' ? '#10B981' : 
+                        alertConfig.type === 'warning' ? '#F59E0B' : '#3B82F6'
+                    }
+                    confirmColor={
+                        alertConfig.type === 'error' ? '#EF4444' : 
+                        alertConfig.type === 'success' ? '#10B981' : 
+                        alertConfig.type === 'warning' ? '#EF4444' : '#3B82F6'
+                    }
+                />
             </SafeAreaView>
         </Modal>
     );

@@ -3,7 +3,7 @@ import { ScrollView, TouchableOpacity, Alert, StatusBar, ActivityIndicator, Layo
 
 // Habilitar LayoutAnimation en Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
@@ -23,6 +23,8 @@ import StatsGrid from '../components/StatsGrid';
 import RecentEvents from '../components/RecentEvents';
 import EventManagement from '../components/EventManagement';
 import UserManagement from '../components/UserManagement';
+import ConfirmModal from '@/components/ConfirmModal';
+import { ICONS } from '@/components/icons';
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
@@ -35,15 +37,15 @@ export default function AdminDashboardScreen() {
   const { width: W } = useWindowDimensions();
   const prevW = useRef(W);
   useEffect(() => {
-      if (prevW.current !== W) {
-          LayoutAnimation.configureNext({
-              duration: 280,
-              create:  { type: 'easeInEaseOut', property: 'opacity' },
-              update:  { type: 'easeInEaseOut' },
-              delete:  { type: 'easeInEaseOut', property: 'opacity' },
-          });
-          prevW.current = W;
-      }
+    if (prevW.current !== W) {
+      LayoutAnimation.configureNext({
+        duration: 280,
+        create: { type: 'easeInEaseOut', property: 'opacity' },
+        update: { type: 'easeInEaseOut' },
+        delete: { type: 'easeInEaseOut', property: 'opacity' },
+      });
+      prevW.current = W;
+    }
   }, [W]);
 
   useEffect(() => {
@@ -56,6 +58,27 @@ export default function AdminDashboardScreen() {
   const [usuarios, setUsuarios] = useState<AdminUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
 
+  // --- ESTADO DE ALERTAS PERSONALIZADAS ---
+  const [alertConfig, setAlertConfig] = useState<{
+      isOpen: boolean;
+      title: string;
+      description: string;
+      type: 'error' | 'success' | 'info' | 'warning';
+      onConfirm?: () => void;
+      confirmLabel?: string;
+      cancelLabel?: string;
+      hideCancel?: boolean;
+  }>({
+      isOpen: false,
+      title: '',
+      description: '',
+      type: 'info'
+  });
+  const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
+  const showAlert = (title: string, description: string, type: 'error' | 'success' | 'info' | 'warning', onConfirm?: () => void, confirmLabel: string = 'Entendido', cancelLabel: string = '', hideCancel: boolean = true) => {
+      setAlertConfig({ isOpen: true, title, description, type, onConfirm, confirmLabel, cancelLabel, hideCancel });
+  };
+
   const eventos = useMemo(() => {
     if (!Array.isArray(backendEvents)) return [];
     return backendEvents.map(be => ({
@@ -63,13 +86,13 @@ export default function AdminDashboardScreen() {
       titulo: be.titulo,
       categoria: be.categories && be.categories.length > 0 ? be.categories.map(c => c.nombre).join(', ') : 'Sin categoría',
       estado: be.estado === 'PUBLISHED' ? 'Aprobado' as const
-            : be.estado === 'PENDING' ? 'Pendiente' as const
-            : be.estado === 'REJECTED' ? 'Rechazado' as const
+        : be.estado === 'PENDING' ? 'Pendiente' as const
+          : be.estado === 'REJECTED' ? 'Rechazado' as const
             : be.estado === 'SCHEDULED' ? 'Programado' as const
-            : be.estado === 'SUSPENDED' ? 'Suspendido' as const
-            : be.estado === 'CANCELLED' ? 'Cancelado' as const
-            : be.estado === 'FINISHED' ? 'Finalizado' as const
-            : be.estado,
+              : be.estado === 'SUSPENDED' ? 'Suspendido' as const
+                : be.estado === 'CANCELLED' ? 'Cancelado' as const
+                  : be.estado === 'FINISHED' ? 'Finalizado' as const
+                    : be.estado,
       fecha: be.fechaInicio,
       motivoRechazo: be.motivoRechazo,
       raw: be,
@@ -84,7 +107,7 @@ export default function AdminDashboardScreen() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'No se pudieron cargar los usuarios del servidor.';
       console.error('Error al cargar usuarios:', err);
-      Alert.alert('Error', msg);
+      showAlert('Error', msg, 'error');
     } finally {
       setLoadingUsers(false);
     }
@@ -145,12 +168,12 @@ export default function AdminDashboardScreen() {
       };
 
       await eventService.updateEvent(Number(id), payload);
-      Alert.alert('✅ Éxito', `El evento "${original.titulo}" ha sido aprobado y ahora está ${isFinished ? 'finalizado' : 'programado'}.`);
+      showAlert('✅ Éxito', `El evento "${original.titulo}" ha sido aprobado y ahora está ${isFinished ? 'finalizado' : 'programado'}.`, 'success');
       refetchEvents();
     } catch (error: unknown) {
       console.error('Error al aprobar evento:', error);
       const errMsg = error instanceof Error ? error.message : 'No se pudo aprobar el evento.';
-      Alert.alert('⚠️ Error', errMsg);
+      showAlert('⚠️ Error', errMsg, 'error');
     }
   };
 
@@ -186,12 +209,12 @@ export default function AdminDashboardScreen() {
       };
 
       await eventService.updateEvent(Number(id), payload);
-      Alert.alert('✅ Éxito', `El evento "${original.titulo}" ha sido iniciado y ahora es público.`);
+      showAlert('✅ Éxito', `El evento "${original.titulo}" ha sido iniciado y ahora es público.`, 'success');
       refetchEvents();
     } catch (error: unknown) {
       console.error('Error al iniciar evento:', error);
       const errMsg = error instanceof Error ? error.message : 'No se pudo iniciar el evento.';
-      Alert.alert('⚠️ Error', errMsg);
+      showAlert('⚠️ Error', errMsg, 'error');
     }
   };
 
@@ -227,12 +250,12 @@ export default function AdminDashboardScreen() {
       };
 
       await eventService.updateEvent(Number(id), payload);
-      Alert.alert('⏸️ Éxito', `El evento "${original.titulo}" ha sido suspendido.`);
+      showAlert('⏸️ Éxito', `El evento "${original.titulo}" ha sido suspendido.`, 'success');
       refetchEvents();
     } catch (error: unknown) {
       console.error('Error al suspender evento:', error);
       const errMsg = error instanceof Error ? error.message : 'No se pudo suspender el evento.';
-      Alert.alert('⚠️ Error', errMsg);
+      showAlert('⚠️ Error', errMsg, 'error');
     }
   };
 
@@ -268,12 +291,12 @@ export default function AdminDashboardScreen() {
       };
 
       await eventService.updateEvent(Number(id), payload);
-      Alert.alert('⏹️ Éxito', `El evento "${original.titulo}" ha sido cancelado.`);
+      showAlert('⏹️ Éxito', `El evento "${original.titulo}" ha sido cancelado.`, 'success');
       refetchEvents();
     } catch (error: unknown) {
       console.error('Error al cancelar evento:', error);
       const errMsg = error instanceof Error ? error.message : 'No se pudo cancelar el evento.';
-      Alert.alert('⚠️ Error', errMsg);
+      showAlert('⚠️ Error', errMsg, 'error');
     }
   };
 
@@ -309,66 +332,63 @@ export default function AdminDashboardScreen() {
       };
 
       await eventService.updateEvent(Number(id), payload);
-      Alert.alert('❌ Solicitud Rechazada', `El evento "${original.titulo}" ha sido rechazado.`);
+      showAlert('❌ Solicitud Rechazada', `El evento "${original.titulo}" ha sido rechazado.`, 'success');
       refetchEvents();
     } catch (error: unknown) {
       console.error('Error al rechazar evento:', error);
       const errMsg = error instanceof Error ? error.message : 'No se pudo rechazar el evento.';
-      Alert.alert('⚠️ Error', errMsg);
+      showAlert('⚠️ Error', errMsg, 'error');
     }
   };
 
   const handleFinalizarEvento = (id: string) => {
-    Alert.alert(
+    showAlert(
       'Finalizar Evento',
       '¿Está seguro de que desea finalizar este evento? Ya no se podrán escanear más asistencias.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Finalizar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const original = backendEvents.find(e => String(e.id) === id);
-              if (!original) return;
+      'warning',
+      async () => {
+        try {
+          const original = backendEvents.find(e => String(e.id) === id);
+          if (!original) return;
 
-              const payload = {
-                titulo: original.titulo,
-                descripcion: original.descripcion || '',
-                fechaInicio: original.fechaInicio,
-                fechaFin: original.fechaFin,
-                horaInicio: original.horaInicio,
-                horaFin: original.horaFin,
-                capacidad: original.capacidad,
-                imagenUrl: original.imagenUrl,
-                modalidad: original.modalidad,
-                lugar: original.lugar,
-                referencia: original.referencia,
-                latitud: original.latitud,
-                longitud: original.longitud,
-                estado: 'FINISHED',
-                requiresApproval: original.requiresApproval,
-                allowQrAttendance: original.allowQrAttendance,
-                edadMinima: original.edadMinima,
-                requisitos: original.requisitos,
-                categoryIds: original.categories.map(c => c.id),
-                tagIds: original.tags.map(t => t.id),
-                imageUrls: original.imageUrls || [],
-                grabacionUrl: original.grabacionUrl || null,
-                motivoRechazo: original.motivoRechazo,
-              };
+          const payload = {
+            titulo: original.titulo,
+            descripcion: original.descripcion || '',
+            fechaInicio: original.fechaInicio,
+            fechaFin: original.fechaFin,
+            horaInicio: original.horaInicio,
+            horaFin: original.horaFin,
+            capacidad: original.capacidad,
+            imagenUrl: original.imagenUrl,
+            modalidad: original.modalidad,
+            lugar: original.lugar,
+            referencia: original.referencia,
+            latitud: original.latitud,
+            longitud: original.longitud,
+            estado: 'FINISHED',
+            requiresApproval: original.requiresApproval,
+            allowQrAttendance: original.allowQrAttendance,
+            edadMinima: original.edadMinima,
+            requisitos: original.requisitos,
+            categoryIds: original.categories.map(c => c.id),
+            tagIds: original.tags.map(t => t.id),
+            imageUrls: original.imageUrls || [],
+            grabacionUrl: original.grabacionUrl || null,
+            motivoRechazo: original.motivoRechazo,
+          };
 
-              await eventService.updateEvent(Number(id), payload);
-              Alert.alert('🏁 Éxito', `El evento "${original.titulo}" ha sido finalizado.`);
-              refetchEvents();
-            } catch (error: unknown) {
-              console.error('Error al finalizar evento:', error);
-              const errMsg = error instanceof Error ? error.message : 'No se pudo finalizar el evento.';
-              Alert.alert('⚠️ Error', errMsg);
-            }
-          }
+          await eventService.updateEvent(Number(id), payload);
+          showAlert('🏁 Éxito', `El evento "${original.titulo}" ha sido finalizado.`, 'success');
+          refetchEvents();
+        } catch (error: unknown) {
+          console.error('Error al finalizar evento:', error);
+          const errMsg = error instanceof Error ? error.message : 'No se pudo finalizar el evento.';
+          showAlert('⚠️ Error', errMsg, 'error');
         }
-      ]
+      },
+      'Finalizar',
+      'Cancelar',
+      false
     );
   };
 
@@ -407,41 +427,38 @@ export default function AdminDashboardScreen() {
       const successMessage = role === 'MANAGER'
         ? 'El enlace de grabación ha sido enviado al administrador para su aprobación.'
         : 'El enlace de grabación ha sido guardado correctamente.';
-      Alert.alert('✅ Éxito', successMessage);
+      showAlert('✅ Éxito', successMessage, 'success');
       refetchEvents();
     } catch (error: unknown) {
       console.error('Error al guardar enlace de video:', error);
       const errMsg = error instanceof Error ? error.message : 'No se pudo guardar el enlace de video.';
-      Alert.alert('⚠️ Error', errMsg);
+      showAlert('⚠️ Error', errMsg, 'error');
     }
   };
 
   const handleEliminarEvento = (id: string) => {
-    Alert.alert(
+    showAlert(
       'Eliminar Evento',
       '¿Está seguro de que desea eliminar este evento? Esta acción no se puede deshacer.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await eventService.deleteEvent(Number(id));
-              Alert.alert('✅ Éxito', 'El evento ha sido eliminado correctamente.');
-              refetchEvents();
-            } catch (error: any) {
-              console.error('Error al eliminar evento:', error);
-              let errMsg = 'No se pudo eliminar el evento.';
-              if (error && typeof error === 'object') {
-                const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
-                errMsg = axiosErr.response?.data?.message || axiosErr.message || errMsg;
-              }
-              Alert.alert('⚠️ Error al eliminar', errMsg);
-            }
+      'error',
+      async () => {
+        try {
+          await eventService.deleteEvent(Number(id));
+          showAlert('✅ Éxito', 'El evento ha sido eliminado correctamente.', 'success');
+          refetchEvents();
+        } catch (error: any) {
+          console.error('Error al eliminar evento:', error);
+          let errMsg = 'No se pudo eliminar el evento.';
+          if (error && typeof error === 'object') {
+            const axiosErr = error as { response?: { data?: { message?: string } }; message?: string };
+            errMsg = axiosErr.response?.data?.message || axiosErr.message || errMsg;
           }
+          showAlert('⚠️ Error al eliminar', errMsg, 'error');
         }
-      ]
+      },
+      'Eliminar',
+      'Cancelar',
+      false
     );
   };
 
@@ -452,12 +469,12 @@ export default function AdminDashboardScreen() {
       setUsuarios(prev =>
         prev.map(u => u.id === id ? { ...u, rol: newRole, emoji: newRole === 'ADMIN' ? '👑' : newRole === 'TEACHER' ? '🧑‍💻' : '👨🏻‍💻' } : u)
       );
-      Alert.alert('Éxito', `El rol del usuario ha sido actualizado a ${newRole}.`);
+      showAlert('Éxito', `El rol del usuario ha sido actualizado a ${newRole}.`, 'success');
     } catch (err: unknown) {
       const msg = err && typeof err === 'object' && 'response' in err
         ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'No se pudo actualizar el rol.')
         : (err instanceof Error ? err.message : 'Error desconocido al actualizar el rol.');
-      Alert.alert('Error', msg);
+      showAlert('Error', msg, 'error');
     }
   };
 
@@ -468,30 +485,27 @@ export default function AdminDashboardScreen() {
       ? '¿Estás seguro de que deseas desactivar este usuario? Ya no podrá iniciar sesión en el sistema.'
       : '¿Deseas activar nuevamente este usuario? Podrá volver a iniciar sesión.';
 
-    Alert.alert(
+    showAlert(
       `${newStatus === 'INACTIVE' ? 'Desactivar' : 'Activar'} usuario`,
       confirmMessage,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: newStatus === 'INACTIVE' ? 'Desactivar' : 'Activar',
-          style: newStatus === 'INACTIVE' ? 'destructive' : 'default',
-          onPress: async () => {
-            try {
-              await adminService.updateUserStatus(id, newStatus);
-              setUsuarios(prev =>
-                prev.map(u => u.id === id ? { ...u, status: newStatus } : u)
-              );
-              Alert.alert('Éxito', `El usuario ha sido ${newStatus === 'INACTIVE' ? 'desactivado' : 'activado'} correctamente.`);
-            } catch (err: unknown) {
-              const msg = err && typeof err === 'object' && 'response' in err
-                ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'No se pudo actualizar el estado.')
-                : (err instanceof Error ? err.message : 'Error desconocido al actualizar el estado.');
-              Alert.alert('Error', msg);
-            }
-          }
+      'warning',
+      async () => {
+        try {
+          await adminService.updateUserStatus(id, newStatus);
+          setUsuarios(prev =>
+            prev.map(u => u.id === id ? { ...u, status: newStatus } : u)
+          );
+          showAlert('Éxito', `El usuario ha sido ${newStatus === 'INACTIVE' ? 'desactivado' : 'activado'} correctamente.`, 'success');
+        } catch (err: unknown) {
+          const msg = err && typeof err === 'object' && 'response' in err
+            ? ((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'No se pudo actualizar el estado.')
+            : (err instanceof Error ? err.message : 'Error desconocido al actualizar el estado.');
+          showAlert('Error', msg, 'error');
         }
-      ]
+      },
+      newStatus === 'INACTIVE' ? 'Desactivar' : 'Activar',
+      'Cancelar',
+      false
     );
   };
 
@@ -532,7 +546,7 @@ export default function AdminDashboardScreen() {
           </Box>
         </HStack>
       </LinearGradient>
- 
+
       {/* 🧭 SUB-HEADER NAVIGATION TABS */}
       <HStack className="px-6 border-b border-gray-200 pb-4 mb-8 mt-4" style={{ gap: 12, alignItems: 'center' }}>
         <TouchableOpacity
@@ -543,7 +557,7 @@ export default function AdminDashboardScreen() {
             Dashboard
           </Text>
         </TouchableOpacity>
- 
+
         {(role === 'ADMIN' || role === 'MANAGER') && (
           <TouchableOpacity
             onPress={() => setActiveTab('eventos')}
@@ -554,7 +568,7 @@ export default function AdminDashboardScreen() {
             </Text>
           </TouchableOpacity>
         )}
- 
+
         {role === 'ADMIN' && (
           <TouchableOpacity
             onPress={() => setActiveTab('usuarios')}
@@ -565,7 +579,7 @@ export default function AdminDashboardScreen() {
             </Text>
           </TouchableOpacity>
         )}
- 
+
         {(role === 'ADMIN' || role === 'MANAGER') && (
           <TouchableOpacity
             onPress={handleNavigationToCreation}
@@ -578,7 +592,7 @@ export default function AdminDashboardScreen() {
           </TouchableOpacity>
         )}
       </HStack>
- 
+
       <Box className="px-6">
         {activeTab === 'dashboard' && (
           <VStack>
@@ -617,6 +631,36 @@ export default function AdminDashboardScreen() {
           />
         )}
       </Box>
+
+      {/* MODAL DE ALERTAS */}
+      <ConfirmModal
+          isOpen={alertConfig.isOpen}
+          onClose={closeAlert}
+          onConfirm={() => {
+              if (alertConfig.onConfirm) alertConfig.onConfirm();
+              closeAlert();
+          }}
+          title={alertConfig.title}
+          description={alertConfig.description}
+          confirmLabel={alertConfig.confirmLabel}
+          cancelLabel={alertConfig.cancelLabel}
+          hideCancel={alertConfig.hideCancel}
+          icon={
+              alertConfig.type === 'error' ? ICONS.AlertCircle : 
+              alertConfig.type === 'success' ? ICONS.CheckCircle : 
+              alertConfig.type === 'warning' ? ICONS.AlertCircle : ICONS.AlertCircle
+          }
+          iconColor={
+              alertConfig.type === 'error' ? '#EF4444' : 
+              alertConfig.type === 'success' ? '#10B981' : 
+              alertConfig.type === 'warning' ? '#F59E0B' : '#3B82F6'
+          }
+          confirmColor={
+              alertConfig.type === 'error' ? '#EF4444' : 
+              alertConfig.type === 'success' ? '#10B981' : 
+              alertConfig.type === 'warning' ? '#EF4444' : '#3B82F6'
+          }
+      />
     </ScrollView>
   );
 }

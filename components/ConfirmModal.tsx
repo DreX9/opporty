@@ -17,6 +17,7 @@ interface ConfirmModalProps {
   confirmColor?: string; // e.g. '#6366F1' or '#EF4444'
   icon?: any; // e.g. ICONS.AlertCircle
   iconColor?: string;
+  hideCancel?: boolean;
 }
 
 export default function ConfirmModal({
@@ -30,6 +31,7 @@ export default function ConfirmModal({
   confirmColor = '#6366F1',
   icon = ICONS.AlertCircle,
   iconColor = '#6366F1',
+  hideCancel = false,
 }: ConfirmModalProps) {
   return (
     <Modal
@@ -52,12 +54,14 @@ export default function ConfirmModal({
 
             {/* Botones de acción */}
             <HStack style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={onClose}
-              >
-                <Text style={styles.cancelText}>{cancelLabel}</Text>
-              </TouchableOpacity>
+              {!hideCancel && (
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={onClose}
+                >
+                  <Text style={styles.cancelText}>{cancelLabel}</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 style={[styles.button, styles.confirmButton, { backgroundColor: confirmColor }]}

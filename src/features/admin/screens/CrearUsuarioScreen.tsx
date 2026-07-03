@@ -22,6 +22,7 @@ import DropdownSelect from '@/components/DropdownSelect';
 import { ICONS } from '@/components/icons';
 import { useRouter, useNavigation } from 'expo-router';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import ConfirmModal from '@/components/ConfirmModal';
 
 import { ESTADO_INICIAL_DOCENTE, TEACHER_STATUS_OPTIONS } from '../constants';
 import { TeacherFormData, TeacherStatus, BackendRole, TeacherRegisterResponse } from '../types';
@@ -65,6 +66,27 @@ export default function CrearUsuarioScreen() {
 
     const navigation = useNavigation();
 
+    // --- ESTADO DE ALERTAS PERSONALIZADAS ---
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        type: 'error' | 'success' | 'info' | 'warning';
+        onConfirm?: () => void;
+        confirmLabel?: string;
+        cancelLabel?: string;
+        hideCancel?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        type: 'info'
+    });
+    const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
+    const showAlert = (title: string, description: string, type: 'error' | 'success' | 'info' | 'warning', onConfirm?: () => void, confirmLabel: string = 'Entendido', cancelLabel: string = '', hideCancel: boolean = true) => {
+        setAlertConfig({ isOpen: true, title, description, type, onConfirm, confirmLabel, cancelLabel, hideCancel });
+    };
+
     const hasUnsavedChanges = () => {
         return form.firstName.trim() !== '' ||
                form.lastName.trim() !== '' ||
@@ -79,17 +101,14 @@ export default function CrearUsuarioScreen() {
                 return true; 
             }
             if (hasUnsavedChanges() && !submitting && !registeredTeacher) {
-                Alert.alert(
+                showAlert(
                     '¿Cancelar registro?',
                     'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
-                    [
-                        { text: 'No', style: 'cancel', onPress: () => {} },
-                        {
-                            text: 'Sí, salir',
-                            style: 'destructive',
-                            onPress: () => router.back(),
-                        },
-                    ]
+                    'warning',
+                    () => router.back(),
+                    'Sí, salir',
+                    'No',
+                    false
                 );
                 return true; // prevent default exit
             }
@@ -111,17 +130,14 @@ export default function CrearUsuarioScreen() {
                             setPasoActual(prev => prev - 1);
                         } else {
                             if (hasUnsavedChanges() && !submitting && !registeredTeacher) {
-                                Alert.alert(
+                                showAlert(
                                     '¿Cancelar registro?',
                                     'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
-                                    [
-                                        { text: 'No', style: 'cancel', onPress: () => {} },
-                                        {
-                                            text: 'Sí, salir',
-                                            style: 'destructive',
-                                            onPress: () => router.back(),
-                                        },
-                                    ]
+                                    'warning',
+                                    () => router.back(),
+                                    'Sí, salir',
+                                    'No',
+                                    false
                                 );
                             } else {
                                 router.back();
@@ -169,7 +185,7 @@ export default function CrearUsuarioScreen() {
             .fetchRoles()
             .then((data) => setRoles(data))
             .catch(() =>
-                Alert.alert('Error', 'No se pudieron cargar los roles del sistema.')
+                showAlert('Error', 'No se pudieron cargar los roles del sistema.', 'error')
             )
             .finally(() => setLoadingRoles(false));
     }, []);
@@ -247,7 +263,7 @@ export default function CrearUsuarioScreen() {
         else if (pasoActual === 3) errors = validarPaso3();
 
         if (errors.length > 0) {
-            Alert.alert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${errors.join('\n')}`);
+            showAlert('⚠️ Campos inválidos', `Por favor corrige los siguientes campos:\n${errors.join('\n')}`, 'error');
             return;
         }
 
@@ -263,17 +279,14 @@ export default function CrearUsuarioScreen() {
             setPasoActual((prev) => prev - 1);
         } else {
             if (hasUnsavedChanges() && !submitting && !registeredTeacher) {
-                Alert.alert(
+                showAlert(
                     '¿Cancelar registro?',
                     'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
-                    [
-                        { text: 'No', style: 'cancel', onPress: () => {} },
-                        {
-                            text: 'Sí, salir',
-                            style: 'destructive',
-                            onPress: () => router.back(),
-                        },
-                    ]
+                    'warning',
+                    () => router.back(),
+                    'Sí, salir',
+                    'No',
+                    false
                 );
             } else {
                 router.back();
@@ -291,7 +304,7 @@ export default function CrearUsuarioScreen() {
                 err instanceof Error
                     ? err.message
                     : 'Error desconocido al registrar el docente.';
-            Alert.alert('❌ Error', message);
+            showAlert('❌ Error', message, 'error');
         } finally {
             setSubmitting(false);
         }
@@ -307,7 +320,7 @@ export default function CrearUsuarioScreen() {
             const username = registeredTeacher.user?.username || '';
             if (username) {
                 await Clipboard.setStringAsync(username);
-                Alert.alert('¡Copiado! 📋', 'El nombre de usuario ha sido copiado al portapapeles.');
+                showAlert('¡Copiado! 📋', 'El nombre de usuario ha sido copiado al portapapeles.', 'success');
             }
         };
 
@@ -847,6 +860,36 @@ export default function CrearUsuarioScreen() {
                     </Button>
                 </HStack>
             </ScrollView>
+
+            {/* MODAL DE ALERTAS */}
+            <ConfirmModal
+                isOpen={alertConfig.isOpen}
+                onClose={closeAlert}
+                onConfirm={() => {
+                    if (alertConfig.onConfirm) alertConfig.onConfirm();
+                    closeAlert();
+                }}
+                title={alertConfig.title}
+                description={alertConfig.description}
+                confirmLabel={alertConfig.confirmLabel}
+                cancelLabel={alertConfig.cancelLabel}
+                hideCancel={alertConfig.hideCancel}
+                icon={
+                    alertConfig.type === 'error' ? ICONS.AlertCircle : 
+                    alertConfig.type === 'success' ? ICONS.CheckCircle : 
+                    alertConfig.type === 'warning' ? ICONS.AlertCircle : ICONS.AlertCircle
+                }
+                iconColor={
+                    alertConfig.type === 'error' ? '#EF4444' : 
+                    alertConfig.type === 'success' ? '#10B981' : 
+                    alertConfig.type === 'warning' ? '#F59E0B' : '#3B82F6'
+                }
+                confirmColor={
+                    alertConfig.type === 'error' ? '#EF4444' : 
+                    alertConfig.type === 'success' ? '#10B981' : 
+                    alertConfig.type === 'warning' ? '#EF4444' : '#3B82F6'
+                }
+            />
         </KeyboardAvoidingView>
     );
 }

@@ -26,6 +26,7 @@ import { ICONS } from '@/components/icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { SelectorMapaModal } from '@/components/SelectorMapaModal';
+import ConfirmModal from '@/components/ConfirmModal';
 
 import {
     Select,
@@ -75,6 +76,27 @@ export default function CrearEventoScreen() {
                form.fechaInicio !== '';
     };
 
+    // --- ESTADO DE ALERTAS PERSONALIZADAS ---
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        type: 'error' | 'success' | 'info' | 'warning';
+        onConfirm?: () => void;
+        confirmLabel?: string;
+        cancelLabel?: string;
+        hideCancel?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        type: 'info'
+    });
+    const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
+    const showAlert = (title: string, description: string, type: 'error' | 'success' | 'info' | 'warning', onConfirm?: () => void, confirmLabel: string = 'Entendido', cancelLabel: string = '', hideCancel: boolean = true) => {
+        setAlertConfig({ isOpen: true, title, description, type, onConfirm, confirmLabel, cancelLabel, hideCancel });
+    };
+
     useEffect(() => {
         const backAction = () => {
             if (pasoActual > 1) {
@@ -83,17 +105,14 @@ export default function CrearEventoScreen() {
             }
             
             if (hasUnsavedChanges() && !publicando && !id) {
-                Alert.alert(
+                showAlert(
                     '¿Cancelar creación?',
                     'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
-                    [
-                        { text: 'No', style: 'cancel', onPress: () => {} },
-                        {
-                            text: 'Sí, salir',
-                            style: 'destructive',
-                            onPress: () => router.back(),
-                        },
-                    ]
+                    'warning',
+                    () => router.back(),
+                    'Sí, salir',
+                    'No',
+                    false
                 );
                 return true; // prevent default, we handle the exit
             }
@@ -115,17 +134,14 @@ export default function CrearEventoScreen() {
                             setPasoActual(prev => prev - 1);
                         } else {
                             if (hasUnsavedChanges() && !publicando && !id) {
-                                Alert.alert(
+                                showAlert(
                                     '¿Cancelar creación?',
                                     'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
-                                    [
-                                        { text: 'No', style: 'cancel', onPress: () => {} },
-                                        {
-                                            text: 'Sí, salir',
-                                            style: 'destructive',
-                                            onPress: () => router.back(),
-                                        },
-                                    ]
+                                    'warning',
+                                    () => router.back(),
+                                    'Sí, salir',
+                                    'No',
+                                    false
                                 );
                             } else {
                                 router.back();
@@ -181,7 +197,7 @@ export default function CrearEventoScreen() {
                         const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
                         msg = axiosErr.response?.data?.message || axiosErr.message || msg;
                     }
-                    Alert.alert('Error', msg);
+                    showAlert('Error', msg, 'error');
                 } finally {
                     setCargandoEdicion(false);
                 }
@@ -206,13 +222,13 @@ export default function CrearEventoScreen() {
 
     const seleccionarImagen = async () => {
         if (form.imageUrls.length >= 3) {
-            Alert.alert('⚠️ Límite alcanzado', 'Solo puedes subir hasta 3 imágenes para este evento.');
+            showAlert('⚠️ Límite alcanzado', 'Solo puedes subir hasta 3 imágenes para este evento.', 'warning');
             return;
         }
 
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-            Alert.alert('⚠️ Permiso denegado', 'Se requieren permisos de la galería para seleccionar una imagen.');
+            showAlert('⚠️ Permiso denegado', 'Se requieren permisos de la galería para seleccionar una imagen.', 'warning');
             return;
         }
 
@@ -239,11 +255,11 @@ export default function CrearEventoScreen() {
                     };
                 });
                 
-                Alert.alert('✅ Éxito', 'La imagen se ha subido correctamente a Cloudinary.');
+                showAlert('✅ Éxito', 'La imagen se ha subido correctamente a Cloudinary.', 'success');
             }
         } catch (error: any) {
             console.error('[CrearEventoScreen] Error al subir imagen:', error);
-            Alert.alert('⚠️ Error', error.message || 'No se pudo subir la imagen.');
+            showAlert('⚠️ Error', error.message || 'No se pudo subir la imagen.', 'error');
         } finally {
             setSubiendoImagen(false);
         }
@@ -361,7 +377,7 @@ export default function CrearEventoScreen() {
 
     const pasoSiguiente = () => {
         if (subiendoImagen) {
-            Alert.alert('⏳ Subiendo imagen', 'Por favor, espera a que termine de subir la imagen antes de continuar.');
+            showAlert('⏳ Subiendo imagen', 'Por favor, espera a que termine de subir la imagen antes de continuar.', 'info');
             return;
         }
 
@@ -374,7 +390,7 @@ export default function CrearEventoScreen() {
             if (form.imageUrls.length === 0) listErrors.push('- Imágenes (sube al menos una)');
 
             if (listErrors.length > 0) {
-                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
+                showAlert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`, 'warning');
                 return;
             }
         } else if (pasoActual === 2) {
@@ -410,7 +426,7 @@ export default function CrearEventoScreen() {
             }
 
             if (listErrors.length > 0) {
-                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
+                showAlert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`, 'warning');
                 return;
             }
         } else if (pasoActual === 3) {
@@ -420,7 +436,7 @@ export default function CrearEventoScreen() {
             if (validateMinLength(form.requisitos, 10) !== 'valid') listErrors.push('- Requisitos (mín. 10 caracteres)');
 
             if (listErrors.length > 0) {
-                Alert.alert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`);
+                showAlert('⚠️ Campos requeridos', `Por favor completa o corrige los siguientes campos:\n${listErrors.join('\n')}`, 'warning');
                 return;
             }
         }
@@ -437,17 +453,14 @@ export default function CrearEventoScreen() {
             setPasoActual(prev => prev - 1);
         } else {
             if (hasUnsavedChanges() && !publicando && !id) {
-                Alert.alert(
+                showAlert(
                     '¿Cancelar creación?',
                     'Tienes datos ingresados. ¿Estás seguro de que deseas salir y perder los cambios?',
-                    [
-                        { text: 'No', style: 'cancel', onPress: () => {} },
-                        {
-                            text: 'Sí, salir',
-                            style: 'destructive',
-                            onPress: () => router.back(),
-                        },
-                    ]
+                    'warning',
+                    () => router.back(),
+                    'Sí, salir',
+                    'No',
+                    false
                 );
             } else {
                 router.back();
@@ -493,35 +506,25 @@ export default function CrearEventoScreen() {
                 
                 eventStateManager.markNotificationAsRead(String(id));
                 
-                Alert.alert('✅ ¡Evento actualizado!', msgExito, [
-                    {
-                        text: 'Excelente',
-                        onPress: () => {
-                            if (role === 'ADMIN') {
-                                router.replace({ pathname: '/tabs/admin', params: { tab: 'eventos' } });
-                            } else {
-                                router.replace('/tabs/radar');
-                            }
-                        }
+                showAlert('✅ ¡Evento actualizado!', msgExito, 'success', () => {
+                    if (role === 'ADMIN') {
+                        router.replace({ pathname: '/tabs/admin', params: { tab: 'eventos' } });
+                    } else {
+                        router.replace('/tabs/radar');
                     }
-                ]);
+                }, 'Excelente', '', true);
             } else {
                 await eventService.createEvent(payload);
                 const msgExito = role === 'MANAGER'
                     ? `El evento "${form.titulo}" ha sido creado y enviado para revisión del administrador.`
                     : `El evento "${form.titulo}" se publicó correctamente. Será visible para los estudiantes de inmediato.`;
-                Alert.alert('✅ ¡Evento publicado!', msgExito, [
-                    {
-                        text: 'Excelente',
-                        onPress: () => {
-                            if (role === 'ADMIN') {
-                                router.replace({ pathname: '/tabs/admin', params: { tab: 'eventos' } });
-                            } else {
-                                router.replace('/tabs/radar');
-                            }
-                        }
+                showAlert('✅ ¡Evento publicado!', msgExito, 'success', () => {
+                    if (role === 'ADMIN') {
+                        router.replace({ pathname: '/tabs/admin', params: { tab: 'eventos' } });
+                    } else {
+                        router.replace('/tabs/radar');
                     }
-                ]);
+                }, 'Excelente', '', true);
             }
         } catch (err) {
             console.error('[CrearEventoScreen] Error al guardar evento:', err);
@@ -530,7 +533,7 @@ export default function CrearEventoScreen() {
                 const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
                 msg = axiosErr.response?.data?.message || axiosErr.message || msg;
             }
-            Alert.alert('⚠️ Error al guardar evento', msg);
+            showAlert('⚠️ Error al guardar evento', msg, 'error');
         } finally {
             setPublicando(false);
         }
@@ -1080,6 +1083,36 @@ export default function CrearEventoScreen() {
                     </Button>
                 </HStack>
             </ScrollView>
+
+            {/* MODAL DE ALERTAS */}
+            <ConfirmModal
+                isOpen={alertConfig.isOpen}
+                onClose={closeAlert}
+                onConfirm={() => {
+                    if (alertConfig.onConfirm) alertConfig.onConfirm();
+                    closeAlert();
+                }}
+                title={alertConfig.title}
+                description={alertConfig.description}
+                confirmLabel={alertConfig.confirmLabel}
+                cancelLabel={alertConfig.cancelLabel}
+                hideCancel={alertConfig.hideCancel}
+                icon={
+                    alertConfig.type === 'error' ? ICONS.AlertCircle : 
+                    alertConfig.type === 'success' ? ICONS.CheckCircle : 
+                    alertConfig.type === 'warning' ? ICONS.AlertCircle : ICONS.AlertCircle
+                }
+                iconColor={
+                    alertConfig.type === 'error' ? '#EF4444' : 
+                    alertConfig.type === 'success' ? '#10B981' : 
+                    alertConfig.type === 'warning' ? '#F59E0B' : '#3B82F6'
+                }
+                confirmColor={
+                    alertConfig.type === 'error' ? '#EF4444' : 
+                    alertConfig.type === 'success' ? '#10B981' : 
+                    alertConfig.type === 'warning' ? '#EF4444' : '#3B82F6'
+                }
+            />
         </KeyboardAvoidingView>
     );
 }
