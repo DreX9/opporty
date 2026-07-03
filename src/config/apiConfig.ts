@@ -10,25 +10,26 @@ type ConnectionMethod = 'WIFI' | 'USB' | 'EMULATOR' | 'PROD_APK';
 
 // MODO DE CONEXIÓN PREFERIDO:
 // Cambiar a 'PROD_APK' cuando vayas a generar el APK final con eas build.
-const PREFERRED_METHOD: 'AUTO' | ConnectionMethod = 'PROD_APK';
+const PREFERRED_METHOD: 'AUTO' | ConnectionMethod = 'USB';
 
 // IP REAL DE TU LAPTOP (Sacada de tu ipconfig: Adaptador de LAN inalámbrica Wi-Fi):
 const LAPTOP_IP = '192.168.0.8';
 
 const getBackendUrl = (): { url: string; method: string } => {
     // Si el usuario fuerza un método específico:
-    if ((PREFERRED_METHOD as string) !== 'AUTO') {
-        if (PREFERRED_METHOD === 'PROD_APK') {
+    const method = PREFERRED_METHOD as string;
+    if (method !== 'AUTO') {
+        if (method === 'PROD_APK') {
             return { url: `http://${LAPTOP_IP}:8080/api/v1`, method: 'APK Producción (Forzado)' };
         }
-        if (PREFERRED_METHOD === 'USB') {
+        if (method === 'USB') {
             return { url: 'http://localhost:8080/api/v1', method: 'USB (Forzado)' };
         }
-        if (PREFERRED_METHOD === 'EMULATOR') {
+        if (method === 'EMULATOR') {
             return { url: 'http://10.0.2.2:8080/api/v1', method: 'Emulador Android (Forzado)' };
         }
         // Wifi
-        const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
+        const hostUri = Constants.expoConfig?.hostUri || (Constants.manifest as any)?.hostUri;
         const ip = hostUri ? hostUri.split(':')[0] : 'localhost';
         return { url: `http://${ip}:8080/api/v1`, method: 'Wi-Fi / Expo Go (Forzado)' };
     }
@@ -38,7 +39,7 @@ const getBackendUrl = (): { url: string; method: string } => {
     // 1. Si está ejecutándose mediante Expo Go (tanto Wi-Fi como cable),
     // expoConfig.hostUri contiene la IP local de la computadora (ej. 192.168.1.15:8081).
     // Esto funciona perfectamente en el 90% de los casos si están en la misma red Wi-Fi.
-    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
+    const hostUri = Constants.expoConfig?.hostUri || (Constants.manifest as any)?.hostUri;
     
     if (hostUri) {
         const ip = hostUri.split(':')[0];
