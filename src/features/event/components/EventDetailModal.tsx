@@ -27,6 +27,7 @@ import EventQrPanel from './EventQrPanel';
 import { exportConstanciaPDF, ConstanciaData } from '../services/constanciaService';
 import { EventoBackend } from '../types/api';
 import { eventService } from '../services/eventService';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 
@@ -56,6 +57,27 @@ export default function EventDetailModal({
     const [isCertOpen, setIsCertOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [isRegistering, setIsRegistering] = useState(false);
+
+    // --- ESTADO DE ALERTAS PERSONALIZADAS ---
+    const [alertConfig, setAlertConfig] = useState<{
+        isOpen: boolean;
+        title: string;
+        description: string;
+        type: 'error' | 'success' | 'info' | 'warning';
+        onConfirm?: () => void;
+        confirmLabel?: string;
+        cancelLabel?: string;
+        hideCancel?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        description: '',
+        type: 'info'
+    });
+    const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
+    const showAlert = (title: string, description: string, type: 'error' | 'success' | 'info' | 'warning', onConfirm?: () => void, confirmLabel: string = 'Entendido', cancelLabel: string = '', hideCancel: boolean = true) => {
+        setAlertConfig({ isOpen: true, title, description, type, onConfirm, confirmLabel, cancelLabel, hideCancel });
+    };
 
     // Animaciones
     const animIngreso = useRef(new Animated.Value(1)).current;
@@ -90,10 +112,12 @@ export default function EventDetailModal({
         try {
             const reg = await eventService.registerToEvent(Number(evento.id));
             eventStateManager.registerToEvent(evento.id);
-            Alert.alert(
+            showAlert(
                 '¡Registro Exitoso! 🎉',
                 `Te has registrado correctamente en "${evento.titulo}". Recuerda asistir el día del evento y escanear tus códigos QR de Ingreso y Salida para obtener tu constancia académica.`,
-                [{ text: '¡Excelente!' }]
+                'success',
+                () => {},
+                '¡Excelente!'
             );
             onEventSaved?.();
         } catch (err: any) {
@@ -101,19 +125,19 @@ export default function EventDetailModal({
             const serverMsg: string = err?.response?.data?.message || err?.message || '';
 
             if (status === 409 || serverMsg.toLowerCase().includes('aforo') || serverMsg.toLowerCase().includes('capacidad')) {
-                Alert.alert(
+                showAlert(
                     '🚫 Aforo Completo',
                     'El aforo de este evento ha sido completado. Ya no hay lugares disponibles.',
-                    [{ text: 'Entendido' }]
+                    'warning'
                 );
                 // Refrescar estado para que el botón refleje "Aforo Completo"
                 onEventSaved?.();
             } else if (status === 400 && serverMsg.toLowerCase().includes('ya estás registrado')) {
                 // El usuario ya está registrado (p.ej. desde otro dispositivo)
                 eventStateManager.registerToEvent(evento.id);
-                Alert.alert('Ya Inscrito', 'Ya te encuentras registrado en este evento.', [{ text: 'OK' }]);
+                showAlert('Ya Inscrito', 'Ya te encuentras registrado en este evento.', 'info');
             } else {
-                Alert.alert('Error al Registrarse', serverMsg || 'Ocurrió un error inesperado. Intenta de nuevo.', [{ text: 'Cerrar' }]);
+                showAlert('Error al Registrarse', serverMsg || 'Ocurrió un error inesperado. Intenta de nuevo.', 'error', () => {}, 'Cerrar');
             }
         } finally {
             setIsRegistering(false);
@@ -154,10 +178,10 @@ export default function EventDetailModal({
             setIsCertOpen(false);
         } catch (err) {
             console.error('Error exportando constancia:', err);
-            Alert.alert(
+            showAlert(
                 'Error al exportar',
                 'No se pudo generar el PDF. Por favor intenta nuevamente.',
-                [{ text: 'Aceptar' }]
+                'error'
             );
         } finally {
             setIsExporting(false);
@@ -617,6 +641,36 @@ export default function EventDetailModal({
                         </View>
                     </View>
                 </Modal>
+
+                {/* MODAL DE ALERTAS PERSONALIZADO */}
+                <ConfirmModal
+                    isOpen={alertConfig.isOpen}
+                    onClose={closeAlert}
+                    onConfirm={() => {
+                        if (alertConfig.onConfirm) alertConfig.onConfirm();
+                        closeAlert();
+                    }}
+                    title={alertConfig.title}
+                    description={alertConfig.description}
+                    confirmLabel={alertConfig.confirmLabel}
+                    cancelLabel={alertConfig.cancelLabel}
+                    hideCancel={alertConfig.hideCancel}
+                    icon={
+                        alertConfig.type === 'error' ? ICONS.AlertCircle : 
+                        alertConfig.type === 'success' ? ICONS.CheckCircle : 
+                        alertConfig.type === 'warning' ? ICONS.AlertCircle : ICONS.Info
+                    }
+                    iconColor={
+                        alertConfig.type === 'error' ? '#EF4444' : 
+                        alertConfig.type === 'success' ? '#10B981' : 
+                        alertConfig.type === 'warning' ? '#F59E0B' : '#3B82F6'
+                    }
+                    confirmColor={
+                        alertConfig.type === 'error' ? '#EF4444' : 
+                        alertConfig.type === 'success' ? '#10B981' : 
+                        alertConfig.type === 'warning' ? '#EF4444' : '#3B82F6'
+                    }
+                />
             </Box>
         </Modal>
     );
