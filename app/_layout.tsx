@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import '@/global.css';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -12,6 +13,17 @@ import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Box } from '@/components/ui/box';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -44,6 +56,27 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
+      
+      // Test de notificaciones programadas
+      async function scheduleNotification() {
+        const { status } = await Notifications.requestPermissionsAsync();
+        if (status === 'granted') {
+          await Notifications.cancelAllScheduledNotificationsAsync();
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "¡Hola desde Opporty! 🚀",
+              body: "Esta es tu notificación de prueba cada 5 minutos. Abre la app.",
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+              seconds: 5,
+              repeats: false,
+            },
+          });
+          console.log("Notificación programada para ejecutarse cada 5 minutos.");
+        }
+      }
+      scheduleNotification();
     }
   }, [loaded]);
 
