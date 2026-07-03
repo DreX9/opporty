@@ -334,7 +334,7 @@ export default function CrearUsuarioScreen() {
                         Nombre de Usuario / Código Generado
                     </Text>
                     <Text className="text-indigo-600 text-2xl font-black text-center mb-4 tracking-wide">
-                        {registeredTeacher.user?.username || 'mrXXXXXX'}
+                        {registeredTeacher.user?.username || 'cXXXXXX'}
                     </Text>
 
                     <TouchableOpacity

@@ -105,7 +105,7 @@ export default function RegisterModal({ isOpen, onClose, onRegister }: RegisterM
         const currentYear = new Date().getFullYear();
         const suffixVal = currentYear - 2026 + 1;
         const suffix = suffixVal > 0 ? String(suffixVal).padStart(2, '0') : '01';
-        return `${currentYear}${lastFour}${suffix}`;
+        return `u${currentYear}${lastFour}${suffix}`;
     };
     const generatedUsername = getGeneratedUsername();
 
