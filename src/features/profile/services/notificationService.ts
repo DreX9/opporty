@@ -52,7 +52,7 @@ export const notificationService = {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Error al obtener conteo de notificaciones no leídas:', error);
+      // console.warn('Error al obtener conteo de notificaciones no leídas:', error.message);
       return 0; // Si falla, mejor retornar 0 para no romper la UI
     }
   },
