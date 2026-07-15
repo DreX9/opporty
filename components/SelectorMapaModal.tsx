@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, StyleSheet, View } from 'react-native';
-import MapView, { Marker, MapPressEvent } from 'react-native-maps';
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import * as Location from 'expo-location';
 import { Button, ButtonText } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -11,8 +11,6 @@ import { HStack } from '@/components/ui/hstack';
 const LIMA_COORDS = {
     latitude: -12.046374,
     longitude: -77.042793,
-    latitudeDelta: 0.015,
-    longitudeDelta: 0.015,
 };
 
 interface SelectorMapaProps {
@@ -23,69 +21,67 @@ interface SelectorMapaProps {
 }
 
 export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada, initialCoords }: SelectorMapaProps) {
-    const mapRef = useRef<MapView | null>(null);
+    const webviewRef = useRef<WebView | null>(null);
     const [marcador, setMarcador] = useState<{ latitude: number; longitude: number } | null>(null);
     const [direccionTexto, setDireccionTexto] = useState('');
     const [cargandoDireccion, setCargandoDireccion] = useState(false);
+    const [mapaCargado, setMapaCargado] = useState(false);
 
-    // Obtener el nombre de la calle/lugar a partir de las coordenadas (Geocoding Inverso)
+    // Obtener el nombre de la calle usando Nominatim (OpenStreetMap gratuito)
     const obtenerDireccionTexto = async (lat: number, lng: number) => {
         setCargandoDireccion(true);
         try {
-            const { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-                setDireccionTexto("Permiso de ubicación denegado");
-                return;
-            }
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`, {
+                headers: {
+                    'User-Agent': 'OpportyApp/1.0',
+                    'Accept-Language': 'es'
+                }
+            });
+            const resultado = await response.json();
+            
+            if (resultado && resultado.address) {
+                const { road, house_number, suburb, city, town } = resultado.address;
+                const calle = road || '';
+                const numero = house_number ? ` ${house_number}` : '';
+                const distrito = suburb || city || town ? `, ${suburb || city || town}` : '';
 
-            const [resultado] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-            if (resultado) {
-                const calle = resultado.street || '';
-                const numero = resultado.streetNumber ? ` ${resultado.streetNumber}` : '';
-                const distrito = resultado.district ? `, ${resultado.district}` : '';
-
-                const direccionCompleta = `${calle}${numero}${distrito}`.trim() || "Ubicación seleccionada en mapa";
+                const direccionCompleta = `${calle}${numero}${distrito}`.trim() || resultado.display_name || "Ubicación seleccionada en mapa";
                 setDireccionTexto(direccionCompleta);
+            } else {
+                setDireccionTexto("Ubicación seleccionada en mapa");
             }
         } catch (error) {
+            console.error("Error Nominatim:", error);
             setDireccionTexto("Coordenadas seleccionadas");
         } finally {
             setCargandoDireccion(false);
         }
     };
 
+    const moverMapaAMarcador = (lat: number, lng: number) => {
+        if (webviewRef.current && mapaCargado) {
+            webviewRef.current.injectJavaScript(`
+                moverMarcador(${lat}, ${lng});
+                true;
+            `);
+        }
+    };
+
     useEffect(() => {
-        if (!visible) return;
+        if (!visible || !mapaCargado) return;
 
         const inicializarUbicacion = async () => {
             const isLimaDefault = initialCoords && 
                                   Math.abs(initialCoords.latitude - LIMA_COORDS.latitude) < 0.0001 && 
                                   Math.abs(initialCoords.longitude - LIMA_COORDS.longitude) < 0.0001;
 
-            // Caso 1: Coordenadas iniciales provistas por selección previa o edición (y no son las por defecto)
-            if (initialCoords && 
-                initialCoords.latitude !== 0 && 
-                initialCoords.longitude !== 0 && 
-                !isLimaDefault) {
-                
-                const targetCoords = {
-                    latitude: initialCoords.latitude,
-                    longitude: initialCoords.longitude,
-                };
-                setMarcador(targetCoords);
-                obtenerDireccionTexto(targetCoords.latitude, targetCoords.longitude);
-                
-                setTimeout(() => {
-                    mapRef.current?.animateToRegion({
-                        ...targetCoords,
-                        latitudeDelta: 0.015,
-                        longitudeDelta: 0.015,
-                    }, 1000);
-                }, 200);
+            if (initialCoords && initialCoords.latitude !== 0 && initialCoords.longitude !== 0 && !isLimaDefault) {
+                setMarcador(initialCoords);
+                obtenerDireccionTexto(initialCoords.latitude, initialCoords.longitude);
+                moverMapaAMarcador(initialCoords.latitude, initialCoords.longitude);
                 return;
             }
 
-            // Caso 2: Evento nuevo (o coordenadas por defecto) - Obtener la ubicación actual del usuario
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status === 'granted') {
@@ -98,19 +94,12 @@ export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada, i
                     };
                     setMarcador(currentCoords);
                     obtenerDireccionTexto(currentCoords.latitude, currentCoords.longitude);
-                    
-                    setTimeout(() => {
-                        mapRef.current?.animateToRegion({
-                            ...currentCoords,
-                            latitudeDelta: 0.015,
-                            longitudeDelta: 0.015,
-                        }, 1000);
-                    }, 200);
+                    moverMapaAMarcador(currentCoords.latitude, currentCoords.longitude);
                 } else {
                     usarDefaultLocation();
                 }
             } catch (error) {
-                console.error('Error obteniendo ubicación actual:', error);
+                console.warn('Ubicación actual no disponible (GPS apagado o sin permisos), usando por defecto.');
                 usarDefaultLocation();
             }
         };
@@ -118,18 +107,34 @@ export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada, i
         const usarDefaultLocation = () => {
             setMarcador(null);
             setDireccionTexto('');
-            setTimeout(() => {
-                mapRef.current?.animateToRegion(LIMA_COORDS, 1000);
-            }, 200);
+            if (webviewRef.current && mapaCargado) {
+                webviewRef.current.injectJavaScript(`
+                    if (marker) {
+                        map.removeLayer(marker);
+                        marker = null;
+                    }
+                    map.setView([${LIMA_COORDS.latitude}, ${LIMA_COORDS.longitude}], 13);
+                    true;
+                `);
+            }
         };
 
         inicializarUbicacion();
-    }, [visible, initialCoords]);
+    }, [visible, initialCoords, mapaCargado]);
 
-    const manejarPresionMapa = (e: MapPressEvent) => {
-        const coords = e.nativeEvent.coordinate;
-        setMarcador(coords);
-        obtenerDireccionTexto(coords.latitude, coords.longitude);
+    const manejarMensajeWebView = (event: WebViewMessageEvent) => {
+        try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === 'MAP_LOADED') {
+                setMapaCargado(true);
+            } else if (data.type === 'COORDS_SELECTED') {
+                const { lat, lng } = data;
+                setMarcador({ latitude: lat, longitude: lng });
+                obtenerDireccionTexto(lat, lng);
+            }
+        } catch (e) {
+            console.error("Error parseando mensaje de webview", e);
+        }
     };
 
     const manejarConfirmar = () => {
@@ -139,31 +144,87 @@ export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada, i
                 coords: { lat: marcador.latitude, lng: marcador.longitude }
             });
             onClose();
+            setMapaCargado(false); // Resetear estado
         }
     };
+    
+    const manejarCerrar = () => {
+        onClose();
+        setMapaCargado(false); // Resetear estado
+    };
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <style>
+            body { padding: 0; margin: 0; }
+            html, body, #map { height: 100%; width: 100vw; }
+            .leaflet-control-attribution { display: none; }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <script>
+            var map = L.map('map').setView([${LIMA_COORDS.latitude}, ${LIMA_COORDS.longitude}], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            var marker = null;
+
+            function moverMarcador(lat, lng) {
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                    
+                    marker.on('dragend', function(e) {
+                        var position = marker.getLatLng();
+                        window.ReactNativeWebView.postMessage(JSON.stringify({
+                            type: 'COORDS_SELECTED',
+                            lat: position.lat,
+                            lng: position.lng
+                        }));
+                    });
+                }
+                map.setView([lat, lng], 15);
+            }
+
+            map.on('click', function(e) {
+                var lat = e.latlng.lat;
+                var lng = e.latlng.lng;
+                moverMarcador(lat, lng);
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'COORDS_SELECTED',
+                    lat: lat,
+                    lng: lng
+                }));
+            });
+
+            // Notificar que el mapa cargó
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'MAP_LOADED' }));
+        </script>
+    </body>
+    </html>
+    `;
 
     return (
-        <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+        <Modal visible={visible} animationType="slide" onRequestClose={manejarCerrar}>
             <View style={styles.container}>
-                <MapView
-                    ref={mapRef}
+                <WebView
+                    ref={webviewRef}
+                    source={{ html: htmlContent }}
                     style={styles.map}
-                    initialRegion={LIMA_COORDS}
-                    onPress={manejarPresionMapa}
-                    showsUserLocation={true} // Muestra el punto azul del usuario si da permisos
-                >
-                    {marcador && (
-                        <Marker
-                            coordinate={marcador}
-                            draggable
-                            onDragEnd={(e) => {
-                                const coords = e.nativeEvent.coordinate;
-                                setMarcador(coords);
-                                obtenerDireccionTexto(coords.latitude, coords.longitude);
-                            }}
-                        />
-                    )}
-                </MapView>
+                    onMessage={manejarMensajeWebView}
+                    javaScriptEnabled={true}
+                    scrollEnabled={false}
+                    bounces={false}
+                />
 
                 {/* Panel Inferior con detalles y acciones */}
                 <VStack style={styles.floatingPanel} space="md">
@@ -176,7 +237,7 @@ export function SelectorMapaModal({ visible, onClose, onUbicacionSeleccionada, i
                     </Text>
 
                     <HStack style={{ gap: 10 }}>
-                        <Button variant="outline" className="flex-1 h-12 rounded-xl border-[#E9EAF4] bg-white" onPress={onClose}>
+                        <Button variant="outline" className="flex-1 h-12 rounded-xl border-[#E9EAF4] bg-white" onPress={manejarCerrar}>
                             <ButtonText className="text-gray-600 font-bold uppercase tracking-wider text-xs">Cancelar</ButtonText>
                         </Button>
                         <Button

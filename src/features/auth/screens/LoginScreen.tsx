@@ -85,12 +85,12 @@ export default function LoginScreen() {
         } catch (error) {
             const err = error as { response?: { data?: { message?: string } }; message?: string };
             let msg = err.response?.data?.message || err.message || "El usuario o la contraseña no son correctos.";
-            
+
             // Traducir Bad credentials
             if (msg.toLowerCase().includes("bad credentials")) {
-                msg = "La contraseña o el usuario ingresados son incorrectos.";
+                msg = "El usuario o la contraseña ingresados son incorrectos.";
             }
-            
+
             setLoginError(msg);
         }
     };
@@ -326,16 +326,16 @@ export default function LoginScreen() {
                     confirmLabel="Entendido"
                     hideCancel={true}
                     icon={
-                        alertConfig.type === 'error' ? ICONS.AlertCircle : 
-                        alertConfig.type === 'success' ? ICONS.CheckCircle : ICONS.AlertCircle
+                        alertConfig.type === 'error' ? ICONS.AlertCircle :
+                            alertConfig.type === 'success' ? ICONS.CheckCircle : ICONS.AlertCircle
                     }
                     iconColor={
-                        alertConfig.type === 'error' ? '#EF4444' : 
-                        alertConfig.type === 'success' ? '#10B981' : '#3B82F6'
+                        alertConfig.type === 'error' ? '#EF4444' :
+                            alertConfig.type === 'success' ? '#10B981' : '#3B82F6'
                     }
                     confirmColor={
-                        alertConfig.type === 'error' ? '#EF4444' : 
-                        alertConfig.type === 'success' ? '#10B981' : '#3B82F6'
+                        alertConfig.type === 'error' ? '#EF4444' :
+                            alertConfig.type === 'success' ? '#10B981' : '#3B82F6'
                     }
                 />
             </KeyboardAvoidingView>
