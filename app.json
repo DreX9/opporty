@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "starter-kit-expo",
+    "name": "ECHO",
     "slug": "starter-kit-expo",
     "version": "1.0.0",
     "orientation": "default",
@@ -21,7 +21,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.gustavoaanpc.echo"
     },
     "web": {
       "bundler": "metro",
@@ -42,6 +47,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "14b17f8c-5c11-417d-9c22-7ef3121c5755"
+      }
     }
   }
 }

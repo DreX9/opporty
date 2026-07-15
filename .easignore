@@ -1,0 +1,8 @@
+# Ignorar la carpeta del backend, ya que no es necesaria para construir la app móvil
+opporty-backend/
+
+# Ignorar node_modules y dependencias
+node_modules/
+
+# Ignorar la carpeta .git para evitar subir el historial completo
+.git/
