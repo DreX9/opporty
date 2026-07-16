@@ -56,6 +56,8 @@ const getBackendUrl = (): { url: string; method: string } => {
     return { url: 'http://localhost:8080/api/v1', method: 'USB / Localhost (Fallback)' };
 };
 
-export const API_URL = 'https://radar-bd.onrender.com/api/v1';
+// export const API_URL = 'https://radar-bd.onrender.com/api/v1';
+export const API_URL = getBackendUrl().url;
 
-console.log(`[API Config] Conectando con el backend en la nube: ${API_URL}`);
+// console.log(`[API Config] Conectando con el backend en la nube: ${API_URL}`);
+console.log(`[API Config] Conectando con el backend: ${API_URL}`);

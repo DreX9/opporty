@@ -511,7 +511,7 @@ export default function RadarScreen() {
                                     width: '80%',
                                     height: '80%',
                                     borderRadius: 9999,
-                                    borderWidth: 1.5,
+                                    borderWidth: 3,
                                     borderColor: C.radarRing1,
                                 }}
                             />
@@ -524,7 +524,7 @@ export default function RadarScreen() {
                                 useAnimatedStyle(() => {
                                     return {
                                         transform: [{ scale: 0.15 + 0.85 * phase2.value }],
-                                        opacity: 0.6 * (1 - phase2.value),
+                                        opacity: 0.45 * (1 - phase2.value),
                                     };
                                 })
                             ]}
@@ -535,7 +535,7 @@ export default function RadarScreen() {
                                     width: '56%',
                                     height: '56%',
                                     borderRadius: 9999,
-                                    borderWidth: 1.5,
+                                    borderWidth: 2.5,
                                     borderColor: C.radarRing2,
                                 }}
                             />
@@ -548,7 +548,7 @@ export default function RadarScreen() {
                                 useAnimatedStyle(() => {
                                     return {
                                         transform: [{ scale: 0.15 + 0.85 * phase3.value }],
-                                        opacity: 0.6 * (1 - phase3.value),
+                                        opacity: 0.45 * (1 - phase3.value),
                                     };
                                 })
                             ]}
@@ -559,50 +559,10 @@ export default function RadarScreen() {
                                     width: '30%',
                                     height: '30%',
                                     borderRadius: 9999,
-                                    borderWidth: 1.5,
+                                    borderWidth: 2.5,
                                     borderColor: C.radarRing3,
                                 }}
                             />
-                        </Reanimated.View>
-
-                        {/* 3. Barrido de radar rotatorio con estela (Sweep y cono de luz) */}
-                        <Reanimated.View
-                            style={[
-                                StyleSheet.absoluteFillObject,
-                                useAnimatedStyle(() => {
-                                    return {
-                                        transform: [{ rotate: `${sweepRotation.value}deg` }],
-                                    };
-                                })
-                            ]}
-                            pointerEvents="none"
-                        >
-                            <Svg width="100%" height="100%" viewBox={`0 0 ${RADAR_SIZE} ${RADAR_SIZE}`} style={StyleSheet.absoluteFillObject}>
-                                <Defs>
-                                    <LinearGradient id="sweepGrad" x1="100%" y1="50%" x2="75%" y2="10%" gradientUnits="userSpaceOnUse">
-                                        <Stop offset="0%" stopColor="#6366F1" stopOpacity="0.32" />
-                                        <Stop offset="50%" stopColor="#6366F1" stopOpacity="0.12" />
-                                        <Stop offset="100%" stopColor="#6366F1" stopOpacity="0.0" />
-                                    </LinearGradient>
-                                </Defs>
-                                {/* Estela luminosa: cono gradual */}
-                                <Path
-                                    d="M 140 140 L 210 18.76 A 140 140 0 0 1 280 140 Z"
-                                    fill="url(#sweepGrad)"
-                                />
-                                {/* Brazo de barrido */}
-                                <Line
-                                    x1="140"
-                                    y1="140"
-                                    x2="280"
-                                    y2="140"
-                                    stroke="#6366F1"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                />
-                                {/* Punta brillante */}
-                                <Circle cx="280" cy="140" r="3.5" fill="#FFFFFF" />
-                            </Svg>
                         </Reanimated.View>
 
                         {/* Punto central (usuario) */}
