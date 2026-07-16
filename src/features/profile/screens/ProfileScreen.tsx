@@ -45,6 +45,49 @@ import { loadInterests, saveInterests } from '../state/interestsState';
 
 
 
+function formatNotificationTime(createdAtStr?: string): string {
+    if (!createdAtStr) return 'Ahora';
+    try {
+        const date = new Date(createdAtStr);
+        if (isNaN(date.getTime())) return 'Ahora';
+        
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMin = Math.floor(diffMs / 60000);
+        
+        if (diffMin < 1) return 'Ahora';
+        if (diffMin < 60) return `Hace ${diffMin} min`;
+        
+        const diffHrs = Math.floor(diffMin / 60);
+        const isToday = date.getDate() === now.getDate() && 
+                        date.getMonth() === now.getMonth() && 
+                        date.getFullYear() === now.getFullYear();
+                        
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        if (isToday) {
+            return `Hoy ${hours}:${minutes}`;
+        }
+        
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = date.getDate() === yesterday.getDate() && 
+                            date.getMonth() === yesterday.getMonth() && 
+                            date.getFullYear() === yesterday.getFullYear();
+                            
+        if (isYesterday) {
+            return `Ayer ${hours}:${minutes}`;
+        }
+        
+        const dias = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const diaSemana = dias[date.getDay()];
+        return `${diaSemana} ${hours}:${minutes}`;
+    } catch {
+        return 'Ahora';
+    }
+}
+
 export default function ProfileScreen() {
     const router = useRouter();
     const { payload, role } = useAuthState();
@@ -232,7 +275,8 @@ export default function ProfileScreen() {
             title: n.title,
             description: n.message,
             originalId: n.id,
-            eventId: n.eventId
+            eventId: n.eventId,
+            createdAt: n.createdAt
         }))
     ];
     const solicitudesPendientes = listaSolicitudes.length;
@@ -703,88 +747,80 @@ export default function ProfileScreen() {
                             <ScrollView style={{ width: '100%', maxHeight: 350 }} showsVerticalScrollIndicator={false}>
                                 <View style={{ gap: 12, paddingVertical: 10 }}>
                                     {listaSolicitudes.map((notif) => (
-                                        <View key={notif.id} style={{
-                                            backgroundColor: '#F8FAFC',
-                                            borderRadius: 12,
-                                            borderWidth: 1,
-                                            borderColor: '#E2E8F0',
-                                            padding: 12,
-                                            gap: 6
-                                        }}>
-                                            <HStack style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <HStack style={{ alignItems: 'center', gap: 6 }}>
-                                                    <Icon as={ICONS.Bell} style={{ color: '#F59E0B', width: 16, height: 16 }} />
-                                                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#D97706' }}>
-                                                        {notif.title}
-                                                    </Text>
-                                                </HStack>
-                                            </HStack>
-                                            <Text style={{ fontSize: 12, color: '#475569', fontWeight: '600' }}>
-                                                {notif.description}
-                                            </Text>
-                                            <HStack style={{ gap: 8, marginTop: 4 }}>
-                                                <TouchableOpacity
-                                                    onPress={async () => {
-                                                        try {
-                                                            const { notificationService } = require('../services/notificationService');
-                                                            await notificationService.markAsRead(notif.originalId);
-                                                            setServerNotifications(prev => prev.filter((n: any) => n.id !== notif.originalId));
-                                                        } catch (e) {
-                                                            console.error(e);
-                                                        }
-                                                    }}
-                                                    style={{
-                                                        flex: 1,
-                                                        backgroundColor: '#FFFBEB',
-                                                        borderColor: '#FCD34D',
-                                                        borderWidth: 1,
-                                                        borderRadius: 8,
-                                                        paddingVertical: 8,
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}
-                                                >
-                                                    <Text style={{ color: '#D97706', fontSize: 11, fontWeight: '700' }}>
-                                                        Entendido
-                                                    </Text>
-                                                </TouchableOpacity>
+                                        <View key={notif.id} style={styles.pushNotifCard}>
+                                            {/* Cabecera (Estilo Push iOS) */}
+                                            <View style={styles.pushNotifHeader}>
+                                                <View style={styles.pushNotifHeaderLeft}>
+                                                    <View style={styles.pushNotifIconContainer}>
+                                                        <Image
+                                                            source={require('@/assets/images/icon.png')}
+                                                            style={styles.pushNotifAppIcon}
+                                                            resizeMode="cover"
+                                                        />
+                                                    </View>
+                                                    <Text style={styles.pushNotifAppName}>ECHO</Text>
+                                                </View>
+                                                <Text style={styles.pushNotifTime}>
+                                                    {formatNotificationTime(notif.createdAt)}
+                                                </Text>
+                                            </View>
 
-                                                {notif.eventId && (
+                                            {/* Cuerpo de la Notificación */}
+                                            <View style={styles.pushNotifBody}>
+                                                <Text style={styles.pushNotifTitle} numberOfLines={2}>
+                                                    {notif.title}
+                                                </Text>
+                                                <Text style={styles.pushNotifDescription}>
+                                                    {notif.description}
+                                                </Text>
+
+                                                {/* Botones de Acción */}
+                                                <View style={styles.pushNotifActions}>
                                                     <TouchableOpacity
                                                         onPress={async () => {
-                                                            setIsNotifOpen(false);
                                                             try {
                                                                 const { notificationService } = require('../services/notificationService');
                                                                 await notificationService.markAsRead(notif.originalId);
                                                                 setServerNotifications(prev => prev.filter((n: any) => n.id !== notif.originalId));
                                                             } catch (e) {
-                                                                console.error('Error marking as read:', e);
+                                                                console.error(e);
                                                             }
-                                                            const hasAdminAccess = role === 'ADMIN' || role === 'TEACHER' || role === 'MANAGER';
-                                                            router.push({
-                                                                pathname: hasAdminAccess ? '/tabs/admin' : '/tabs/event',
-                                                                params: hasAdminAccess 
-                                                                    ? { tab: 'eventos', openEventId: String(notif.eventId) }
-                                                                    : { openEventId: String(notif.eventId) }
-                                                            });
                                                         }}
-                                                        style={{
-                                                            flex: 1,
-                                                            backgroundColor: '#EEF2FF',
-                                                            borderColor: '#6366F1',
-                                                            borderWidth: 1,
-                                                            borderRadius: 8,
-                                                            paddingVertical: 8,
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center'
-                                                        }}
+                                                        style={styles.pushNotifButtonSec}
                                                     >
-                                                        <Text style={{ color: '#4F46E5', fontSize: 11, fontWeight: '700' }}>
-                                                            Revisar Detalle
+                                                        <Text style={styles.pushNotifButtonSecText}>
+                                                            Entendido
                                                         </Text>
                                                     </TouchableOpacity>
-                                                )}
-                                            </HStack>
+
+                                                    {notif.eventId && (
+                                                        <TouchableOpacity
+                                                            onPress={async () => {
+                                                                setIsNotifOpen(false);
+                                                                try {
+                                                                    const { notificationService } = require('../services/notificationService');
+                                                                    await notificationService.markAsRead(notif.originalId);
+                                                                    setServerNotifications(prev => prev.filter((n: any) => n.id !== notif.originalId));
+                                                                } catch (e) {
+                                                                    console.error('Error marking as read:', e);
+                                                                }
+                                                                const hasAdminAccess = role === 'ADMIN' || role === 'TEACHER' || role === 'MANAGER';
+                                                                router.push({
+                                                                    pathname: hasAdminAccess ? '/tabs/admin' : '/tabs/event',
+                                                                    params: hasAdminAccess 
+                                                                        ? { tab: 'eventos', openEventId: String(notif.eventId) }
+                                                                        : { openEventId: String(notif.eventId) }
+                                                                });
+                                                            }}
+                                                            style={styles.pushNotifButtonPri}
+                                                        >
+                                                            <Text style={styles.pushNotifButtonPriText}>
+                                                                Revisar Detalle
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
+                                            </View>
                                         </View>
                                     ))}
                                 </View>
@@ -1270,6 +1306,112 @@ const styles = StyleSheet.create({
     certDownloadBtnText: {
         color: '#FFFFFF',
         fontSize: 13,
+        fontWeight: '800',
+    },
+    pushNotifCard: {
+        backgroundColor: '#A78BFA', // uniradar-violet (#A78BFA)
+        borderRadius: 22,
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    pushNotifHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.06)',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+    },
+    pushNotifHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    pushNotifIconContainer: {
+        width: 22,
+        height: 22,
+        borderRadius: 6,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        overflow: 'hidden',
+    },
+    pushNotifAppIcon: {
+        width: 16,
+        height: 16,
+    },
+    pushNotifAppName: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: '#2E1065', // violet-950
+        letterSpacing: 1.2,
+    },
+    pushNotifTime: {
+        fontSize: 11,
+        color: '#4C1D95', // violet-800
+        fontWeight: '600',
+    },
+    pushNotifBody: {
+        padding: 16,
+    },
+    pushNotifTitle: {
+        fontSize: 15,
+        fontWeight: '800',
+        color: '#1E1B4B', // indigo-950
+        marginBottom: 6,
+        lineHeight: 18,
+    },
+    pushNotifDescription: {
+        fontSize: 13,
+        color: '#312E81', // indigo-900
+        lineHeight: 18,
+        fontWeight: '500',
+    },
+    pushNotifActions: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 14,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.25)',
+    },
+    pushNotifButtonSec: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.25)',
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingVertical: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    pushNotifButtonSecText: {
+        color: '#1E1B4B',
+        fontSize: 12,
+        fontWeight: '800',
+    },
+    pushNotifButtonPri: {
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 12,
+        paddingVertical: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    pushNotifButtonPriText: {
+        color: '#2E1065',
+        fontSize: 12,
         fontWeight: '800',
     },
 });
