@@ -3,9 +3,9 @@ import { EventoDot, EventoCard } from '../types';
 export const C = {
     bg: '#F4F4FB',           // fondo general ligeramente lila
     radarBg: '#EEF0FA',      // fondo de la caja del radar
-    radarRing1: '#C084FC',   // uniradar-lightPurple
-    radarRing2: '#A78BFA',   // violeta medio
-    radarRing3: '#6366F1',   // uniradar-indigo
+    radarRing1: '#6366F1',   // azul/índigo sutil
+    radarRing2: '#6366F1',   // azul/índigo sutil
+    radarRing3: '#6366F1',   // azul/índigo sutil
     accent: '#6366F1',
     accentPurple: '#A82BFA',
     cardBg: '#FFFFFF',
