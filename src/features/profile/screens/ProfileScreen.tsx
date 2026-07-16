@@ -760,9 +760,12 @@ export default function ProfileScreen() {
                                                             } catch (e) {
                                                                 console.error('Error marking as read:', e);
                                                             }
+                                                            const hasAdminAccess = role === 'ADMIN' || role === 'TEACHER' || role === 'MANAGER';
                                                             router.push({
-                                                                pathname: '/tabs/admin',
-                                                                params: { tab: 'eventos', openEventId: String(notif.eventId) }
+                                                                pathname: hasAdminAccess ? '/tabs/admin' : '/tabs/event',
+                                                                params: hasAdminAccess 
+                                                                    ? { tab: 'eventos', openEventId: String(notif.eventId) }
+                                                                    : { openEventId: String(notif.eventId) }
                                                             });
                                                         }}
                                                         style={{
