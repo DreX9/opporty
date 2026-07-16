@@ -7,11 +7,15 @@ import {
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import { Slot } from 'expo-router';
+import { useEffect, useRef } from 'react';
+import { Slot, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Box } from '@/components/ui/box';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync, setupNotificationChannel } from '@/src/utils/pushNotifications';
+import { notificationService } from '@/src/features/profile/services/notificationService';
+import { useAuthState } from '@/src/features/auth/state';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -19,6 +23,16 @@ export {
 } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
+
+// Configurar cómo se muestran las notificaciones cuando la app está en foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 const MyDarkTheme = {
   ...DarkTheme,
@@ -51,6 +65,53 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
+  const router = useRouter();
+  const authState = useAuthState();
+
+  const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
+  const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
+
+  useEffect(() => {
+    // Solo registrar push cuando el usuario está autenticado
+    if (!authState.token) {
+      return;
+    }
+
+    // Configurar canal de notificaciones en Android
+    setupNotificationChannel();
+
+    // Registrar para push y enviar token al backend
+    registerForPushNotificationsAsync().then((pushToken) => {
+      if (pushToken) {
+        notificationService.savePushToken(pushToken);
+      }
+    });
+
+    // Listener: cuando llega una notificación y la app está abierta (foreground)
+    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      console.log('[Push] Notificación recibida en foreground:', notification.request.content.title);
+    });
+
+    // Listener: cuando el usuario PRESIONA la notificación
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      console.log('[Push] Usuario presionó notificación. Data:', data);
+
+      // Redirigir según los datos de la notificación
+      if (data?.eventId) {
+        // Navegar a la pantalla de evento
+        router.push('/tabs/(tabs)/event');
+      } else if (data?.screen === 'notifications') {
+        router.push('/tabs/(tabs)/profile');
+      }
+    });
+
+    return () => {
+      notificationListener.current?.remove();
+      responseListener.current?.remove();
+    };
+  }, [authState.token]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GluestackUIProvider mode="dark">

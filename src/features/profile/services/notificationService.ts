@@ -23,6 +23,7 @@ export interface Notification {
   title: string;
   message: string;
   isRead: boolean;
+  eventId: number | null;
   createdAt: string;
 }
 
@@ -89,6 +90,20 @@ export const notificationService = {
     } catch (error: any) {
       console.error('Error al marcar todas las notificaciones como leídas:', error);
       throw error;
+    }
+  },
+
+  /**
+   * Envía el Expo Push Token al backend para asociarlo al usuario autenticado
+   */
+  async savePushToken(token: string): Promise<void> {
+    try {
+      await apiClient.put('/users/me/push-token', { token }, {
+          headers: getAuthHeaders(),
+      });
+      console.log('[Push] Token guardado en el backend correctamente.');
+    } catch (error: any) {
+      console.error('Error al guardar push token:', error);
     }
   }
 };

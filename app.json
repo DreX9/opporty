@@ -26,7 +26,8 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.gustavoaanpc.echo"
+      "package": "com.gustavoaanpc.echo",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -42,6 +43,13 @@
         "expo-camera",
         {
           "cameraPermission": "Permite el acceso a la cámara para escanear códigos QR de asistencia de eventos."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#00E5FF"
         }
       ]
     ],
