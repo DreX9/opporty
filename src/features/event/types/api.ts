@@ -93,6 +93,7 @@ export interface QrSessionViewDTO {
 export interface QrSessionResponse {
   session: QrSessionViewDTO;
   qrCodeBase64: string;
+  remainingSeconds: number;
 }
 
 /**

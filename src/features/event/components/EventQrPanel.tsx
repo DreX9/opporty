@@ -67,6 +67,7 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
                 setSessionEntry(prev => {
                     if (!prev || prev.id !== entryRes.session.id) {
                         setQrEntryBase64(entryRes.qrCodeBase64);
+                        setTimeLeftEntry(entryRes.remainingSeconds);
                         return entryRes.session;
                     }
                     return prev;
@@ -86,6 +87,7 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
                 setSessionExit(prev => {
                     if (!prev || prev.id !== exitRes.session.id) {
                         setQrExitBase64(exitRes.qrCodeBase64);
+                        setTimeLeftExit(exitRes.remainingSeconds);
                         return exitRes.session;
                     }
                     return prev;
@@ -114,55 +116,47 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
 
     // Cuenta regresiva para Entrada
     useEffect(() => {
-        if (sessionEntry && sessionEntry.active) {
-            const expires = new Date(sessionEntry.expiresAt).getTime();
-
-            const updateTimer = () => {
-                const now = new Date().getTime();
-                const diff = Math.max(0, Math.floor((expires - now) / 1000));
-                setTimeLeftEntry(diff);
-
-                if (diff <= 0) {
-                    setSessionEntry(prev => prev ? { ...prev, active: false } : null);
-                    setQrEntryBase64(null);
-                    if (timerEntryRef.current) clearInterval(timerEntryRef.current);
-                }
-            };
-
-            updateTimer();
-            timerEntryRef.current = setInterval(updateTimer, 1000);
+        if (sessionEntry && sessionEntry.active && timeLeftEntry > 0) {
+            timerEntryRef.current = setInterval(() => {
+                setTimeLeftEntry(prev => {
+                    const diff = prev - 1;
+                    if (diff <= 0) {
+                        setSessionEntry(s => s ? { ...s, active: false } : null);
+                        setQrEntryBase64(null);
+                        if (timerEntryRef.current) clearInterval(timerEntryRef.current);
+                        return 0;
+                    }
+                    return diff;
+                });
+            }, 1000);
         }
 
         return () => {
             if (timerEntryRef.current) clearInterval(timerEntryRef.current);
         };
-    }, [sessionEntry]);
+    }, [sessionEntry, qrEntryBase64]);
 
     // Cuenta regresiva para Salida
     useEffect(() => {
-        if (sessionExit && sessionExit.active) {
-            const expires = new Date(sessionExit.expiresAt).getTime();
-
-            const updateTimer = () => {
-                const now = new Date().getTime();
-                const diff = Math.max(0, Math.floor((expires - now) / 1000));
-                setTimeLeftExit(diff);
-
-                if (diff <= 0) {
-                    setSessionExit(prev => prev ? { ...prev, active: false } : null);
-                    setQrExitBase64(null);
-                    if (timerExitRef.current) clearInterval(timerExitRef.current);
-                }
-            };
-
-            updateTimer();
-            timerExitRef.current = setInterval(updateTimer, 1000);
+        if (sessionExit && sessionExit.active && timeLeftExit > 0) {
+            timerExitRef.current = setInterval(() => {
+                setTimeLeftExit(prev => {
+                    const diff = prev - 1;
+                    if (diff <= 0) {
+                        setSessionExit(s => s ? { ...s, active: false } : null);
+                        setQrExitBase64(null);
+                        if (timerExitRef.current) clearInterval(timerExitRef.current);
+                        return 0;
+                    }
+                    return diff;
+                });
+            }, 1000);
         }
 
         return () => {
             if (timerExitRef.current) clearInterval(timerExitRef.current);
         };
-    }, [sessionExit]);
+    }, [sessionExit, qrExitBase64]);
 
     const activarQr = async (type: 'ENTRY' | 'EXIT') => {
         const isEntry = type === 'ENTRY';
@@ -180,6 +174,11 @@ export default function EventQrPanel({ eventId, eventoTitulo }: EventQrPanelProp
             });
             setSession(response.session);
             setQr(response.qrCodeBase64);
+            if (isEntry) {
+                setTimeLeftEntry(response.remainingSeconds);
+            } else {
+                setTimeLeftExit(response.remainingSeconds);
+            }
         } catch (error: unknown) {
             console.error(`Error generando QR de ${type}:`, error);
             let msg = 'No se pudo generar la sesión de QR.';

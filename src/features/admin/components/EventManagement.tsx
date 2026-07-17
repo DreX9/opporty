@@ -21,6 +21,7 @@ import { AdminEvent } from '../types';
 import { eventStateManager, useEventState } from '../../event/state';
 import { useRouter } from 'expo-router';
 import { useAuthState } from '../../auth/state';
+import EventDashboardPanel from './EventDashboardPanel';
 
 function calcularDuracion(inicio: string | null, fin: string | null): string {
   if (!inicio || !fin) return 'No especificada';
@@ -850,6 +851,11 @@ export default function EventManagement({
                       </HStack>
                     </VStack>
                   </VStack>
+
+                  {/* Panel de Control de Evento (Dashboard de Asistencia) */}
+                  {['Aprobado', 'Programado', 'Finalizado'].includes(reviewingEvent.estado) && (
+                    <EventDashboardPanel eventId={reviewingEvent.id} />
+                  )}
 
                   {/* Sección: Categorías y Etiquetas */}
                   <VStack style={styles.reviewSectionCard}>

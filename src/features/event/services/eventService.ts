@@ -170,6 +170,28 @@ export const eventService = {
     },
 
     /**
+     * Obtiene todos los registros (asistencias) de un evento específico.
+     * Requiere rol ADMIN, TEACHER o MANAGER.
+     * Endpoint: GET /api/v1/event-registrations/event/{eventId}
+     */
+    async fetchEventRegistrations(eventId: number): Promise<RegistrationBackend[]> {
+        try {
+            const response = await apiClient.get<RegistrationBackend[]>(`/event-registrations/event/${eventId}`, {
+                headers: getAuthHeaders(),
+            });
+            if (response.status === 204 || !response.data) {
+                return [];
+            }
+            return Array.isArray(response.data) ? response.data : [];
+        } catch (error: any) {
+            if (error.response && (error.response.status === 204 || error.response.status === 404)) {
+                return [];
+            }
+            throw error;
+        }
+    },
+
+    /**
      * Verifica si ha habido actualizaciones en los eventos o registros en el backend.
      * Endpoint: GET /api/v1/events/check-updates
      */
